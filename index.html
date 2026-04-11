@@ -3,8 +3,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>주식소녀</title>
+
+<script>
+  (function() {
+    var mainCharKey = 'nflx'; 
+    try {
+      var savedData = localStorage.getItem('sg_v3');
+      if (savedData) {
+        var parsed = JSON.parse(savedData);
+        if (parsed.mainChar) mainCharKey = parsed.mainChar; 
+      }
+    } catch(e) {} 
+    var link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = 'imgs/' + mainCharKey.toLowerCase() + '.png';
+    document.head.appendChild(link);
+  })();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+/* (이하 기존 CSS 코드 쭉 이어짐) */
 
 :root {
   --bg: #08080f;
