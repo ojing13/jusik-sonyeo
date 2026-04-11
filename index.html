@@ -4755,8 +4755,8 @@ function preloadCharacterImages() {
 }
 
 function initializeGame() {
-  // 💡 핵심: 화면이 다 뜨고 유저가 안심했을 때(5초 뒤), 몰래 뒤에서 이미지를 받습니다!
-  setTimeout(preloadCharacterImages, 5000);
+  // 💡 게임 시작 시 프리로드 함수 실행! (여기를 추가해주세요)
+  preloadCharacterImages();
 
   initChars(); initMissions(); load();
   if (GS.lastSaveTime) {
