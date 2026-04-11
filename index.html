@@ -4052,9 +4052,10 @@ function setMainChar(k) {
 
 function renderPortfolio() {
   var totalProfit = 0;
-  var totalInvested = 0; 
-  var totalValue = 0;    
+  var totalInvested = 0;  // 💡 상단 총 수익률 계산용 (원금 총합)
+  var totalValue = 0;     
 
+  // 1. 총 수익률 및 총 자산 계산 파트
   Object.values(GS.chars).forEach(function(ch) {
     if (ch.owned > 0) {
       var val = ch.price * ch.owned;
@@ -4065,7 +4066,7 @@ function renderPortfolio() {
       : ch.avg_price * ch.owned;
       
       totalValue += netValue; 
-      totalInvested += val; 
+      totalInvested += principal; // ✅ 첫 번째 수정 완료: 원금을 더하도록 변경
       totalProfit += (netValue - principal);
     }
   });
@@ -4095,20 +4096,23 @@ function renderPortfolio() {
     '<div style="font-size:' + valFontSize + '; font-weight:bold; color:#ffe87a; line-height:1.2; white-space:nowrap; letter-spacing:-0.5px;">' + totalValueStr + '</div>' +
     '<div style="font-size:' + profFontSize + '; color:' + profitColor + '; margin-top:2px; white-space:nowrap; letter-spacing:-0.5px;">' + profitStr + '</div>';
 
-  // --- 여기서부터 추가된 섹터 비중 계산 코드 ---
+  // 2. 섹터 비중 계산 파트
   var swHtml = '';
-  if (totalInvested > 0) {
-    var sectorInvested = {};
-    Object.values(GS.chars).forEach(function(ch) {
-      if (ch.owned > 0) {
-        var val = ch.price * ch.owned;
-        sectorInvested[ch.sector] = (sectorInvested[ch.sector] || 0) + val;
-      }
-    });
+  var sectorInvested = {};
+  var totalSectorValue = 0; // ✅ 두 번째 수정 완료: 비중 계산을 위한 현재 가치 총합 변수 분리
 
+  Object.values(GS.chars).forEach(function(ch) {
+    if (ch.owned > 0) {
+      var val = ch.price * ch.owned; // 현재 가치
+      sectorInvested[ch.sector] = (sectorInvested[ch.sector] || 0) + val;
+      totalSectorValue += val; // 전체 현재 가치 누적
+    }
+  });
+
+  if (totalSectorValue > 0) {
     var swArr = [];
     Object.keys(sectorInvested).forEach(function(sec) {
-      var pct = (sectorInvested[sec] / totalInvested) * 100;
+      var pct = (sectorInvested[sec] / totalSectorValue) * 100; // 현재 가치 기준으로 비율 계산
       if (pct > 0) swArr.push({sec: sec, pct: pct});
     });
     swArr.sort(function(a, b){ return b.pct - a.pct; });
@@ -4123,7 +4127,6 @@ function renderPortfolio() {
   
   var portSectorWeightsEl = document.getElementById('port-sector-weights');
   if (portSectorWeightsEl) portSectorWeightsEl.innerHTML = swHtml;
-  // --- 여기까지 추가 ---
 
   renderPortfolioTabs(); 
   renderPortfolioList();
