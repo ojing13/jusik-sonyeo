@@ -41,7 +41,7 @@
   --nav-h: 72px;
   --header-h: 116px;
 }
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action: none; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
 html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); }
 body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(--text); letter-spacing: 0.5px; }
 #app {
@@ -125,7 +125,6 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
   flex:1; overflow-y:auto; overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
   padding-bottom:calc(var(--nav-h) + 8px);
-  touch-action: pan-y;
 }
 .scroll-area::-webkit-scrollbar { display:none; }
 #screen-home { background:var(--bg); }
@@ -1668,7 +1667,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔ㅇㅇㅇ</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -1683,17 +1682,6 @@ body, #app {
 
 </div>
 <script>
-// 화면 전체 스와이프 방지 (스크롤 영역은 허용)
-document.addEventListener('touchmove', function(e) {
-  var el = e.target;
-  while (el && el !== document.body) {
-    var style = window.getComputedStyle(el);
-    var overflow = style.overflowY;
-    if (overflow === 'auto' || overflow === 'scroll') return;
-    el = el.parentElement;
-  }
-  e.preventDefault();
-}, { passive: false });
 // 💡 추가됨: 앱이 켜지자마자 터치 전에 무조건 비디오부터 틀고 보는 마법의 코드
 window.addEventListener('DOMContentLoaded', function() {
   var titleVid = document.getElementById('bg-video');
@@ -1801,14 +1789,12 @@ var _actionTimer = null;
 var _tradeTimer = null;
 var audioCtx;
 function playSound(type) {
-  if (!userInteracted || !GS.sfxOn) return;
+  if (!userInteracted || !GS.sfxOn) return;
 
-  if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
+  // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로 확인합니다!
+  if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
 
-  // audioCtx가 없거나 closed 상태면 새로 만들기
-  if (!audioCtx || audioCtx.state === 'closed') {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   var osc = audioCtx.createOscillator();
   var gain = audioCtx.createGain();
@@ -2743,7 +2729,7 @@ function save() {
       momentumTimer: GS.momentumTimer, 
       biasTimer: GS.biasTimer, 
       mg_highscore: GS.mg_highscore,
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, lastSaveTime: Date.now(),
       chars: outChars
     }));
   } catch(e) {}
@@ -2785,7 +2771,6 @@ function load() {
     if (d.momentumTimer !== undefined) GS.momentumTimer = d.momentumTimer; 
     if (d.biasTimer !== undefined) GS.biasTimer = d.biasTimer; 
     GS.mg_highscore = d.mg_highscore || 0;
-    GS.leftoverMs = d.leftoverMs || 0;
     if (d.bgmOn !== undefined) GS.bgmOn = d.bgmOn;
     if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
     if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
@@ -4824,16 +4809,11 @@ function initializeGame() {
 
   initChars(); initMissions(); load();
   if (GS.lastSaveTime) {
-    var now = Date.now();
-    var offlineMs = (now - GS.lastSaveTime) + (GS.leftoverMs || 0);
-    var elapsedTicks = Math.floor(offlineMs / 5000); 
-    
-    GS.leftoverMs = offlineMs % 5000; // 남은 ms는 주머니에 킵
-
-    if (elapsedTicks > 0) {
+    var elapsed = Math.floor((Date.now() - GS.lastSaveTime) / 5000);
+    if (elapsed > 0) {
       var moneyBefore = GS.money;
-      for (var i = 0; i < elapsedTicks; i++) {
-        tick(true); // 밀린 틱만큼 연산
+      for (var i = 0; i < elapsed; i++) {
+        tick(true);
       }
       window.offlineEarnedAmount = Math.max(0, GS.money - moneyBefore);
     }
@@ -4999,65 +4979,30 @@ document.getElementById('ssr-right-arrow').addEventListener('click', function() 
 startSsrAutoTimer();
 // ------------------------------
 initializeGame();
-// 화면 OFF→ON 시 밀린 시간 완벽 동기화 및 BGM 제어
+// 화면 OFF→ON 시 체력 즉시 보정 (Page Visibility API)
 var _mgHiddenAt = null;
 
 document.addEventListener('visibilitychange', function() {
-  var mainBgm = document.getElementById('bgm-player');
-  var mgBgm = document.getElementById('mg-bgm-player');
-
   if (document.hidden) {
-    // 화면 나갈 때 시간 기록
     _mgHiddenAt = Date.now();
     save();
-    
-    if (mainBgm) mainBgm.pause();
-    if (mgBgm) mgBgm.pause();
-    
   } else {
-    // 🔊 효과음 엔진(AudioContext) 복구
-    if (!audioCtx || audioCtx.state === 'closed') {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } else if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
     if (_mgHiddenAt === null) return;
-    
-    var now = Date.now();
-    // 꺼져있던 시간 + 주머니에 있던 자투리 시간
-    var offlineMs = (now - _mgHiddenAt) + (GS.leftoverMs || 0); 
+    var offlineSec = (Date.now() - _mgHiddenAt) / 1000;
     _mgHiddenAt = null;
+    if (offlineSec < 1) return;
 
-    if (GS.bgmOn) {
-      var mgScreen = document.getElementById('screen-minigame');
-      if (mgScreen && mgScreen.classList.contains('active')) {
-        if (mgBgm) mgBgm.play().catch(function(e){});
-      } else {
-        if (mainBgm) mainBgm.play().catch(function(e){});
-      }
-    }
-
-    // 5초 단위로 틱 계산 후 남은 ms는 다시 주머니에 저장
-    var elapsedTicks = Math.floor(offlineMs / 5000);
-    GS.leftoverMs = offlineMs % 5000; 
-
-    if (elapsedTicks > 0) {
-      var moneyBefore = GS.money;
-      for (var i = 0; i < elapsedTicks; i++) {
-        tick(true); 
-      }
-
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
-      if (earnedAmount > 0 && GS.notiOn) {
-        setTimeout(function() {
-          setAction('백그라운드에서 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
-          playSound('dividend');
-        }, 600);
-      }
-    }
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (ch.energy >= ch.max_energy) return;
+      var regenPct = 0.02 + (ch.level * 0.002);
+      var regenAmount = ch.max_energy * regenPct;
+      var ticks = offlineSec / 5;
+      ch.energy = Math.min(ch.max_energy, Math.floor(ch.energy + regenAmount * ticks));
+    });
 
     updateTotalAssets();
-    renderAll(); 
+    renderHome();
     save();
   }
 });
