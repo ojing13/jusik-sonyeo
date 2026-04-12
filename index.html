@@ -5370,56 +5370,7 @@ document.addEventListener('touchcancel', function(e) {
   }
 }, {passive: true});
 // -----------------------------------
-// --- [스크롤 끝에서 쫀득하게 늘어나는 고무줄(오버스크롤) 효과] ---
-var scrollAreas = document.querySelectorAll('.scroll-area');
 
-scrollAreas.forEach(function(area) {
-  var startY = 0;
-  var currentY = 0;
-  var isPulling = false;
-
-  area.addEventListener('touchstart', function(e) {
-    startY = e.touches[0].clientY;
-    area.style.transition = 'none'; // 당길 때는 내 손가락을 뻑뻑하게 따라오도록 애니메이션 끄기
-  }, { passive: true });
-
-  area.addEventListener('touchmove', function(e) {
-    currentY = e.touches[0].clientY;
-    var deltaY = currentY - startY;
-
-    // 1. 맨 위에서 아래로 계속 당길 때
-    if (area.scrollTop <= 0 && deltaY > 0) {
-      isPulling = true;
-      var move = deltaY * 0.35; // 당기는 힘의 35%만 뻑뻑하게 늘어남
-      area.style.transform = 'translateY(' + move + 'px)';
-    }
-    // 2. 맨 아래에서 위로 계속 당길 때
-    else if (area.scrollTop + area.clientHeight >= area.scrollHeight && deltaY < 0) {
-      isPulling = true;
-      var move = deltaY * 0.35;
-      area.style.transform = 'translateY(' + move + 'px)';
-    } 
-    // 3. 정상적으로 중간을 스크롤 중일 때
-    else {
-      isPulling = false;
-      area.style.transform = 'translateY(0px)';
-    }
-  }, { passive: true });
-
-  // 손가락을 떼면 원래 자리로 쫀득하게 복구
-  function resetBounce() {
-    if (isPulling) {
-      // 통! 하고 부드럽게 튕겨 제자리로 돌아가는 애니메이션
-      area.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
-      area.style.transform = 'translateY(0px)';
-      isPulling = false;
-    }
-  }
-
-  area.addEventListener('touchend', resetBounce, { passive: true });
-  area.addEventListener('touchcancel', resetBounce, { passive: true });
-});
-// -----------------------------------
 </script>
 </body>
 </html>
