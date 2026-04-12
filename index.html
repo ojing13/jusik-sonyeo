@@ -2729,7 +2729,7 @@ function save() {
       momentumTimer: GS.momentumTimer, 
       biasTimer: GS.biasTimer, 
       mg_highscore: GS.mg_highscore,
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, lastSaveTime: Date.now(),
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
       chars: outChars
     }));
   } catch(e) {}
@@ -2771,6 +2771,7 @@ function load() {
     if (d.momentumTimer !== undefined) GS.momentumTimer = d.momentumTimer; 
     if (d.biasTimer !== undefined) GS.biasTimer = d.biasTimer; 
     GS.mg_highscore = d.mg_highscore || 0;
+    GS.leftoverMs = d.leftoverMs || 0;
     if (d.bgmOn !== undefined) GS.bgmOn = d.bgmOn;
     if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
     if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
@@ -4804,16 +4805,23 @@ function preloadCharacterImages() {
 }
 
 function initializeGame() {
-  // 💡 게임 시작 시 프리로드 함수 실행! (여기를 추가해주세요)
   preloadCharacterImages();
-
   initChars(); initMissions(); load();
+
+  // 💡 [오프라인 동기화] 앱을 완전히 껐다가 켰을 때
   if (GS.lastSaveTime) {
-    var elapsed = Math.floor((Date.now() - GS.lastSaveTime) / 5000);
-    if (elapsed > 0) {
+    var now = Date.now();
+    // 마지막 저장 후 흐른 시간 + 저장되어 있던 자투리 시간 합산
+    var offlineMs = (now - GS.lastSaveTime) + (GS.leftoverMs || 0);
+    var elapsedTicks = Math.floor(offlineMs / 5000); 
+    
+    // 이번에 쓰고 남은 자투리 시간은 다시 저장
+    GS.leftoverMs = offlineMs % 5000;
+
+    if (elapsedTicks > 0) {
       var moneyBefore = GS.money;
-      for (var i = 0; i < elapsed; i++) {
-        tick(true);
+      for (var i = 0; i < elapsedTicks; i++) {
+        tick(true); // 밀린 틱만큼 연산 (한도 제한 없음)
       }
       window.offlineEarnedAmount = Math.max(0, GS.money - moneyBefore);
     }
@@ -4979,30 +4987,60 @@ document.getElementById('ssr-right-arrow').addEventListener('click', function() 
 startSsrAutoTimer();
 // ------------------------------
 initializeGame();
-// 화면 OFF→ON 시 체력 즉시 보정 (Page Visibility API)
+// 화면 OFF→ON 시 밀린 시간 완벽 동기화 및 BGM 제어
 var _mgHiddenAt = null;
 
 document.addEventListener('visibilitychange', function() {
+  var mainBgm = document.getElementById('bgm-player');
+  var mgBgm = document.getElementById('mg-bgm-player');
+
   if (document.hidden) {
+    // 화면 나갈 때 시간 기록
     _mgHiddenAt = Date.now();
     save();
+    
+    if (mainBgm) mainBgm.pause();
+    if (mgBgm) mgBgm.pause();
+    
   } else {
     if (_mgHiddenAt === null) return;
-    var offlineSec = (Date.now() - _mgHiddenAt) / 1000;
+    
+    var now = Date.now();
+    // 꺼져있던 시간 + 주머니에 있던 자투리 시간
+    var offlineMs = (now - _mgHiddenAt) + (GS.leftoverMs || 0); 
     _mgHiddenAt = null;
-    if (offlineSec < 1) return;
 
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (ch.energy >= ch.max_energy) return;
-      var regenPct = 0.02 + (ch.level * 0.002);
-      var regenAmount = ch.max_energy * regenPct;
-      var ticks = offlineSec / 5;
-      ch.energy = Math.min(ch.max_energy, Math.floor(ch.energy + regenAmount * ticks));
-    });
+    if (GS.bgmOn) {
+      var mgScreen = document.getElementById('screen-minigame');
+      if (mgScreen && mgScreen.classList.contains('active')) {
+        if (mgBgm) mgBgm.play().catch(function(e){});
+      } else {
+        if (mainBgm) mainBgm.play().catch(function(e){});
+      }
+    }
+
+    // 5초 단위로 틱 계산 후 남은 ms는 다시 주머니에 저장
+    var elapsedTicks = Math.floor(offlineMs / 5000);
+    GS.leftoverMs = offlineMs % 5000; 
+
+    if (elapsedTicks > 0) {
+      var moneyBefore = GS.money;
+      // ⚠️ 유저 요청에 따라 MAX_OFFLINE_TICKS 제한 없이 모두 연산합니다.
+      for (var i = 0; i < elapsedTicks; i++) {
+        tick(true); 
+      }
+
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+      if (earnedAmount > 0 && GS.notiOn) {
+        setTimeout(function() {
+          setAction('백그라운드에서 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
+          playSound('dividend');
+        }, 600);
+      }
+    }
 
     updateTotalAssets();
-    renderHome();
+    renderAll(); 
     save();
   }
 });
