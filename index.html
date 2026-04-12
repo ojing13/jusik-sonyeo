@@ -1667,7 +1667,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.01</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.02</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -1789,9 +1789,20 @@ var _actionTimer = null;
 var _tradeTimer = null;
 var audioCtx;
 function playSound(type) {
-  if (!userInteracted || !GS.sfxOn) return;
+  if (!userInteracted || !GS.sfxOn) return;
 
-  // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로 확인합니다!
+  // 오디오 컨텍스트가 없으면 새로 만들고, 정지되어 있으면 깨웁니다.
+  if (!audioCtx || audioCtx.state === 'closed') {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  
+  if (audioCtx.state === 'suspended') {
+    // ⚠️ 여기서 resume()이 안 먹힐 수 있으므로, 
+    // 실제 소리를 내기 전 유저 액션(tap 함수)에서 깨워주는 게 핵심입니다.
+    audioCtx.resume();
+  }
+
+  // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로확인합니다!
   if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
 
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3208,6 +3219,15 @@ function updateDialogState(forceUpdate) {
 }
 
 function tap(e) {
+  // 💡 유저가 터치하는 "직후"에 오디오 엔진을 강제로 깨웁니다.
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    } else if (audioCtx.state === 'closed') {
+      // 만약 세션이 완전히 닫혔다면 다시 생성합니다.
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
   // 💡 터치 이벤트면 '방금 닿은 손가락들(changedTouches)'을 가져오고, 마우스면 그냥 e를 배열로 만듭니다!
   var touches = (e && e.type === 'touchstart') ? e.changedTouches : [e];
 
