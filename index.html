@@ -4751,6 +4751,9 @@ function devResetStep() {
     GS.earningTimer = 15;
     GS.mg_highscore = 0;
     GS.bgmOn = true; GS.sfxOn = true; GS.notiOn = true;
+
+    GS.mg_hearts = 5; 
+    GS.mg_last_heart_time = Date.now();
     
     if (_actionTimer) clearTimeout(_actionTimer);
     if (_tradeTimer) clearTimeout(_tradeTimer);
