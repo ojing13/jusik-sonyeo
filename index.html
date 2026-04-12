@@ -2954,7 +2954,7 @@ function tick(silent) {
     Object.keys(GS.chars).forEach(function(k) {
       var ch = GS.chars[k];
       if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = -(0.06 + Math.random() * 0.08);
+      if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.10);
       ch._earningApplied = false; applyPriceChange(k);
     });
     GS.crashTicks--;
@@ -2969,7 +2969,7 @@ function tick(silent) {
     Object.keys(GS.chars).forEach(function(k) {
       var ch = GS.chars[k];
       if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = 0.06 + Math.random() * 0.08;
+      if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.10;
       ch._earningApplied = false; applyPriceChange(k);
     });
     GS.bullTicks--;
@@ -2990,7 +2990,7 @@ function tick(silent) {
         Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = -(0.06 + Math.random() * 0.08);
+          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.10);
           ch._earningApplied = false; applyPriceChange(k);
         });
       } else {
@@ -2999,7 +2999,7 @@ function tick(silent) {
         Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = 0.06 + Math.random() * 0.08;
+          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.10;
           ch._earningApplied = false; applyPriceChange(k);
         });
       }
@@ -3040,17 +3040,17 @@ function tick(silent) {
 
       if (isTheme) {
         if (GS.currentTheme.type === 'bad') {
-          baseMin = -0.080 * seasonVol;
+          baseMin = -0.050 * seasonVol;
           baseMax = 0.015 * seasonVol;
         } else {
           baseMin = -0.015 * seasonVol;
-          baseMax = 0.080 * seasonVol;
+          baseMax = 0.050 * seasonVol;
         }
       }
 
       if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
         GS.newsBoost[k].ticks--;
-        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.02; baseMax = 0.12; } else { baseMin = -0.12; baseMax = 0.02; }
+        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.02; baseMax = 0.07; } else { baseMin = -0.07; baseMax = 0.02; }
         if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
       }
       ch.change = baseMin + Math.random() * (baseMax - baseMin);
