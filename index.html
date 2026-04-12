@@ -1667,7 +1667,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.03</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.04</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -4222,7 +4222,7 @@ var mgAnimTick = 0;
 
 var mg = {
   active: false, ctx: null, w: 0, h: 0,
-  p: { x: 50, y: 0, vy: 0, r: 12 },
+  p: { x: 50, y: -1000, vy: 0, r: 12 }, 
   gravity: 0.65, jump: -12, baseSpeed: 6.0, speed: 6.0, score: 0,
   points: [], jumpCount: 0, downCount: 0,
   lastJumpTime: 0, 
@@ -4343,36 +4343,36 @@ function endMg() {
   save(); 
 }
 
-function updateMg() {
+// 기존 function updateMg() { ... } 를 아래 코드로 전체 교체하세요.
+function updateMg(ts) {
   if (mg.score > 500 && mg.score <= 5000) {
-    mg.baseSpeed += 0.0015; 
+    mg.baseSpeed += 0.0015 * ts; 
   }
   mg.speed = mg.baseSpeed;
   
-  mg.score += mg.speed / 10;
+  mg.score += (mg.speed / 10) * ts;
   
-  // 💡 매 프레임 글자를 바꾸는 대신, 앞자리 숫자가 바뀌었을 때만 렌더링해서 과부하 방지!
   var currentScore = Math.floor(mg.score);
   if (mg.lastScore !== currentScore) {
     document.getElementById('mg-score-display').textContent = '거리: ' + currentScore + 'm';
     mg.lastScore = currentScore;
   }
 
-  mg.p.vy += mg.gravity;
-  mg.p.y += mg.p.vy;
+  // 중력과 가속도에 시간 배속(ts) 적용
+  mg.p.vy += mg.gravity * ts;
+  mg.p.y += mg.p.vy * ts;
 
-  // 💡 [추가된 부분] 배경 입자 업데이트 (게임 속도에 비례해 흐름)
+  // 배경 입자 속도 조절
   for (var i = 0; i < mg.bgParticles.length; i++) {
     var p = mg.bgParticles[i];
-    p.x -= mg.speed * p.speed * 0.3; // 입자마다 속도가 다름 (입체감)
-    if (p.x < -10) p.x = mg.w + 10; // 왼쪽으로 사라지면 오른쪽에서 다시 등장
+    p.x -= (mg.speed * p.speed * 0.3) * ts;
+    if (p.x < -10) p.x = mg.w + 10;
   }
-  
-  // 💡 [추가된 부분] 바닥 그리드 오프셋 업데이트 (게임 속도에 비례)
-  mg.bgGridOffset = (mg.bgGridOffset + mg.speed) % 50; // 50px 주기로 무한 반복
+  mg.bgGridOffset = (mg.bgGridOffset + mg.speed * ts) % 50;
 
+  // 바닥 선 속도 조절
   for(var i=0; i<mg.points.length; i++) {
-    mg.points[i].x -= mg.speed;
+    mg.points[i].x -= mg.speed * ts;
   }
 
   while(mg.points[0] && mg.points[0].x < -500) {
@@ -4381,7 +4381,6 @@ function updateMg() {
 
   while(mg.points[mg.points.length-1].x < mg.w + 400) {
     var lastPt = mg.points[mg.points.length-1];
-    
     var isUp = true;
     if (lastPt.type === 'UP') {
         if (Math.random() < 0.45) isUp = false; 
@@ -4405,14 +4404,12 @@ function updateMg() {
     if (isUp) {
       mg.downCount = 0; 
       slope = isSteep ? -(50 + Math.random() * 50) : -(10 + Math.random() * 30);
-
       if (lastPt.y + slope < 200) { 
           slope = 200 - lastPt.y;
           if (slope > 0) slope = -5; 
       }
       len = 240 + Math.random() * 120; 
     } else {
-
       mg.downCount++;
       slope = isSteep ? 40 + Math.random() * 50 : 15 + Math.random() * 25;
       if (lastPt.y + slope > mg.h - 100) {
@@ -4461,7 +4458,6 @@ function updateMg() {
     endMg(); 
   }
 }
-
 function drawMg() {
   // 💡 무거운 그라데이션을 1초에 60번씩 생성하지 않고, 한 번만 만들어서 저장(캐싱)해둠!
   if (!mg.bgGradient) {
@@ -4558,61 +4554,68 @@ function drawMg() {
     sy = (row === 0) ? (H * 0.35) : (H * 0.65);
   }
 
-  // ✂️ 1. 왼쪽 여백을 잘라내는 마법의 숫자 (10~20 사이에서 원하는 만큼 조절하세요!)
-  var cropLeft = 15; 
+  // --- [수정할 부분: drawMg() 함수의 맨 아래쪽] ---
 
-  // ✂️ 2. 자르는 시작점을 오른쪽으로 밀고, 그만큼 가져올 이미지의 너비를 줄입니다.
+  // ✂️ 1. 여백을 잘라내는 마법의 숫자 (원하는 만큼 조절하세요!)
+  var cropLeft = 15;
+  var cropTop = 15; // 💡 추가: 머리 윗부분을 자를 픽셀 수 (너무 많이 자르면 탈모가 올 수 있으니 10~20 사이 권장!)
+
+  // ✂️ 2. 자르는 시작점을 밀어내고, 그만큼 가져올 이미지의 크기를 줄입니다.
   sx = sx + cropLeft;
   sWidth = sWidth - cropLeft;
-  
-  var drawSize = 70, drawW, drawH;
-  if (row === 1 && col === 5) {
-    drawH = drawSize; drawW = drawH * (sWidth / sHeight); 
-  } else {
-    // ✂️ 3. 잘라낸 만큼 화면에 그리는 크기도 줄여서 캐릭터가 뚱뚱하게 늘어나는 걸 막습니다!
-    drawH = drawSize; 
-    drawW = drawSize * (sWidth / (sWidth + cropLeft)); 
-  }
+
+  sy = sy + cropTop;           // 💡 Y축 시작점을 아래로 내려서 정수리를 깎음
+  sHeight = sHeight - cropTop; // 💡 깎아낸 만큼 전체 높이를 줄임
+
+  var drawSize = 70, drawW, drawH;
+  if (row === 1 && col === 5) {
+    // 캐릭터가 죽어서 누워있을 때의 비율 보정
+    drawH = drawSize * (sHeight / (sHeight + cropTop));
+    drawW = drawH * (sWidth / sHeight); 
+  } else {
+    // ✂️ 3. 잘라낸 만큼 화면에 그리는 크기도 같이 줄여서 캐릭터가 홀쭉해지거나 찌부러지는 걸 막습니다.
+    drawH = drawSize * (sHeight / (sHeight + cropTop)); // 💡 머리를 자른 비율만큼 그리는 높이도 줄임
+    drawW = drawSize * (sWidth / (sWidth + cropLeft));
+  }
+
+  var dx = Math.round(mg.p.x - (drawW / 2));
+  // 높이(drawH)가 작아진 만큼 dy(시작 Y좌표)가 알아서 아래로 내려가기 때문에 발바닥 위치는 허공에 뜨지 않고 딱 맞게 유지됩니다!
+  var dy = Math.round(mg.p.y - drawH + 17); 
   
-  var dx = mg.p.x - (drawW / 2);
-  var dy = mg.p.y - drawH + 17; 
-  mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, drawW, drawH);
+  mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, Math.round(drawW), Math.round(drawH));
 }
 
 // 💡 함수 바깥에 변수를 하나 만들어서 화면 요소를 딱 한 번만 찾아둡니다.
 var cachedMgScreen = document.getElementById('screen-minigame');
 
+// 기존 function loopMg(time) { ... } 를 아래 코드로 전체 교체하세요.
 function loopMg(time) {
-  // 1. 발열 방어막: 매 프레임마다 찾지 말고, 캐싱된 변수만 가볍게 확인합니다!
-  if (!cachedMgScreen || !cachedMgScreen.classList.contains('active')) {
-    return; 
-  }
+  if (!cachedMgScreen || !cachedMgScreen.classList.contains('active')) {
+    return; 
+  }
   mg.reqId = requestAnimationFrame(loopMg);
   
-  // 2. 저전력 모드 방어막: 프레임이 깎이면 그만큼 계산을 더 돌림
   var now = performance.now();
   if (!mg.lastTime) mg.lastTime = now;
   var dt = now - mg.lastTime;
   mg.lastTime = now;
   
-  // 프레임 오차를 버리지 않고 누적(Accumulate)시켜서 완벽하게 부드러운 움직임 보장
-  if (!mg.accumulator) mg.accumulator = 0;
-  mg.accumulator += dt;
+  // 💡 렉 스파이크 방어막: 폰이 잠깐 버벅여도 캐릭터가 순간이동하지 않게 최대 시간 고정
+  if (dt > 100) dt = 16.66;
   
-  // 1프레임당 16.66ms (60FPS 기준)
-  while (mg.accumulator >= 16.66) {
-    if (mg.active) {
-      updateMg(); 
-    } else {
-      var idleSpeed = 2.0;
-      for (var i = 0; i < mg.bgParticles.length; i++) {
-        var p = mg.bgParticles[i];
-        p.x -= idleSpeed * p.speed * 0.3;
-        if (p.x < -10) p.x = mg.w + 10;
-      }
-      mg.bgGridOffset = (mg.bgGridOffset + idleSpeed) % 50;
+  // 💡 핵심: 60Hz든 120Hz든 모니터 주사율에 맞춰 움직임 배속을 자동 조절
+  var ts = dt / 16.66;
+  
+  if (mg.active) {
+    updateMg(ts); 
+  } else {
+    var idleSpeed = 2.0;
+    for (var i = 0; i < mg.bgParticles.length; i++) {
+      var p = mg.bgParticles[i];
+      p.x -= (idleSpeed * p.speed * 0.3) * ts;
+      if (p.x < -10) p.x = mg.w + 10;
     }
-    mg.accumulator -= 16.66;
+    mg.bgGridOffset = (mg.bgGridOffset + idleSpeed * ts) % 50;
   }
   
   drawMg();
@@ -4636,6 +4639,7 @@ function switchScreen(name) {
     initMg();
     resizeMg(); 
     mg.active = false;
+    mg.p.y = -1000;
 
     // 메인 BGM 끄고 미니게임 BGM 켜기
   var mainBgm = document.getElementById('bgm-player');
