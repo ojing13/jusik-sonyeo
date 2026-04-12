@@ -1782,13 +1782,10 @@ var _tradeTimer = null;
 
 var audioCtx;
 function playSound(type) {
-  if (!userInteracted) return;
-  if (!GS.sfxOn) return; 
+  if (!userInteracted || !GS.sfxOn) return;
 
-  var mgScreen = document.getElementById('screen-minigame');
-  var isMgActive = mgScreen && mgScreen.classList.contains('active');
-  if (isMgActive && (type === 'event' || type === 'dividend')) return;
-
+  // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로 확인합니다!
+  if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   var osc = audioCtx.createOscillator();
@@ -4234,11 +4231,10 @@ function doMgJump() {
     mg.jumpCount++;
     mg.lastJumpTime = now;
     
-    // 💡 핵심 최적화: 사운드 연산 때문에 점프 화면이 멈추는 걸 방지!
-    setTimeout(function() {
-      playSound('jump');
-    }, 0);
-  }
+    // 💡 setTimeout을 벗겨냅니다. Web Audio API는 백그라운드 스레드에서 
+    // 소리를 만들기 때문에 직접 호출하는 것이 화면 렌더링을 방해하지 않습니다.
+    playSound('jump');
+  }
 }
 
 function startMg() {
@@ -4549,13 +4545,14 @@ function drawMg() {
   mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, drawW, drawH);
 }
 
-function loopMg(time) {
-  // 1. 발열 방어막: 미니게임 화면이 아닐 때는 아예 연산 완전 정지!
-  var mgScreen = document.getElementById('screen-minigame');
-  if (!mgScreen || !mgScreen.classList.contains('active')) {
-    return; 
-  }
+// 💡 함수 바깥에 변수를 하나 만들어서 화면 요소를 딱 한 번만 찾아둡니다.
+var cachedMgScreen = document.getElementById('screen-minigame');
 
+function loopMg(time) {
+  // 1. 발열 방어막: 매 프레임마다 찾지 말고, 캐싱된 변수만 가볍게 확인합니다!
+  if (!cachedMgScreen || !cachedMgScreen.classList.contains('active')) {
+    return; 
+  }
   mg.reqId = requestAnimationFrame(loopMg);
   
   // 2. 저전력 모드 방어막: 프레임이 깎이면 그만큼 계산을 더 돌림
