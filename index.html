@@ -1666,6 +1666,14 @@ body, #app {
       <button id="toggle-noti-btn" onclick="toggleNoti()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer; width:60px;">ON</button>
     </div>
 
+<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔</div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
+        <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
+      </div>
+    </div>
+
     <div style="text-align:center; margin-top:20px;">
       <div id="dev-reset-btn" onclick="playSound('click'); devResetStep()" style="font-size:11px; color:#444466; cursor:pointer; text-decoration:underline; user-select:none;">데이터 초기화</div>
     </div>
@@ -1779,13 +1787,13 @@ function startGame() {
 
 var _actionTimer = null;
 var _tradeTimer = null;
-
 var audioCtx;
 function playSound(type) {
   if (!userInteracted || !GS.sfxOn) return;
 
   // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로 확인합니다!
   if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
+
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   var osc = audioCtx.createOscillator();
@@ -1960,27 +1968,29 @@ var MISSIONS = [
   { id:'total_1000m',   tab:'자산', name:'성장 투자자',      desc:'총 자산 1,000만원 달성',            reward:10,  target:10000000,         type:'assets' },
   { id:'total_5000m',   tab:'자산', name:'개인 투자자',      desc:'총 자산 5,000만원 달성',            reward:15,  target:50000000,         type:'assets' },
   { id:'total_1eok',    tab:'자산', name:'억 단위 투자자',    desc:'총 자산 1억원 달성',                reward:20,  target:100000000,        type:'assets' },
-  { id:'total_10eok',   tab:'자산', name:'큰손',            desc:'총 자산 10억원 달성',               reward:50,  target:1000000000,       type:'assets' },
-  { id:'total_100eok',  tab:'자산', name:'슈퍼개미',         desc:'총 자산 100억원 달성',              reward:80,  target:10000000000,      type:'assets' },
-  { id:'total_1000eok', tab:'자산', name:'재벌',            desc:'총 자산 1,000억원 달성',            reward:100, target:100000000000,     type:'assets' },
-  { id:'total_1jo',     tab:'자산', name:'워렌버핏',         desc:'총 자산 1조원 달성',                reward:150, target:1000000000000,    type:'assets' },
-  { id:'total_10jo',    tab:'자산', name:'월스트리트의 신',   desc:'총 자산 1,000조원 달성',            reward:500, target:1000000000000000, type:'assets' },
-  { id:'tap_50',        tab:'터치', name:'손가락 운동',      desc:'화면 터치 50회',                    reward:5,   target:50,               type:'tap' },
-  { id:'tap_200',       tab:'터치', name:'터치 노가다',      desc:'화면 터치 200회',                   reward:10,  target:200,              type:'tap' },
-  { id:'tap_500',       tab:'터치', name:'터치 중독',        desc:'화면 터치 500회',                   reward:15,  target:500,              type:'tap' },
-  { id:'tap_1000',      tab:'터치', name:'터치 마스터',      desc:'화면 터치 1,000회',                 reward:20,  target:1000,             type:'tap' },
-  { id:'tap_5000',      tab:'터치', name:'터치의 신',        desc:'화면 터치 5,000회',                 reward:40,  target:5000,             type:'tap' },
-  { id:'first_gacha',   tab:'육성', name:'첫 스카웃',        desc:'캐릭터를 1회 스카웃',                  reward:5,   target:1,  type:'gacha' },
-  { id:'level5_any',    tab:'육성', name:'집중 육성',        desc:'캐릭터 1명 Lv.5 달성',         reward:10,  target:5,  type:'level' },
-  { id:'level_max',     tab:'육성', name:'만렙 달성',        desc:'캐릭터 1명 Lv.MAX 달성',       reward:20,  target:10, type:'level' },
-  { id:'all_recruit',   tab:'육성', name:'완전 편성',        desc:'모든 캐릭터를 영입',             reward:50,  target:0,  type:'recruit' },
-  { id:'ssr_level5',    tab:'육성', name:'SSR 집중 육성',    desc:'SSR 캐릭터 1명 Lv.5 달성',     reward:100, target:5,  type:'ssr_level' },
-  { id:'ssr_level_max', tab:'육성', name:'SSR 만렙',         desc:'SSR 캐릭터 1명 Lv.MAX 달성',   reward:200, target:10, type:'ssr_level' },
-  { id:'first_trade',   tab:'투자', name:'첫 거래',         desc:'주식을 1회 매수',             reward:5,   target:1,                type:'trade' },
-  { id:'div_get',       tab:'투자', name:'첫 배당 수익',     desc:'배당금을 1회 수령',           reward:10,  target:1,                type:'div' },
-  { id:'vip_first',     tab:'투자', name:'첫 경영권',        desc:'경영권을 1개 확보',           reward:20,  target:1,                type:'vip_count' },
-  { id:'vip_5',         tab:'투자', name:'기업 사냥꾼',      desc:'경영권을 동시에 5개 확보',         reward:50,  target:5,                type:'vip_count' },
-  { id:'vip_10',        tab:'투자', name:'재계 총수',        desc:'경영권을 동시에 10개 확보',        reward:100, target:10,               type:'vip_count' }
+  { id:'total_10eok',   tab:'자산', name:'큰손',            desc:'총 자산 10억원 달성',               reward:25,  target:1000000000,       type:'assets' },
+  { id:'total_100eok',  tab:'자산', name:'슈퍼개미',         desc:'총 자산 100억원 달성',              reward:50,  target:10000000000,      type:'assets' },
+  { id:'total_1000eok', tab:'자산', name:'재벌',            desc:'총 자산 1,000억원 달성',            reward:75, target:100000000000,     type:'assets' },
+  { id:'total_1jo',     tab:'자산', name:'워렌버핏',         desc:'총 자산 1조원 달성',                reward:100, target:1000000000000,    type:'assets' },
+  { id:'total_10jo',    tab:'자산', name:'월스트리트의 신',   desc:'총 자산 1,000조원 달성',            reward:200, target:1000000000000000, type:'assets' },
+  { id:'tap_50',        tab:'터치', name:'손가락 운동',      desc:'화면 터치 50회',                    reward:3,   target:50,               type:'tap' },
+  { id:'tap_200',       tab:'터치', name:'터치 노가다',      desc:'화면 터치 200회',                   reward:5,  target:200,              type:'tap' },
+  { id:'tap_500',       tab:'터치', name:'터치 중독',        desc:'화면 터치 500회',                   reward:10,  target:500,              type:'tap' },
+  { id:'tap_1000',      tab:'터치', name:'터치 마스터',      desc:'화면 터치 1,000회',                 reward:15,  target:1000,             type:'tap' },
+  { id:'tap_5000',      tab:'터치', name:'터치의 신',        desc:'화면 터치 5,000회',                 reward:20,  target:5000,             type:'tap' },
+  { id:'first_gacha',   tab:'육성', name:'첫 스카웃',        desc:'캐릭터를 1회 스카웃',                  reward:3,   target:1,  type:'gacha' },
+  { id:'level5_any',    tab:'육성', name:'집중 육성',        desc:'캐릭터 1명 Lv.5 달성',         reward:5,  target:5,  type:'level' },
+  { id:'level_max',     tab:'육성', name:'만렙 달성',        desc:'캐릭터 1명 Lv.MAX 달성',       reward:10,  target:10, type:'level' },
+  { id:'all_recruit',   tab:'육성', name:'완전 편성',        desc:'모든 캐릭터를 영입',             reward:30,  target:0,  type:'recruit' },
+  { id:'ssr_level5',    tab:'육성', name:'SSR 집중 육성',    desc:'SSR 캐릭터 1명 Lv.5 달성',     reward:50, target:5,  type:'ssr_level' },
+  { id:'ssr_level_max', tab:'육성', name:'SSR 만렙',         desc:'SSR 캐릭터 1명 Lv.MAX 달성',   reward:100, target:10, type:'ssr_level' },
+  { id:'first_trade',   tab:'투자', name:'첫 거래',         desc:'주식을 1회 매수',             reward:3,   target:1,                type:'trade' },
+  { id:'div_get',       tab:'투자', name:'첫 배당 수익',     desc:'배당금을 1회 수령',           reward:5,  target:1,                type:'div' },
+  { id:'vip_first',     tab:'투자', name:'첫 경영권',        desc:'경영권을 1개 확보',           reward:10,  target:1,                type:'vip_count' },
+  { id:'vip_5',         tab:'투자', name:'기업 사냥꾼',      desc:'경영권을 동시에 5개 확보',         reward:20,  target:5,                type:'vip_count' },
+  { id:'vip_10',        tab:'투자', name:'재계 총수',        desc:'경영권을 동시에 10개 확보',        reward:30, target:10,               type:'vip_count' },
+  { id:'ssr_vip_1',     tab:'투자', name:'포식자',    desc:'SSR 경영권을 1개 확보',       reward:50, target:1,                type:'ssr_vip_count' },
+  { id:'ssr_vip_5',     tab:'투자', name:'지배자', desc:'SSR 경영권을 동시에 5개 확보',       reward:100, target:5,                type:'ssr_vip_count' }
 ];
 
 var THEMES = [
@@ -2499,6 +2509,7 @@ function getMissionProgress(m) {
     case 'ssr_level':   return Math.max.apply(null, Object.values(GS.chars).filter(function(c){ return c.rarity === 'SSR'; }).map(function(c){ return c.level; }).concat([0]));
     case 'tap':     return GS.totalTaps;
     case 'vip_count': return Object.values(GS.chars).filter(function(c) { return c.is_vip; }).length;
+    case 'ssr_vip_count': return Object.values(GS.chars).filter(function(c) { return c.is_vip && c.rarity === 'SSR'; }).length;
     default: return (GS.missions[m.id] && GS.missions[m.id].progress) || 0;
   }
 }
@@ -4688,7 +4699,7 @@ function devResetStep() {
     
     // 1. 로컬 스토리지 데이터 완전 삭제
     localStorage.removeItem(SAVE_KEY);
-    localStorage.removeItem('sg_tutorial_done'); 
+    localStorage.removeItem('sg_tutorial_done');
     
     // 2. 모든 내부 변수 초기 상태로 롤백
     GS.money = 2000000; GS.total_assets = 2000000; GS.start_assets = 2000000;
@@ -4736,6 +4747,44 @@ function devResetStep() {
   }
 }
 
+// --- 🛠️ 개발자용 치트키 시스템 (1회용 특별 보상) ---
+function applyCheat() {
+  playSound('click');
+  var inputEl = document.getElementById('cheat-input');
+  var code = inputEl.value.trim(); // 앞뒤 공백 제거
+  inputEl.value = ''; // 입력창 비우기
+
+  if (!code) return;
+
+  if (code === '운유산') {
+    // 1. 이미 썼는지 확인
+    if (localStorage.getItem('cheat_unyusan_used') === 'true') {
+      showToast("이미 사용한 코드입니다.", "#ff4444");
+      return;
+    }
+
+    // 2. 보상 지급 (10억 + 티켓 100장)
+    GS.money += 1000000000; 
+    GS.tickets += 100;      
+    
+    // 3. 영구 도장 쾅! (다시 못 쓰게)
+    localStorage.setItem('cheat_unyusan_used', 'true');
+
+    // 4. 연출 및 저장
+    playSound('event'); 
+    showToast("지급 완료", "#ffd700", null, 5000); 
+    
+    updateTotalAssets();
+    save(); 
+    renderAll();
+    
+    // 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
+  } else {
+    // 다른 글자를 쳤을 때
+    showToast("알 수 없는 코드입니다.", "#ff4444");
+  }
+}
 // 💡 새로 추가하는 프리로드(미리 불러오기) 함수
 function preloadCharacterImages() {
   // 1. 모든 캐릭터 이미지 미리 다운로드
@@ -5055,12 +5104,11 @@ setInterval(updateMgHearts, 1000);
     }
     lastCharRender = time;
 
-    // 💡 미니게임 중 연산 완전 정지 (렉 제거)
-    var scrMg = document.getElementById('screen-minigame');
-    if (scrMg && scrMg.classList.contains('active')) {
-      requestAnimationFrame(animateBg);
-      return; 
-    }
+    // 💡 미니게임 중 연산 완전 정지 (렉 제거 - 초고속 변수 확인으로 변경!)
+    if (typeof mg !== 'undefined' && mg.active) {
+      requestAnimationFrame(animateBg);
+      return; 
+    }
 
     var cw = container.clientWidth;
     var ch = container.clientHeight;
@@ -5154,11 +5202,11 @@ function renderBgEffects(time) {
   if (time - lastBgRender < 33) { requestAnimationFrame(renderBgEffects); return; }
   lastBgRender = time;
 
-  var scrMg = document.getElementById('screen-minigame');
-  if (scrMg && scrMg.classList.contains('active')) {
-    if (!isBgClearedForMg) { bgCtx.clearRect(0, 0, bgW, bgH); isBgClearedForMg = true; }
-    requestAnimationFrame(renderBgEffects); return; 
-  }
+  // 💡 초고속 변수 확인으로 변경! 무거운 DOM 검색(getElementById) 제거
+  if (typeof mg !== 'undefined' && mg.active) {
+    if (!isBgClearedForMg) { bgCtx.clearRect(0, 0, bgW, bgH); isBgClearedForMg = true; }
+    requestAnimationFrame(renderBgEffects); return; 
+  }
   isBgClearedForMg = false; 
 
   bgCtx.clearRect(0, 0, bgW, bgH);
