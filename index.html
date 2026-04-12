@@ -5371,12 +5371,9 @@ document.addEventListener('touchcancel', function(e) {
 }, {passive: true});
 // -----------------------------------
 
-// --- [스크롤 끝 고무줄 효과 (iOS 이중 튕김 방지 및 하단 버그 픽스)] ---
-
-// 💡 1. 현재 기기가 아이폰/아이패드인지 귀신같이 찾아냅니다.
+// --- [수정됨: 렉 없는 GPU 가속 고무줄 스크롤 효과] ---
 var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-// 💡 2. 아이폰이 아닐 때(안드로이드일 때)만 이 마법을 실행합니다!
 if (!isIOS) {
   var scrollAreas = document.querySelectorAll('.scroll-area');
 
@@ -5392,28 +5389,28 @@ if (!isIOS) {
     area.addEventListener('touchmove', function(e) {
       var currentY = e.touches[0].clientY;
       var deltaY = currentY - startY;
-
-      // 💡 3. 소수점 오차로 하단에서 안 당겨지는 버그 완벽 해결 (-1px 여유를 줌)
       var isAtBottom = Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight - 1;
 
       if (area.scrollTop <= 0 && deltaY > 0) {
         isPulling = true;
-        area.style.transform = 'translateY(' + (deltaY * 0.35) + 'px)';
+        // 💡 렉 제거 핵심: translateY 대신 translate3d를 사용하여 그래픽카드(GPU) 엔진을 강제로 켭니다!
+        area.style.transform = 'translate3d(0, ' + (deltaY * 0.35) + 'px, 0)';
       }
       else if (isAtBottom && deltaY < 0) {
         isPulling = true;
-        area.style.transform = 'translateY(' + (deltaY * 0.35) + 'px)';
+        // 💡 여기도 translate3d 적용!
+        area.style.transform = 'translate3d(0, ' + (deltaY * 0.35) + 'px, 0)';
       } 
       else {
         isPulling = false;
-        area.style.transform = 'translateY(0px)';
+        area.style.transform = 'translate3d(0, 0, 0)';
       }
     }, { passive: true });
 
     function resetBounce() {
       if (isPulling) {
         area.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
-        area.style.transform = 'translateY(0px)';
+        area.style.transform = 'translate3d(0, 0, 0)'; // 💡 복구할 때도 3D 가속 유지
         isPulling = false;
       }
     }
