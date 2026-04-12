@@ -1801,12 +1801,14 @@ var _actionTimer = null;
 var _tradeTimer = null;
 var audioCtx;
 function playSound(type) {
-  if (!userInteracted || !GS.sfxOn) return;
+  if (!userInteracted || !GS.sfxOn) return;
 
-  // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로 확인합니다!
-  if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
+  if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
 
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // audioCtx가 없거나 closed 상태면 새로 만들기
+  if (!audioCtx || audioCtx.state === 'closed') {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   if (audioCtx.state === 'suspended') audioCtx.resume();
   var osc = audioCtx.createOscillator();
   var gain = audioCtx.createGain();
@@ -5013,12 +5015,12 @@ document.addEventListener('visibilitychange', function() {
     if (mgBgm) mgBgm.pause();
     
   } else {
-    // 🔊 [추가] 효과음 엔진(AudioContext) 깨우기
-    // --------------------------------------------------
-    if (audioCtx && audioCtx.state === 'suspended') {
+    // 🔊 효과음 엔진(AudioContext) 복구
+    if (!audioCtx || audioCtx.state === 'closed') {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
-    // --------------------------------------------------
     if (_mgHiddenAt === null) return;
     
     var now = Date.now();
