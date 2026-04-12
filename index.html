@@ -5001,6 +5001,12 @@ document.addEventListener('visibilitychange', function() {
     if (mgBgm) mgBgm.pause();
     
   } else {
+    // 🔊 [추가] 효과음 엔진(AudioContext) 깨우기
+    // --------------------------------------------------
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    // --------------------------------------------------
     if (_mgHiddenAt === null) return;
     
     var now = Date.now();
