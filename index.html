@@ -1178,12 +1178,15 @@ body, #app {
   filter: drop-shadow(0 0 3px rgba(230, 179, 255, 0.8));
 }
 
-/* 💡 안드로이드 스크롤 충돌 및 순간이동 완벽 방지 */
+/* 💡 안드로이드 순정 스크롤 최적화 (가장 가볍고 빠름) */
 .scroll-area {
-  /* 브라우저가 끝에서 억지로 당기거나 물결 효과 내는 것을 원천 차단 (JS와 충돌 방지) */
-  overscroll-behavior-y: none; 
-  transform: translateZ(0);
+  flex: 1; 
+  overflow-y: auto; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* 부드러운 관성 스크롤 허용 */
+  padding-bottom: calc(var(--nav-h) + 8px);
 }
+.scroll-area::-webkit-scrollbar { display:none; }
 
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -5378,62 +5381,6 @@ document.addEventListener('touchcancel', function(e) {
 }, {passive: true});
 // -----------------------------------
 
-// --- [수정됨: 순간이동 방지 쿠션이 추가된 고무줄 스크롤] ---
-var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-if (!isIOS) {
-  var scrollAreas = document.querySelectorAll('.scroll-area');
-
-  scrollAreas.forEach(function(area) {
-    var startY = 0;
-    var isPulling = false;
-    var resetTimer = null; // 💡 쿠션 타이머
-
-    area.addEventListener('touchstart', function(e) {
-      startY = e.touches[0].clientY;
-      if (resetTimer) clearTimeout(resetTimer);
-      area.style.transition = 'none'; 
-    }, { passive: true });
-
-    area.addEventListener('touchmove', function(e) {
-      var currentY = e.touches[0].clientY;
-      var deltaY = currentY - startY;
-      var isAtBottom = Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight - 1;
-
-      if (area.scrollTop <= 0 && deltaY > 0) {
-        isPulling = true;
-        area.style.transform = 'translate3d(0, ' + (deltaY * 0.35) + 'px, 0)';
-      }
-      else if (isAtBottom && deltaY < 0) {
-        isPulling = true;
-        area.style.transform = 'translate3d(0, ' + (deltaY * 0.35) + 'px, 0)';
-      } 
-      else {
-        // 💡 순간이동 방지: 고무줄을 갑자기 놓지 않고 0.15초 동안 부드럽게 원상복구시킴
-        if (isPulling) {
-          isPulling = false;
-          area.style.transition = 'transform 0.15s ease-out';
-          area.style.transform = 'translate3d(0, 0, 0)';
-          resetTimer = setTimeout(function() {
-            if (!isPulling) area.style.transition = 'none';
-          }, 150);
-        }
-      }
-    }, { passive: true });
-
-    function resetBounce() {
-      if (isPulling) {
-        area.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
-        area.style.transform = 'translate3d(0, 0, 0)';
-        isPulling = false;
-      }
-    }
-
-    area.addEventListener('touchend', resetBounce, { passive: true });
-    area.addEventListener('touchcancel', resetBounce, { passive: true });
-  });
-}
-// -----------------------------------
 </script>
 </body>
 </html>
