@@ -2729,7 +2729,7 @@ function save() {
       momentumTimer: GS.momentumTimer, 
       biasTimer: GS.biasTimer, 
       mg_highscore: GS.mg_highscore,
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, lastSaveTime: Date.now(),
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
       chars: outChars
     }));
   } catch(e) {}
@@ -2771,6 +2771,7 @@ function load() {
     if (d.momentumTimer !== undefined) GS.momentumTimer = d.momentumTimer; 
     if (d.biasTimer !== undefined) GS.biasTimer = d.biasTimer; 
     GS.mg_highscore = d.mg_highscore || 0;
+    GS.leftoverMs = d.leftoverMs || 0;
     if (d.bgmOn !== undefined) GS.bgmOn = d.bgmOn;
     if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
     if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
@@ -4809,11 +4810,16 @@ function initializeGame() {
 
   initChars(); initMissions(); load();
   if (GS.lastSaveTime) {
-    var elapsed = Math.floor((Date.now() - GS.lastSaveTime) / 5000);
-    if (elapsed > 0) {
+    var now = Date.now();
+    var offlineMs = (now - GS.lastSaveTime) + (GS.leftoverMs || 0);
+    var elapsedTicks = Math.floor(offlineMs / 5000); 
+    
+    GS.leftoverMs = offlineMs % 5000; // 남은 ms는 주머니에 킵
+
+    if (elapsedTicks > 0) {
       var moneyBefore = GS.money;
-      for (var i = 0; i < elapsed; i++) {
-        tick(true);
+      for (var i = 0; i < elapsedTicks; i++) {
+        tick(true); // 밀린 틱만큼 연산
       }
       window.offlineEarnedAmount = Math.max(0, GS.money - moneyBefore);
     }
@@ -4979,7 +4985,7 @@ document.getElementById('ssr-right-arrow').addEventListener('click', function() 
 startSsrAutoTimer();
 // ------------------------------
 initializeGame();
-// 화면 OFF→ON 시 밀린 시간 완벽 동기화 및 BGM 제어 (Page Visibility API)
+// 화면 OFF→ON 시 밀린 시간 완벽 동기화 및 BGM 제어
 var _mgHiddenAt = null;
 
 document.addEventListener('visibilitychange', function() {
@@ -4987,23 +4993,21 @@ document.addEventListener('visibilitychange', function() {
   var mgBgm = document.getElementById('mg-bgm-player');
 
   if (document.hidden) {
-    // 1. 화면이 꺼지거나 백그라운드로 내려갔을 때 (시간 기록)
+    // 화면 나갈 때 시간 기록
     _mgHiddenAt = Date.now();
     save();
     
-    // 🎵 음악 일시정지
     if (mainBgm) mainBgm.pause();
     if (mgBgm) mgBgm.pause();
     
   } else {
-    // 2. 화면으로 다시 돌아왔을 때
     if (_mgHiddenAt === null) return;
     
     var now = Date.now();
-    var offlineMs = now - _mgHiddenAt;
+    // 꺼져있던 시간 + 주머니에 있던 자투리 시간
+    var offlineMs = (now - _mgHiddenAt) + (GS.leftoverMs || 0); 
     _mgHiddenAt = null;
 
-    // 🎵 BGM 다시 재생
     if (GS.bgmOn) {
       var mgScreen = document.getElementById('screen-minigame');
       if (mgScreen && mgScreen.classList.contains('active')) {
@@ -5013,18 +5017,16 @@ document.addEventListener('visibilitychange', function() {
       }
     }
 
-    // 🚀 핵심 마법: 꺼져있던 시간을 계산해서 그만큼 게임을 강제로 진행시킵니다!
-    var elapsedTicks = Math.floor(offlineMs / 5000); // 5000ms(5초)당 1틱
+    // 5초 단위로 틱 계산 후 남은 ms는 다시 주머니에 저장
+    var elapsedTicks = Math.floor(offlineMs / 5000);
+    GS.leftoverMs = offlineMs % 5000; 
 
     if (elapsedTicks > 0) {
       var moneyBefore = GS.money;
-
-      // 밀린 틱만큼 주식시장(주가, 배당금, 테마장, 뉴스, 체력 등)을 알림 없이 초고속으로 돌립니다!
       for (var i = 0; i < elapsedTicks; i++) {
-        tick(true); // silent = true (팝업 도배 방지)
+        tick(true); 
       }
 
-      // 백그라운드에서 번 배당금이 있다면 짜잔! 하고 알려줍니다.
       var earnedAmount = Math.max(0, GS.money - moneyBefore);
       if (earnedAmount > 0 && GS.notiOn) {
         setTimeout(function() {
@@ -5034,7 +5036,6 @@ document.addEventListener('visibilitychange', function() {
       }
     }
 
-    // 바뀐 주가와 돈을 화면에 싹 업데이트하고 저장!
     updateTotalAssets();
     renderAll(); 
     save();
