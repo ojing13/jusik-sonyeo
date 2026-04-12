@@ -1667,7 +1667,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.02</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.03</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -1789,29 +1789,31 @@ var _actionTimer = null;
 var _tradeTimer = null;
 var audioCtx;
 function playSound(type) {
-  if (!userInteracted || !GS.sfxOn) return;
+    if (!userInteracted || !GS.sfxOn) return;
 
-  // 오디오 컨텍스트가 없으면 새로 만들고, 정지되어 있으면 깨웁니다.
-  if (!audioCtx || audioCtx.state === 'closed') {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  
-  if (audioCtx.state === 'suspended') {
-    // ⚠️ 여기서 resume()이 안 먹힐 수 있으므로, 
-    // 실제 소리를 내기 전 유저 액션(tap 함수)에서 깨워주는 게 핵심입니다.
-    audioCtx.resume();
-  }
+    // 1. 오디오 컨텍스트가 없거나 닫혔으면 새로 생성
+    if (!audioCtx || audioCtx.state === 'closed') {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
 
-  // 💡 매번 DOM(HTML)을 검색하지 말고, 미니게임 객체의 상태를 바로확인합니다!
-  if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
+    // 2. 일시정지 상태라면 깨우기 시도
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        // 깨어나는 중에는 소리가 안 날 수 있으므로, 일단 이번 호출은 무시하거나 
+        // 아주 짧은 지연 후 실행하게 할 수 있지만, 보통 다음 터치부터 정상 작동하게 됩니다.
+    }
 
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  var osc = audioCtx.createOscillator();
-  var gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  var now = audioCtx.currentTime;
+    // [중요] 컨텍스트가 'running' 상태일 때만 소리 재생 로직 실행
+    if (audioCtx.state !== 'running') return;
+
+    // 미니게임 중 불필요한 이벤트 사운드 차단 (기존 로직)
+    if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
+
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    var now = audioCtx.currentTime;
 
   if (type === 'tap') {
     osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
@@ -3219,15 +3221,15 @@ function updateDialogState(forceUpdate) {
 }
 
 function tap(e) {
-  // 💡 유저가 터치하는 "직후"에 오디오 엔진을 강제로 깨웁니다.
-  if (audioCtx) {
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    } else if (audioCtx.state === 'closed') {
-      // 만약 세션이 완전히 닫혔다면 다시 생성합니다.
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // [강력 처방] 터치가 발생한 순간 오디오 상태를 체크해서 강제로 깨움
+    if (audioCtx) {
+        if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
+            audioCtx.resume();
+        }
+    } else {
+        // 컨텍스트 자체가 날아갔을 경우 재생성
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-  }
   // 💡 터치 이벤트면 '방금 닿은 손가락들(changedTouches)'을 가져오고, 마우스면 그냥 e를 배열로 만듭니다!
   var touches = (e && e.type === 'touchstart') ? e.changedTouches : [e];
 
@@ -5021,7 +5023,10 @@ document.addEventListener('visibilitychange', function() {
     
     if (mainBgm) mainBgm.pause();
     if (mgBgm) mgBgm.pause();
-    
+
+    if (audioCtx && audioCtx.state !== 'closed') {
+            audioCtx.suspend();
+    }
   } else {
     if (_mgHiddenAt === null) return;
     
@@ -5029,6 +5034,17 @@ document.addEventListener('visibilitychange', function() {
     // 꺼져있던 시간 + 주머니에 있던 자투리 시간
     var offlineMs = (now - _mgHiddenAt) + (GS.leftoverMs || 0); 
     _mgHiddenAt = null;
+
+    if (audioCtx) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => {
+                    console.log("AudioContext resumed successfully");
+                });
+            } else if (audioCtx.state === 'interrupted') {
+                // iOS에서 전화가 오거나 알람이 울린 후 발생하는 상태
+                audioCtx.resume();
+            }
+        }
 
     if (GS.bgmOn) {
       var mgScreen = document.getElementById('screen-minigame');
