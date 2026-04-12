@@ -4572,12 +4572,14 @@ function loopMg(time) {
   var dt = now - mg.lastTime;
   mg.lastTime = now;
   
-  var steps = Math.round(dt / 16.66) || 1;
-  if (steps > 3) steps = 3; 
-
-  for (var s = 0; s < steps; s++) {
+  // 프레임 오차를 버리지 않고 누적(Accumulate)시켜서 완벽하게 부드러운 움직임 보장
+  if (!mg.accumulator) mg.accumulator = 0;
+  mg.accumulator += dt;
+  
+  // 1프레임당 16.66ms (60FPS 기준)
+  while (mg.accumulator >= 16.66) {
     if (mg.active) {
-      updateMg(); // 게임 중일 때는 정상 속도로 진행
+      updateMg(); 
     } else {
       var idleSpeed = 2.0;
       for (var i = 0; i < mg.bgParticles.length; i++) {
@@ -4587,6 +4589,7 @@ function loopMg(time) {
       }
       mg.bgGridOffset = (mg.bgGridOffset + idleSpeed) % 50;
     }
+    mg.accumulator -= 16.66;
   }
   
   drawMg();
