@@ -5371,6 +5371,58 @@ document.addEventListener('touchcancel', function(e) {
 }, {passive: true});
 // -----------------------------------
 
+// --- [스크롤 끝 고무줄 효과 (iOS 이중 튕김 방지 및 하단 버그 픽스)] ---
+
+// 💡 1. 현재 기기가 아이폰/아이패드인지 귀신같이 찾아냅니다.
+var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// 💡 2. 아이폰이 아닐 때(안드로이드일 때)만 이 마법을 실행합니다!
+if (!isIOS) {
+  var scrollAreas = document.querySelectorAll('.scroll-area');
+
+  scrollAreas.forEach(function(area) {
+    var startY = 0;
+    var isPulling = false;
+
+    area.addEventListener('touchstart', function(e) {
+      startY = e.touches[0].clientY;
+      area.style.transition = 'none'; 
+    }, { passive: true });
+
+    area.addEventListener('touchmove', function(e) {
+      var currentY = e.touches[0].clientY;
+      var deltaY = currentY - startY;
+
+      // 💡 3. 소수점 오차로 하단에서 안 당겨지는 버그 완벽 해결 (-1px 여유를 줌)
+      var isAtBottom = Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight - 1;
+
+      if (area.scrollTop <= 0 && deltaY > 0) {
+        isPulling = true;
+        area.style.transform = 'translateY(' + (deltaY * 0.35) + 'px)';
+      }
+      else if (isAtBottom && deltaY < 0) {
+        isPulling = true;
+        area.style.transform = 'translateY(' + (deltaY * 0.35) + 'px)';
+      } 
+      else {
+        isPulling = false;
+        area.style.transform = 'translateY(0px)';
+      }
+    }, { passive: true });
+
+    function resetBounce() {
+      if (isPulling) {
+        area.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
+        area.style.transform = 'translateY(0px)';
+        isPulling = false;
+      }
+    }
+
+    area.addEventListener('touchend', resetBounce, { passive: true });
+    area.addEventListener('touchcancel', resetBounce, { passive: true });
+  });
+}
+// -----------------------------------
 </script>
 </body>
 </html>
