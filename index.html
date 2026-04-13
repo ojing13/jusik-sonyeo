@@ -591,7 +591,13 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
   color: white;
 }
 
-#screen-minigame { background:transparent; display:none; flex-direction:column; }
+#screen-minigame { 
+  display: none; 
+  flex-direction: column; 
+  background: #0a0a14 !important; /* 1. 뒷배경을 어두운 색으로 덮기 */
+  bottom: 0 !important; /* 2. 아이폰 하단 빈틈까지 화면을 쫙 늘려서 덮기! */
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important; /* 3. UI가 홈바에 안 가려지게 패딩 주기 */
+}
 #screen-minigame.active { display:flex; }
 .mg-overlay {
   position:absolute; inset:0; display:flex; flex-direction:column;
@@ -917,7 +923,6 @@ nav, .nav,
 body, #app {
   background: linear-gradient(-45deg, #000a1a, #001a0a, #0a0020, #1a0010, #000d1a) !important;
   background-size: 400% 400% !important;
-  animation: cyberBackground 8s ease infinite !important;
 }
 /* 3. 배경을 가리고 있던 덮개들을 싹 투명하게 치워줍니다! (이게 핵심이에요) */
 .screen, #screen-home, #screen-market, #screen-portfolio, #screen-mission, #screen-gacha {
@@ -1187,7 +1192,7 @@ body, #app {
   padding-bottom: calc(var(--nav-h) + 8px);
 }
 .scroll-area::-webkit-scrollbar { display:none; }
-
+#mg-score-display { display: none !important; }
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1672,7 +1677,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.08</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.09</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -3085,7 +3090,11 @@ function tick(silent) {
   }
 
   updateTotalAssets(); updateMissions(); updateDialogState();
-  if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+  if (!silent) { 
+    if (!mg.active) save(); // 💡 핵심: 미니게임 플레이 중(mg.active)에는 무거운 세이브를 생략합니다!
+    var mgScreen = document.getElementById('screen-minigame'); 
+    if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); 
+  }
 }
 
 function payDividends(silent) {
@@ -3230,6 +3239,24 @@ function updateDialogState(forceUpdate) {
   }
 }
 
+// 💡 화면 렌더링 렉 0% 달성을 위한 전용 UI 업데이트 함수
+function updateTapUI() {
+  var ch = GS.chars[GS.mainChar];
+
+  // 1. 돈 텍스트만 살짝 교체
+  document.getElementById('h-money').textContent = fcomma(GS.total_assets) + ' 원';
+  document.getElementById('h-assets').textContent = '현금 ' + fcomma(GS.money) + '원';
+
+  // 2. 체력 게이지 바 및 텍스트만 갱신
+  var fill = document.getElementById('energy-fill');
+  fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
+  fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
+  
+  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭: ' + GS.tapCount + '/100';
+  
+  // (그래프나 이미지 등은 건드리지 않으므로 연산량이 1/100로 줄어듭니다)
+}
+
 function tap(e) {
     // [강력 처방] 터치가 발생한 순간 오디오 상태를 체크해서 강제로 깨움
     if (audioCtx) {
@@ -3308,8 +3335,8 @@ function tap(e) {
     }
   }
   
-  // 💡 화면 갱신은 손가락 처리가 다 끝난 뒤에 한 번만 깔끔하게 실행합니다!
-  updateTotalAssets(); renderHome();
+  updateTotalAssets(); 
+  updateTapUI(); // 화면 전체를 새로 그리는 대신, 숫자만 살짝 바꾸는 마법!
 }
 
 function showTapPopup(earned, x, y) {
@@ -4370,12 +4397,6 @@ function updateMg(ts) {
   mg.speed = mg.baseSpeed;
   
   mg.score += (mg.speed / 10) * ts;
-  
-  var currentScore = Math.floor(mg.score);
-  if (mg.lastScore !== currentScore) {
-    document.getElementById('mg-score-display').textContent = '거리: ' + currentScore + 'm';
-    mg.lastScore = currentScore;
-  }
 
   // 중력과 가속도에 시간 배속(ts) 적용
   mg.p.vy += mg.gravity * ts;
@@ -4602,7 +4623,16 @@ function drawMg() {
   var dy = Math.round(mg.p.y - drawH + 17); 
   
   mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, Math.round(drawW), Math.round(drawH));
+
+  // 💡 캔버스 내부에 점수를 직접 그립니다. (DOM 렉 0%)
+  if (mg.active) {
+    mg.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    mg.ctx.font = 'bold 22px "Jua", sans-serif';
+    mg.ctx.textAlign = 'right';
+    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20, 40);
+  }
 }
+
 
 // 💡 함수 바깥에 변수를 하나 만들어서 화면 요소를 딱 한 번만 찾아둡니다.
 var cachedMgScreen = document.getElementById('screen-minigame');
@@ -4652,7 +4682,6 @@ function switchScreen(name) {
   var targetBtn = document.querySelector('[data-screen="' + name + '"]');
   if(targetBtn) targetBtn.classList.add('active');
   
-  // switchScreen 함수 내에서 if (name === 'minigame') 안쪽을 아래처럼 바꿔주세요.
   if (name === 'minigame') {
     document.getElementById('mg-best-score').textContent = '최고 기록: ' + Math.floor(GS.mg_highscore || 0) + 'm';
     initMg();
@@ -4661,12 +4690,12 @@ function switchScreen(name) {
     mg.p.y = -1000;
 
     // 메인 BGM 끄고 미니게임 BGM 켜기
-  var mainBgm = document.getElementById('bgm-player');
-  var mgBgm = document.getElementById('mg-bgm-player');
-  if (mainBgm) mainBgm.pause();
-  if (mgBgm && GS.bgmOn) mgBgm.play().catch(function(e){});
+    var mainBgm = document.getElementById('bgm-player');
+    var mgBgm = document.getElementById('mg-bgm-player');
+    if (mainBgm) mainBgm.pause();
+    if (mgBgm && GS.bgmOn) mgBgm.play().catch(function(e){});
     
-    // 💡 화면에 들어오자마자 배경 입자 생성
+    // 화면에 들어오자마자 배경 입자 생성
     mg.bgGridOffset = 0;
     mg.bgParticles = [];
     for (var i = 0; i < 40; i++) {
@@ -4678,33 +4707,41 @@ function switchScreen(name) {
     }
 
     if (mg.reqId) cancelAnimationFrame(mg.reqId);
-    mg.reqId = requestAnimationFrame(loopMg); // 💡 게임을 시작 안 해도 루프 가동!
+    mg.reqId = requestAnimationFrame(loopMg);
 
     document.getElementById('mg-ui').style.display = 'flex';
     document.getElementById('mg-over-ui').style.display = 'none';
- // 변경 후
-} else {
-  mg.active = false;
-  if (mg.reqId) cancelAnimationFrame(mg.reqId);
 
-  // 미니게임 BGM 끄고 메인 BGM 복귀
-  var mgBgm = document.getElementById('mg-bgm-player');
-  var mainBgm = document.getElementById('bgm-player');
-  if (mgBgm) { mgBgm.pause(); mgBgm.currentTime = 0; }
-  if (mainBgm && GS.bgmOn) mainBgm.play().catch(function(e){});
+    // 💡 미니게임 탭에 들어오면 무거운 캔버스와 애니메이션을 끕니다
+    document.getElementById('bg-effect-container').style.display = 'none';
+    document.getElementById('bg-animation-container').style.display = 'none';
+
+  } else {
+    mg.active = false;
+    if (mg.reqId) cancelAnimationFrame(mg.reqId);
+
+    // 미니게임 BGM 끄고 메인 BGM 복귀
+    var mgBgm = document.getElementById('mg-bgm-player');
+    var mainBgm = document.getElementById('bgm-player');
+    if (mgBgm) { mgBgm.pause(); mgBgm.currentTime = 0; }
+    if (mainBgm && GS.bgmOn) mainBgm.play().catch(function(e){});
+    
     document.getElementById('mg-ui').style.display = 'flex';
     document.getElementById('mg-over-ui').style.display = 'none';
-  }
+
+    // 💡 다른 화면(홈, 거래소 등)으로 돌아갈 때 다시 배경을 켜줍니다!
+    document.getElementById('bg-effect-container').style.display = 'block';
+    document.getElementById('bg-animation-container').style.display = 'block';
+  } // <--- 💡 괄호가 여기서 정상적으로 닫혀야 합니다!
 
   if (name !== 'minigame') {
-    // 🚀 핵심 마법 1: 탭 화면 전환이 먼저 부드럽게 일어나도록, 무거운 그리기 작업을 0.02초 미룹니다!
     setTimeout(function() {
       if (name === 'market') renderMarket();
       if (name === 'portfolio') renderPortfolio();
       if (name === 'gacha') renderGacha();
       if (name === 'mission') renderMission();
       if (name === 'home') renderHome();
-    }, 20); // 20ms 양보
+    }, 20);
   }
 }
 
@@ -5208,13 +5245,20 @@ setInterval(updateMgHearts, 1000);
     lastCharRender = time;
 
     // 💡 미니게임 중 연산 완전 정지 (렉 제거 - 초고속 변수 확인으로 변경!)
-    if (typeof mg !== 'undefined' && mg.active) {
-      requestAnimationFrame(animateBg);
-      return; 
-    }
+    if (typeof mg !== 'undefined' && mg.active) {
+      requestAnimationFrame(animateBg);
+      return; 
+    }
 
     var cw = container.clientWidth;
     var ch = container.clientHeight;
+
+    // 💡 [여기가 핵심 수정 부분입니다!] 
+    // 컨테이너가 숨겨져서 너비나 높이가 0일 때는 벽 충돌 연산을 건너뜁니다.
+    if (cw === 0 || ch === 0) {
+      requestAnimationFrame(animateBg);
+      return;
+    }
 
     charData.forEach(function(char) {
       char.x += char.vx;
