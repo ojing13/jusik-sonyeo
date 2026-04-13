@@ -4629,7 +4629,8 @@ function drawMg() {
     mg.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     mg.ctx.font = 'bold 22px "Jua", sans-serif';
     mg.ctx.textAlign = 'right';
-    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20, 80);
+    var scoreY = 40 + deviceNotchHeight;
+    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20, 40);
   }
 }
 
@@ -4916,6 +4917,15 @@ function initializeGame() {
   
   updateMissions(); updateTotalAssets(); updateDialogState(true); renderAll();
   if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
+
+  // 👇 [추가] 기기의 노치(Safe Area) 높이를 딱 한 번만 계산해서 저장합니다 (렉 0%)
+  var notchDetector = document.createElement('div');
+  notchDetector.style.paddingTop = 'env(safe-area-inset-top, 0px)';
+  notchDetector.style.position = 'absolute';
+  notchDetector.style.visibility = 'hidden';
+  document.body.appendChild(notchDetector);
+  deviceNotchHeight = parseInt(window.getComputedStyle(notchDetector).paddingTop) || 0;
+  notchDetector.remove(); // 계산 끝나면 즉시 삭제
 
   setInterval(tick, 5000);
 }
