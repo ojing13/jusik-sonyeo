@@ -2572,8 +2572,9 @@ function initChars() {
 
 var _toastMax = 3;
 
-function showToast(msg, color, linkKey, duration) {
-  if (GS.isTutorial) return; // 튜토리얼 중 알림 팝업 차단
+// 파라미터 맨 끝에 isNews 를 추가합니다.
+function showToast(msg, color, linkKey, duration, isNews) {
+  if (GS.isTutorial) return; 
   
   var mgScreen = document.getElementById('screen-minigame');
   if (mgScreen && mgScreen.classList.contains('active')) return;
@@ -2581,13 +2582,31 @@ function showToast(msg, color, linkKey, duration) {
   var wrap = document.getElementById('toast-wrap');
   if (!wrap) return;
 
+  // 💡 핵심 수정: 3개가 꽉 찼을 때 지울 대상을 똑똑하게 고릅니다.
   while (wrap.children.length >= _toastMax) {
-    var oldest = wrap.firstChild;
-    if (oldest) wrap.removeChild(oldest);
+    var targetToRemove = null;
+    
+    // 1순위: 화면에 있는 알림 중 '뉴스가 아닌 것(일반 유저 행동)'을 찾아냅니다.
+    for (var i = 0; i < wrap.children.length; i++) {
+      if (wrap.children[i].dataset.isNews !== 'true') {
+        targetToRemove = wrap.children[i];
+        break; // 가장 먼저 뜬(오래된) 일반 알림을 찾으면 멈춤
+      }
+    }
+    
+    // 2순위: 만약 3개가 전부 뉴스라면 어쩔 수 없이 가장 오래된 뉴스를 지웁니다.
+    if (!targetToRemove) {
+      targetToRemove = wrap.firstChild;
+    }
+
+    if (targetToRemove) wrap.removeChild(targetToRemove);
   }
 
   var item = document.createElement('div');
   item.className = 'toast-item';
+  
+  // 💡 뉴스라면 보호막 꼬리표를 달아줍니다.
+  if (isNews) item.dataset.isNews = 'true';
 
   var tx = document.createElement('span');
   tx.className = 'toast-item-text';
@@ -2616,7 +2635,8 @@ function showToast(msg, color, linkKey, duration) {
 
 function showNewsToast(msg, color, linkKey) {
   if (!GS.notiOn) return;
-  showToast(msg, color, linkKey, 6000);
+  // 💡 맨 끝에 true를 추가해서 "이건 뉴스니까 보호해라!" 라고 알려줍니다.
+  showToast(msg, color, linkKey, 6000, true); 
 }
 
 function setAction(msg, priority) {
