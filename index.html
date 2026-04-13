@@ -1671,7 +1671,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.07</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.08</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -2640,22 +2640,14 @@ function showNewsToast(msg, color, linkKey) {
 }
 
 function setAction(msg, priority) {
-  if (GS.isTutorial) return; // 튜토리얼 중 액션 팝업 차단
-  
+  if (GS.isTutorial) return; 
   var mgScreen = document.getElementById('screen-minigame');
   if (mgScreen && mgScreen.classList.contains('active')) return;
 
-  if (priority >= GS.actionPriority) {
-    GS.actionMsg = msg;
-    GS.actionPriority = priority;
-    if (_actionTimer) clearTimeout(_actionTimer);
-    var color = (msg.indexOf('부족') >= 0) ? '#ff5555' : '#66ff88';
-    showToast(msg, color, null, 4000);
-    _actionTimer = setTimeout(function() {
-      GS.actionMsg = '';
-      GS.actionPriority = 0;
-    }, 4000);
-  }
+  // 💡 우선순위(Priority) 검사 및 차단 로직을 완전히 제거했습니다!
+  // 이제 배당금이든 매매든 발생하는 즉시 토스트 스택에 정상적으로 쌓입니다.
+  var color = (msg.indexOf('부족') >= 0) ? '#ff5555' : '#66ff88';
+  showToast(msg, color, null, 6000); 
 }
 
 function updateTotalAssets() {
