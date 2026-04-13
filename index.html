@@ -2954,7 +2954,7 @@ function tick(silent) {
     Object.keys(GS.chars).forEach(function(k) {
       var ch = GS.chars[k];
       if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = -(0.02 + Math.random() * 0.10);
+      if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
       ch._earningApplied = false; applyPriceChange(k);
     });
     GS.crashTicks--;
@@ -2969,7 +2969,7 @@ function tick(silent) {
     Object.keys(GS.chars).forEach(function(k) {
       var ch = GS.chars[k];
       if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = 0.02 + Math.random() * 0.10;
+      if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
       ch._earningApplied = false; applyPriceChange(k);
     });
     GS.bullTicks--;
@@ -2990,7 +2990,7 @@ function tick(silent) {
         Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.10);
+          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
           ch._earningApplied = false; applyPriceChange(k);
         });
       } else {
@@ -2999,7 +2999,7 @@ function tick(silent) {
         Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.10;
+          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
           ch._earningApplied = false; applyPriceChange(k);
         });
       }
