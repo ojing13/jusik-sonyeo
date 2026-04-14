@@ -4916,6 +4916,22 @@ function applyCheat() {
     
     // 설정창 자동으로 닫기
     document.getElementById('settings-modal').classList.remove('active');
+  
+  } else if (code === '티켓만땅') { // 💡 여기에 티켓 1000장 치트키를 추가했어요!
+    // 1. 스카웃 티켓 1000장을 즉시 추가합니다.
+    GS.tickets += 1000;
+    
+    // 2. 연출 및 저장
+    playSound('event'); 
+    showToast("티켓 1000장 충전 완료!", "#cc88ff", null, 3000); 
+    
+    // 3. 화면의 숫자들을 즉시 갱신하고 저장합니다.
+    updateTotalAssets();
+    save(); 
+    renderAll();
+    
+    // 4. 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
 
   } else {
     // 다른 글자를 쳤을 때
