@@ -40,7 +40,6 @@
   --accent: #ffcc44;
   --nav-h: 72px;
   --header-h: 116px;
-  --sat: env(safe-area-inset-top, 0px);
 }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
 html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); }
@@ -1058,14 +1057,6 @@ body, #app {
   padding-top: calc(28px + env(safe-area-inset-top, 0px)) !important;
 }
 
-#screen-minigame {
-  padding-top: env(safe-area-inset-top, 0px) !important;
-}
-
-#mg-container {
-  padding-top: env(safe-area-inset-top, 0px) !important;
-}
-
 /* 💡 미니게임 화면의 우측 상단 점수도 노치에 가리지 않게 내려줍니다 */
 #mg-score-display {
   top: calc(20px + env(safe-area-inset-top, 0px)) !important;
@@ -1668,7 +1659,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.11</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -4276,8 +4267,6 @@ function resizeMg() {
   if(cvs.parentElement && cvs.parentElement.offsetWidth > 0) {
     mg.w = cvs.parentElement.offsetWidth;
     mg.h = cvs.parentElement.offsetHeight;
-    var safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0');
-    mg.h = mg.h - safeTop;
     
     // 💡 누락됐던 핵심 마법: 아이폰의 미친 해상도를 제한해서 과부하를 막습니다!
     var dpr = Math.min(window.devicePixelRatio || 1, 2); 
@@ -4640,7 +4629,7 @@ function drawMg() {
     mg.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     mg.ctx.font = 'bold 22px "Jua", sans-serif';
     mg.ctx.textAlign = 'right';
-    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20, 40);
+    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20, 62.5);
   }
 }
 
