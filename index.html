@@ -1661,7 +1661,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.12</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -3386,6 +3386,9 @@ function doGacha(count) {
     var ch = GS.chars[picked];
     var isNew = false;
 
+    // 💡 alreadyMax 변수를 추가해서 이미 만렙이었는지 체크합니다.
+    var alreadyMax = false;
+
     if (!ch.unlocked) {
       ch.unlocked = true;
       isNew = true;
@@ -3395,10 +3398,15 @@ function doGacha(count) {
         ch.level++;
         ch.max_energy += 10;
         ch.energy = ch.max_energy;
+      } else {
+        // 레벨업을 못했다면 이미 만렙이라는 뜻!
+        alreadyMax = true; 
       }
     }
-    gachaResults.push({ key: picked, isNew: isNew });
+    // 💡 결과를 저장할 때 alreadyMax도 같이 넘겨줍니다.
+    gachaResults.push({ key: picked, isNew: isNew, alreadyMax: alreadyMax });
   }
+
   playSound('gacha');
   updateTotalAssets(); updateMissions(); save();
   GS.skipGachaReveal = (count >= 10);
@@ -3458,7 +3466,8 @@ function updateCharImage(container, key, tickerText, fallbackSelector) {
 function showRevealCard() {
   if (revealIdx >= gachaResults.length) { showGrid(); return; }
   var result = gachaResults[revealIdx];
-  var key = result.key, isNew = result.isNew;
+  // 💡 여기에 alreadyMax가 추가되었습니다.
+  var key = result.key, isNew = result.isNew, alreadyMax = result.alreadyMax;
   var ch = GS.chars[key];
   var rc = RARITY_COLORS[ch.rarity] || '#666677';
   var sc = SECTOR_COLORS[ch.sector] || '#555566';
@@ -3482,7 +3491,8 @@ function showRevealCard() {
   document.getElementById('reveal-level').textContent = (ch.level >= 10 ? 'Lv.MAX' : 'Lv.' + ch.level);
   document.getElementById('reveal-trait').textContent = ch.sector + ' / ' + ch.rarity;
 
-  document.getElementById('reveal-status').textContent = isNew ? '신규 영입!' : (ch.level >= 10 ? 'MAX 달성!' : '레벨업!');
+  // 💡 여기가 '초과 영입'으로 변경된 부분입니다.
+  document.getElementById('reveal-status').textContent = isNew ? '신규 영입!' : (alreadyMax ? '초과 영입' : (ch.level >= 10 ? 'MAX 달성!' : '레벨업!'));
 
   card.style.transform = 'scale(0.8)'; card.style.opacity = '0';
   card.style.transition = 'transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s';
@@ -3500,7 +3510,8 @@ function showGridDetail(result) {
   document.getElementById('reveal-counter').style.display = 'none';
   document.getElementById('reveal-status').style.display = '';
 
-  var key = result.key, isNew = result.isNew;
+  // 💡 여기에 alreadyMax가 추가되었습니다.
+  var key = result.key, isNew = result.isNew, alreadyMax = result.alreadyMax;
   var ch = GS.chars[key];
   var rc = RARITY_COLORS[ch.rarity] || '#666677';
   var sc = SECTOR_COLORS[ch.sector] || '#555566';
@@ -3525,7 +3536,8 @@ function showGridDetail(result) {
   document.getElementById('reveal-level').textContent = (ch.level >= 10 ? 'Lv.MAX' : 'Lv.' + ch.level);
   document.getElementById('reveal-trait').textContent = ch.sector + ' / ' + ch.rarity;
 
-  document.getElementById('reveal-status').textContent = isNew ? '신규 영입!' : (ch.level >= 10 ? 'MAX 달성!' : '레벨업!');
+  // 💡 여기가 '초과 영입'으로 변경된 부분입니다.
+  document.getElementById('reveal-status').textContent = isNew ? '신규 영입!' : (alreadyMax ? '초과 영입' : (ch.level >= 10 ? 'MAX 달성!' : '레벨업!'));
 
   card.style.transform = 'scale(0.8)'; card.style.opacity = '0';
   card.style.transition = 'transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s';
