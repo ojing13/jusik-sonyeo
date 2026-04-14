@@ -2944,6 +2944,7 @@ function applyPriceChange(k) {
 }
 
 function tick(silent) {
+  if (mg.active) return;
   if (GS.isTutorial) return;
   GS.actionPriority = 0;
   if (GS.stickyNewsTicks > 0) GS.stickyNewsTicks--;
@@ -4268,6 +4269,7 @@ var mgAnimTick = 0;
 
 var mg = {
   active: false, ctx: null, w: 0, h: 0,
+  pointPool: [],
   p: { x: 50, y: -1000, vy: 0, r: 12 }, 
   gravity: 0.65, jump: -12, baseSpeed: 6.0, speed: 6.0, score: 0,
   points: [], jumpCount: 0, downCount: 0,
@@ -4356,6 +4358,7 @@ function startMg() {
   mg.points.push({ x: mg.w + 100, y: mg.h / 2, type: 'UP' });
 
   mg.active = true; // 💡 true로 바꾸는 순간 loopMg가 알아서 게임 플레이 연산을 시작합니다.
+  mg.startTime = Date.now();
   mg.lastTime = performance.now();
   // 루프 중복 호출 방지를 위해 requestAnimationFrame은 여기서 부르지 않아요!
 }
@@ -4363,6 +4366,16 @@ function startMg() {
 function endMg() {
   mg.active = false;
   playSound('crash');
+
+  // 💡 미니게임 플레이 시간만큼 밀린 틱 한번에 처리
+  var now = Date.now();
+  var offlineMs = now - mg.startTime;
+  var missedTicks = Math.floor(offlineMs / 5000);
+  if (missedTicks > 0) {
+    for (var i = 0; i < missedTicks; i++) {
+      tick(true); // silent=true로 토스트/사운드 없이 조용히 처리
+    }
+  }
   
   var isNewBest = false;
   if (!GS.mg_highscore) GS.mg_highscore = 0;
@@ -4416,7 +4429,8 @@ function updateMg(ts) {
   }
 
   while(mg.points[0] && mg.points[0].x < -500) {
-    mg.points.shift();
+    var old = mg.points.shift();
+    mg.pointPool.push(old); // 버리지 않고 재활용
   }
 
   while(mg.points[mg.points.length-1].x < mg.w + 400) {
@@ -4460,7 +4474,11 @@ function updateMg(ts) {
     }
     
     var ny = lastPt.y + slope;
-    mg.points.push({ x: lastPt.x + len, y: ny, type: isUp ? 'UP' : 'DOWN' });
+    var newPt = mg.pointPool.length > 0 ? mg.pointPool.pop() : {};
+    newPt.x = lastPt.x + len;
+    newPt.y = ny;
+    newPt.type = isUp ? 'UP' : 'DOWN';
+    mg.points.push(newPt);
   }
 
   var px = mg.p.x;
