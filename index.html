@@ -1178,6 +1178,11 @@ body, #app {
 }
 .scroll-area::-webkit-scrollbar { display:none; }
 #mg-score-display { display: none !important; }
+
+.grid-avatar .dynamic-char-img {
+  animation: none !important;
+  transform: scale(1) !important;
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -3565,7 +3570,12 @@ function showGrid() {
     div.style.border = '1.5px solid ' + rc + '66';
     div.style.cursor = 'pointer';
 
+    // 💡 [최종 수정] 뱃지가 잘리지 않게 '카드 안쪽' 모서리로 컴팩트하게 위치시켰습니다.
+    // 기존 top:-3px, right:-3px -> 수정 top:2px, right:2px
+    var newBadgeHtml = result.isNew ? '<div style="position:absolute; top:2px; right:2px; background:#ff3355; color:#fff; font-size:8.5px; font-weight:900; padding:1px 3.5px; border-radius:4px; z-index:10; box-shadow:0 1.5px 3px rgba(0,0,0,0.8); transform:rotate(10deg); letter-spacing:0.3px;">NEW!</div>' : '';
+
     div.innerHTML = '<div class="grid-card-inner">'
+    + newBadgeHtml 
     + '<div class="grid-avatar" style="background:' + sc + '22;border:2px solid ' + rc + '; position:relative; overflow:hidden;">'
     + '<span class="fallback-grid-text" style="font-weight:900;color:white;font-size:12px; z-index:2; display:none;">' + ch.ticker.substring(0,4) + '</span></div>'
     + '<div class="grid-rarity" style="margin-top:4px;"><span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="font-size:9px; padding:1px 4px;">' + ch.rarity + '</span></div>'
