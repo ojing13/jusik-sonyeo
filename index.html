@@ -1187,6 +1187,8 @@ body, #app {
 </head>
 <body>
 
+<div id="safe-area-detector" style="position: absolute; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px); visibility: hidden; pointer-events: none;"></div>
+
 <div id="start-screen" onclick="startGame()">
   <img src="imgs/title_cover.gif" id="bg-image" alt="타이틀 배경">
   <div id="title-blink-text" style="z-index: 2;">화면을 터치해서 시작하세요</div>
@@ -4251,6 +4253,7 @@ var mgAnimTick = 0;
 
 var mg = {
   active: false, ctx: null, w: 0, h: 0,
+  safeTop: 0, safeRight: 0,
   pointPool: [],
   p: { x: 50, y: -1000, vy: 0, r: 12 }, 
   gravity: 0.65, jump: -12, baseSpeed: 6.0, speed: 6.0, score: 0,
@@ -4268,6 +4271,12 @@ function resizeMg() {
     mg.w = cvs.parentElement.offsetWidth;
     mg.h = cvs.parentElement.offsetHeight;
     
+    var detector = document.getElementById('safe-area-detector');
+    if (detector) {
+      mg.safeTop = parseFloat(getComputedStyle(detector).top) || 0;
+      mg.safeRight = parseFloat(getComputedStyle(detector).right) || 0;
+    }
+
     // 💡 누락됐던 핵심 마법: 아이폰의 미친 해상도를 제한해서 과부하를 막습니다!
     var dpr = Math.min(window.devicePixelRatio || 1, 2); 
     cvs.width = mg.w * dpr; 
@@ -4629,7 +4638,8 @@ function drawMg() {
     mg.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     mg.ctx.font = 'bold 22px "Jua", sans-serif';
     mg.ctx.textAlign = 'right';
-    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20, 62.5);
+    // X좌표(mg.w - 20)에는 safeRight를 빼주고, Y좌표(40)에는 safeTop을 더해줍니다!
+    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20 - mg.safeRight, 40 + mg.safeTop);
   }
 }
 
