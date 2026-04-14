@@ -4542,8 +4542,9 @@ function drawMg() {
   mg.ctx.beginPath();
   for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'UP') {
-      mg.ctx.moveTo(mg.points[i].x, mg.points[i].y);
-      mg.ctx.lineTo(mg.points[i+1].x, mg.points[i+1].y);
+      // 💡 마법 2: 좌표 뒤에 | 0 을 붙여서 소수점을 날려버립니다.
+mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
+mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
   mg.ctx.strokeStyle = 'rgba(255, 51, 68, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
@@ -4553,8 +4554,9 @@ function drawMg() {
   mg.ctx.beginPath();
   for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'DOWN') {
-      mg.ctx.moveTo(mg.points[i].x, mg.points[i].y);
-      mg.ctx.lineTo(mg.points[i+1].x, mg.points[i+1].y);
+      // 💡 마법 2: 좌표 뒤에 | 0 을 붙여서 소수점을 날려버립니다.
+mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
+mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
   mg.ctx.strokeStyle = 'rgba(51, 204, 255, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
@@ -4657,13 +4659,18 @@ function loopMg(time) {
   var now = performance.now();
   if (!mg.lastTime) mg.lastTime = now;
   var dt = now - mg.lastTime;
-  mg.lastTime = now;
-  
-  // 💡 렉 스파이크 방어막: 폰이 잠깐 버벅여도 캐릭터가 순간이동하지 않게 최대 시간 고정
-  if (dt > 100) dt = 16.66;
-  
-  // 💡 핵심: 60Hz든 120Hz든 모니터 주사율에 맞춰 움직임 배속을 자동 조절
-  var ts = dt / 16.66;
+mg.lastTime = now;
+
+// 💡 마법 1: 프레임 타임 보정 (Jitter 방지)
+if (dt > 15 && dt < 18.5) {
+  dt = 16.666; // 60Hz 환경의 미세한 요동은 강제 고정!
+} else if (dt > 7 && dt < 9.5) {
+  dt = 8.333;  // 120Hz 환경의 미세한 요동은 강제 고정!
+} else if (dt > 100) {
+  dt = 16.666; // 렉 스파이크 방어
+}
+
+var ts = dt / 16.666;
   
   if (mg.active) {
     updateMg(ts); 
@@ -5175,6 +5182,9 @@ document.addEventListener('visibilitychange', function() {
 });
 // 하트 시스템 작동 코드
 function updateMgHearts() {
+    // 💡 마법 3: 미니게임이 켜져있을 땐 무거운 HTML 조작을 완전히 멈춥니다!
+    if (typeof mg !== 'undefined' && mg.active) return;
+
     var now = Date.now();
     var rechargeTime = 1800000; // 30분
 
