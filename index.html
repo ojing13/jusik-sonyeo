@@ -2858,8 +2858,8 @@ function applyPriceChange(k) {
   var gravity = diffRatio * 0.00015; // 상장가에서 멀어질수록 미세한 중력이 발생
   effectiveChange -= gravity;
 
-  // 💡 절대 안전벨트: 1틱(5초)에 위아래 최대 15%까지만 제한
-  effectiveChange = Math.max(-0.15, Math.min(0.15, effectiveChange));
+  // 💡 상하한가 30%로 확장! (어닝 폭등/폭락이 정상적으로 반영됩니다)
+  effectiveChange = Math.max(-0.30, Math.min(0.30, effectiveChange));
 
   // 🟢 변동성 끌림(증발) 완벽 해결 로직
   var np;
