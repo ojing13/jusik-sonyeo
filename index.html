@@ -1530,7 +1530,7 @@ body, #app {
         <h4 class="guide-h4" style="color:#cc88ff;">[4] 배당금과 분산 투자</h4>
         <ul class="guide-list">
           <li>💰 <span style="color:white; font-weight:bold;">1분마다 현금 지급:</span> 주식을 보유하기만 해도 1분마다 배당금이 들어옵니다. (캐릭터 레벨에 따라 복리로 증가)</li>
-          <li>💎 <span style="color:white; font-weight:bold;">등급별 기본 배당 (1분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.1%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.05%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.025%</span> / N <span style="color:#888899; font-weight:bold;">0.01%</span></li>
+          <li>💎 <span style="color:white; font-weight:bold;">등급별 기본 배당 (1분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.05%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.03%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.02%</span> / N <span style="color:#888899; font-weight:bold;">0.01%</span></li>
           <li>📊 <span style="color:white; font-weight:bold;">분산 투자 보너스:</span> 전체 투자금의 10% 이상을 차지하는 섹터가 <strong>3개면 총 배당금 1.2배</strong>, <strong>5개면 1.5배</strong> 보너스!</li>
         </ul>
 
@@ -3101,7 +3101,7 @@ function payDividends(silent) {
   var total = 0;
   var sectorValues = {};
   var totalInvested = 0;
-  var divRates = { SSR:0.001, SR:0.0005, R:0.00025, N:0.0001 };
+  var divRates = { SSR:0.0005, SR:0.0003, R:0.0002, N:0.0001 };
 
   Object.values(GS.chars).forEach(function(ch) {
     if (!ch.unlocked || ch.owned <= 0) return;
@@ -4094,7 +4094,7 @@ function showStockDetail(k) {
   document.getElementById('sd-level').textContent = (ch.level >= 10 ? 'Lv.MAX' : 'Lv.' + ch.level);
   document.getElementById('sd-energy').textContent = ch.max_energy;
 
-  var divRates = { SSR:0.001, SR:0.0005, R:0.00025, N:0.0001 };
+  var divRates = { SSR:0.0005, SR:0.0003, R:0.0002, N:0.0001 };
 
   var baseRate = divRates[ch.rarity] || 0.0005;
   var levelBonus = getDivLevelBonus(ch.rarity, ch.level);
