@@ -1666,7 +1666,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.12</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1.3</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -2187,6 +2187,8 @@ var SECTOR_DIALOGS = {
 var GS = {
   mg_hearts: 5, 
   mg_last_heart_time: Date.now(),
+  tradeMode: 1,         // 💡 추가: 저장될 거래 수량
+  tradeLabel: '1주',    // 💡 추가: 저장될 거래 수량 텍스트
   money: 2000000, total_assets: 2000000, start_assets: 2000000,
   gacha_count: 0, pity_count: 0, tickets: 10,
   chars: {}, mainChar: 'nflx',
@@ -2746,9 +2748,10 @@ function save() {
       momentumTimer: GS.momentumTimer, 
       biasTimer: GS.biasTimer, 
       mg_highscore: GS.mg_highscore,
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
-      chars: outChars
-    }));
+      tradeMode: GS.tradeMode,      // 💡 추가: 수량 값 저장
+      tradeLabel: GS.tradeLabel,    // 💡 추가: 수량 텍스트 저장
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
+      chars: outChars    }));
   } catch(e) {}
 }
 
@@ -2793,6 +2796,16 @@ function load() {
     if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
     if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
     if (d.lastSaveTime) GS.lastSaveTime = d.lastSaveTime;
+
+    // 💡 추가: 수량 데이터가 있으면 불러오기
+    if (d.tradeMode !== undefined) {
+      GS.tradeMode = d.tradeMode;
+      GS.tradeLabel = d.tradeLabel || '1주';
+      tradeMode = GS.tradeMode; // 글로벌 변수도 같이 업데이트
+      
+      var qtyBtn = document.getElementById('qty-btn');
+      if (qtyBtn) qtyBtn.textContent = '수량: ' + GS.tradeLabel + ' ▼';
+    }
 
     var baseMaxEn = { SSR: 400, SR: 300, R: 250, N: 200 };
     if (d.chars) {
@@ -3606,8 +3619,14 @@ function toggleQtyDropdown() {
 function selectQty(val, label) {
   playSound('click');
   tradeMode = parseInt(val);
+  
+  // 💡 추가: GS 변수에 저장하고 세이브 함수 호출
+  GS.tradeMode = tradeMode;
+  GS.tradeLabel = label;
+  
   document.getElementById('qty-btn').textContent = '수량: ' + label + ' ▼';
   document.getElementById('qty-dropdown').classList.remove('show');
+  save(); // 💡 추가: 수량 변경 즉시 저장
 }
 
 document.addEventListener('click', function(e) {
@@ -4858,7 +4877,13 @@ function devResetStep() {
     
     portTab = '보유';
     marketTab = 'IT';
-    
+    // 💡 추가: 수량 설정 초기화
+    tradeMode = 1;
+    GS.tradeMode = 1;
+    GS.tradeLabel = '1주';
+    var qtyBtn = document.getElementById('qty-btn');
+    if (qtyBtn) qtyBtn.textContent = '수량: 1주 ▼';
+
     // 💡 3. [핵심] 모바일 앱 전용 스크롤 & UI 초기화 (새로고침 번쩍임 방지)
     // 모든 스크롤 가능한 영역의 스크롤 위치를 맨 위(0)로 강제 이동시킵니다.
     document.querySelectorAll('.scroll-area').forEach(function(el) {
