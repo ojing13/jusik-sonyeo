@@ -2185,7 +2185,7 @@ var SECTOR_DIALOGS = {
 };
 
 var GS = {
-  mg_hearts: 5, 
+  mg_hearts: 4, 
   mg_last_heart_time: Date.now(),
   tradeMode: 1,         // 💡 추가: 저장될 거래 수량
   tradeLabel: '1주',    // 💡 추가: 저장될 거래 수량 텍스트
@@ -2766,7 +2766,7 @@ function load() {
     GS.gacha_count = d.gacha_count || 0;
     GS.pity_count = d.pity_count || 0;
     GS.tickets = (d.tickets !== undefined) ? d.tickets : 10;
-    GS.mg_hearts = (d.mg_hearts !== undefined) ? d.mg_hearts : 5;
+    GS.mg_hearts = (d.mg_hearts !== undefined) ? d.mg_hearts : 4;
     GS.mg_last_heart_time = d.mg_last_heart_time || Date.now();
     GS.mainChar = d.mainChar || 'nflx';
     if (d.tapCount) GS.tapCount = d.tapCount;
@@ -4361,9 +4361,9 @@ function startMg() {
   // 2. 하트를 하나 써요!
   GS.mg_hearts--; 
 
-  // 3. 만약 하트가 5개 가득 차 있었다가 처음으로 깎인 거라면?
+  // 3. 만약 하트가 4개 가득 차 있었다가 처음으로 깎인 거라면?
   // 이때부터 "30분 타이머"를 째깍째깍 시작합니다!
-  if (GS.mg_hearts === 4) { 
+  if (GS.mg_hearts === 3) { 
     GS.mg_last_heart_time = Date.now(); 
   }
 
@@ -4866,7 +4866,7 @@ function devResetStep() {
     GS.mg_highscore = 0;
     GS.bgmOn = true; GS.sfxOn = true; GS.notiOn = true;
 
-    GS.mg_hearts = 5; 
+    GS.mg_hearts = 4; 
     GS.mg_last_heart_time = Date.now();
     
     if (_actionTimer) clearTimeout(_actionTimer);
@@ -4935,8 +4935,8 @@ function applyCheat() {
     document.getElementById('settings-modal').classList.remove('active');
 
   } else if (code === '하트만땅') { // 💡 여기에 새로운 하트 치트키를 추가했어요!
-    // 1. 하트를 최대치(5개)로 꽉 채웁니다.
-    GS.mg_hearts = 5;
+    // 1. 하트를 최대치(4개)로 꽉 채웁니다.
+    GS.mg_hearts = 4;
     
     // 2. 하트가 꽉 찼으니 타이머 기준 시간을 지금으로 초기화합니다.
     GS.mg_last_heart_time = Date.now();
@@ -5251,11 +5251,11 @@ function updateMgHearts() {
     var now = Date.now();
     var rechargeTime = 1800000; // 30분
 
-    if (GS.mg_hearts < 5) {
+    if (GS.mg_hearts < 4) {
         var elapsed = now - GS.mg_last_heart_time;
         if (elapsed >= rechargeTime) {
             var recharged = Math.floor(elapsed / rechargeTime);
-            GS.mg_hearts = Math.min(5, GS.mg_hearts + recharged);
+            GS.mg_hearts = Math.min(4, GS.mg_hearts + recharged);
             GS.mg_last_heart_time += recharged * rechargeTime;
             save();
         }
@@ -5266,7 +5266,7 @@ function updateMgHearts() {
         var row = document.getElementById(rowId);
         if (row) {
             row.innerHTML = '';
-            for (var i = 1; i <= 5; i++) {
+            for (var i = 1; i <= 4; i++) {
                 var h = document.createElement('div');
                 h.className = 'mg-heart' + (i <= GS.mg_hearts ? ' active' : '');
                 row.appendChild(h);
@@ -5281,7 +5281,7 @@ function updateMgHearts() {
     var btn = document.getElementById('mg-start-btn');
     var restartBtn = document.getElementById('mg-restart-btn'); // 💡 다시 도전 버튼도 찾아요!
 
-    if (GS.mg_hearts >= 5) {
+    if (GS.mg_hearts >= 4) {
         timerEl.textContent = "하트가 가득 찼습니다!";
     } else {
         var nextIn = rechargeTime - (now - GS.mg_last_heart_time);
