@@ -3064,17 +3064,17 @@ function tick(silent) {
 
       if (isTheme) {
         if (GS.currentTheme.type === 'bad') {
-          baseMin = -0.060 * seasonVol;
+          baseMin = -0.050 * seasonVol;
           baseMax = 0.015 * seasonVol;
         } else {
           baseMin = -0.015 * seasonVol;
-          baseMax = 0.060 * seasonVol;
+          baseMax = 0.050 * seasonVol;
         }
       }
 
       if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
         GS.newsBoost[k].ticks--;
-        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.060; } else { baseMin = -0.060; baseMax = 0.015; }
+        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.050; } else { baseMin = -0.050; baseMax = 0.015; }
         if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
       }
       ch.change = baseMin + Math.random() * (baseMax - baseMin);
