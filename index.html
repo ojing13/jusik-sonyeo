@@ -1966,36 +1966,43 @@ function getVipReq(rarity) {
 }
 
 var MISSIONS = [
-  { id:'total_500m',    tab:'자산', name:'소액 투자자',      desc:'총 자산 500만원 달성',              reward:10,   target:5000000,        type:'assets' },
-  { id:'total_1000m',   tab:'자산', name:'성장 투자자',      desc:'총 자산 1,000만원 달성',            reward:10,  target:10000000,         type:'assets' },
-  { id:'total_5000m',   tab:'자산', name:'개인 투자자',      desc:'총 자산 5,000만원 달성',            reward:15,  target:50000000,         type:'assets' },
-  { id:'total_1eok',    tab:'자산', name:'억 단위 투자자',    desc:'총 자산 1억원 달성',                reward:20,  target:100000000,        type:'assets' },
-  { id:'total_10eok',   tab:'자산', name:'큰손',            desc:'총 자산 10억원 달성',               reward:25,  target:1000000000,       type:'assets' },
-  { id:'total_100eok',  tab:'자산', name:'슈퍼개미',         desc:'총 자산 100억원 달성',              reward:50,  target:10000000000,      type:'assets' },
-  { id:'total_1000eok', tab:'자산', name:'재벌',            desc:'총 자산 1,000억원 달성',            reward:75, target:100000000000,     type:'assets' },
-  { id:'total_1jo',     tab:'자산', name:'워렌버핏',         desc:'총 자산 1조원 달성',                reward:100, target:1000000000000,    type:'assets' },
-  { id:'total_10jo',    tab:'자산', name:'월스트리트의 신',   desc:'총 자산 1,000조원 달성',            reward:200, target:1000000000000000, type:'assets' },
-  { id:'tap_50',        tab:'터치', name:'손가락 운동',      desc:'화면 터치 50회',                    reward:5,   target:50,               type:'tap' },
-  { id:'tap_200',       tab:'터치', name:'터치 노가다',      desc:'화면 터치 200회',                   reward:5,  target:200,              type:'tap' },
-  { id:'tap_500',       tab:'터치', name:'터치 중독',        desc:'화면 터치 500회',                   reward:10,  target:500,              type:'tap' },
-  { id:'tap_1000',      tab:'터치', name:'화면 브레이커',      desc:'화면 터치 1,000회',                 reward:15,  target:1000,             type:'tap' },
-  { id:'tap_5000',      tab:'터치', name:'인간 매크로',        desc:'화면 터치 5,000회',                 reward:20,  target:5000,             type:'tap' },
-  { id:'tap_10000',     tab:'터치', name:'빛의 속도',        desc:'화면 터치 10,000회',              reward:30,  target:10000,            type:'tap' },
-  { id:'tap_50000',     tab:'터치', name:'터치 마스터',     desc:'화면 터치 50,000회',              reward:50,  target:50000,            type:'tap' },
-  { id:'tap_100000',    tab:'터치', name:'터치의 신',       desc:'화면 터치 100,000회',             reward:100, target:100000,           type:'tap' },
-  { id:'first_gacha',   tab:'육성', name:'첫 스카웃',        desc:'캐릭터를 1회 스카웃',                  reward:5,   target:1,  type:'gacha' },
-  { id:'level5_any',    tab:'육성', name:'집중 육성',        desc:'캐릭터 1명 Lv.5 달성',         reward:5,  target:5,  type:'level' },
-  { id:'level_max',     tab:'육성', name:'만렙 달성',        desc:'캐릭터 1명 Lv.MAX 달성',       reward:10,  target:10, type:'level' },
-  { id:'all_recruit',   tab:'육성', name:'완전 편성',        desc:'모든 캐릭터를 영입',             reward:30,  target:0,  type:'recruit' },
-  { id:'ssr_level5',    tab:'육성', name:'SSR 집중 육성',    desc:'SSR 캐릭터 1명 Lv.5 달성',     reward:50, target:5,  type:'ssr_level' },
-  { id:'ssr_level_max', tab:'육성', name:'SSR 만렙',         desc:'SSR 캐릭터 1명 Lv.MAX 달성',   reward:100, target:10, type:'ssr_level' },
-  { id:'first_trade',   tab:'투자', name:'첫 거래',         desc:'주식을 1회 매수',             reward:5,   target:1,                type:'trade' },
-  { id:'div_get',       tab:'투자', name:'첫 배당 수익',     desc:'배당금을 1회 수령',           reward:5,  target:1,                type:'div' },
-  { id:'vip_first',     tab:'투자', name:'첫 경영권',        desc:'경영권을 1개 확보',           reward:10,  target:1,                type:'vip_count' },
-  { id:'vip_5',         tab:'투자', name:'기업 사냥꾼',      desc:'경영권을 동시에 5개 확보',         reward:20,  target:5,                type:'vip_count' },
-  { id:'vip_10',        tab:'투자', name:'재계 총수',        desc:'경영권을 동시에 10개 확보',        reward:30, target:10,               type:'vip_count' },
-  { id:'ssr_vip_1',     tab:'투자', name:'포식자',    desc:'SSR 경영권을 1개 확보',       reward:50, target:1,                type:'ssr_vip_count' },
-  { id:'ssr_vip_5',     tab:'투자', name:'지배자', desc:'SSR 경영권을 동시에 5개 확보',       reward:100, target:5,                type:'ssr_vip_count' }
+  // [자산] 복리(로그) 성장에 맞춘 점진적 스케일업 (5M~1000T)
+  { id:'total_500m',    tab:'자산', name:'소액 투자자',      desc:'총 자산 500만원 달성',             reward:5,   target:5000000,        type:'assets' },
+  { id:'total_1000m',   tab:'자산', name:'성장 투자자',      desc:'총 자산 1,000만원 달성',            reward:10,  target:10000000,       type:'assets' },
+  { id:'total_5000m',   tab:'자산', name:'개인 투자자',      desc:'총 자산 5,000만원 달성',            reward:15,  target:50000000,       type:'assets' },
+  { id:'total_1eok',    tab:'자산', name:'억 단위 투자자',    desc:'총 자산 1억원 달성',               reward:20,  target:100000000,      type:'assets' },
+  { id:'total_10eok',   tab:'자산', name:'큰손',            desc:'총 자산 10억원 달성',              reward:25,  target:1000000000,     type:'assets' },
+  { id:'total_100eok',  tab:'자산', name:'슈퍼개미',         desc:'총 자산 100억원 달성',             reward:30,  target:10000000000,    type:'assets' },
+  { id:'total_1000eok', tab:'자산', name:'재벌',            desc:'총 자산 1,000억원 달성',            reward:40,  target:100000000000,   type:'assets' },
+  { id:'total_1jo',     tab:'자산', name:'워렌버핏',         desc:'총 자산 1조원 달성',               reward:50,  target:1000000000000,  type:'assets' },
+  { id:'total_10jo',    tab:'자산', name:'월스트리트의 신',    desc:'총 자산 1,000조원 달성',            reward:100, target:1000000000000000, type:'assets' },
+
+  // [터치] 단순 노동(선형) 요구량 증가에 맞춘 보상 완화
+  { id:'tap_50',        tab:'터치', name:'손가락 운동',      desc:'화면 터치 50회',                  reward:5,   target:50,             type:'tap' },
+  { id:'tap_200',       tab:'터치', name:'터치 노가다',      desc:'화면 터치 200회',                 reward:5,   target:200,            type:'tap' },
+  { id:'tap_500',       tab:'터치', name:'터치 중독',        desc:'화면 터치 500회',                 reward:10,  target:500,            type:'tap' },
+  { id:'tap_1000',      tab:'터치', name:'화면 브레이커',     desc:'화면 터치 1,000회',               reward:10,  target:1000,           type:'tap' },
+  { id:'tap_5000',      tab:'터치', name:'인간 매크로',      desc:'화면 터치 5,000회',               reward:15,  target:5000,           type:'tap' },
+  { id:'tap_10000',     tab:'터치', name:'빛의 속도',        desc:'화면 터치 10,000회',              reward:20,  target:10000,          type:'tap' },
+  { id:'tap_50000',     tab:'터치', name:'터치 마스터',      desc:'화면 터치 50,000회',              reward:50,  target:50000,          type:'tap' },
+  { id:'tap_100000',    tab:'터치', name:'터치의 신',        desc:'화면 터치 100,000회',             reward:100,  target:100000,         type:'tap' },
+
+  // [육성] 도감 완성 난이도와 특정 캐릭터 중복 획득 난이도 간의 밸런스
+  { id:'first_gacha',   tab:'육성', name:'첫 스카웃',        desc:'캐릭터를 1회 스카웃',              reward:5,   target:1,              type:'gacha' },
+  { id:'level5_any',    tab:'육성', name:'집중 육성',        desc:'캐릭터 1명 Lv.5 달성',             reward:10,  target:5,              type:'level' },
+  { id:'level_max',     tab:'육성', name:'만렙 달성',        desc:'캐릭터 1명 Lv.MAX 달성',           reward:20,  target:10,             type:'level' },
+  { id:'all_recruit',   tab:'육성', name:'완전 편성',        desc:'모든 캐릭터를 영입',               reward:30,  target:0,              type:'recruit' },
+  { id:'ssr_level5',    tab:'육성', name:'SSR 집중 육성',    desc:'SSR 캐릭터 1명 Lv.5 달성',         reward:50,  target:5,              type:'ssr_level' },
+  { id:'ssr_level_max', tab:'육성', name:'SSR 만렙',         desc:'SSR 캐릭터 1명 Lv.MAX 달성',       reward:100, target:10,             type:'ssr_level' },
+
+  // [투자] 필요 자산 규모에 맞춰 자산 미션 보상과 동기화 (샀다 팔기 꼼수 고려)
+  { id:'first_trade',   tab:'투자', name:'첫 거래',         desc:'주식을 1회 매수',                  reward:5,   target:1,              type:'trade' },
+  { id:'div_get',       tab:'투자', name:'첫 배당 수익',      desc:'배당금을 1회 수령',                reward:5,   target:1,              type:'div' },
+  { id:'vip_first',     tab:'투자', name:'첫 경영권',        desc:'경영권을 1개 확보',                reward:10,  target:1,              type:'vip_count' },
+  { id:'vip_5',         tab:'투자', name:'기업 사냥꾼',      desc:'경영권을 동시에 5개 확보',          reward:15,  target:5,              type:'vip_count' },
+  { id:'vip_10',        tab:'투자', name:'재계 총수',        desc:'경영권을 동시에 10개 확보',         reward:20,  target:10,             type:'vip_count' },
+  { id:'ssr_vip_1',     tab:'투자', name:'포식자',          desc:'SSR 경영권을 1개 확보',            reward:30,  target:1,              type:'ssr_vip_count' },
+  { id:'ssr_vip_5',     tab:'투자', name:'지배자',          desc:'SSR 경영권을 동시에 5개 확보',      reward:50,  target:5,              type:'ssr_vip_count' }
 ];
 
 var THEMES = [
