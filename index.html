@@ -475,13 +475,17 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 }
 .stock-card.theme { background:#1a0808; border-color:#662222; }
 .stock-card.vip { border-color:rgba(255,215,0,0.5); }
-@keyframes highlightFlash {
-  0%, 100% { background: var(--bg2); border-color: var(--border); }
-  30%, 70% { background: #332200; border-color: var(--gold); box-shadow: 0 0 15px rgba(255,215,0,0.5); }
+/* 💡 카드의 색상이 바뀔 때 0.4초 동안 부드럽게 변하도록 전환 효과 추가 */
+.stock-card {
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease !important;
 }
+
+/* 💡 애니메이션 대신 고정된 강력한 금빛 상태로 정의 */
 .flash-highlight {
-  animation: highlightFlash 1.5s ease-out !important;
-  border-color: var(--gold) !important;
+  background: #4a3300 !important;
+  border-color: #ffe87a !important;
+  box-shadow: 0 0 25px rgba(255,215,0,0.85), inset 0 0 15px rgba(255,215,0,0.4) !important;
+  z-index: 10; 
 }
 .stock-sector-bar { position:absolute; left:0; top:0; bottom:0; width:4px; }
 .stock-card-inner { padding:12px 12px 12px 18px; }
@@ -1297,8 +1301,8 @@ body, #app {
         </div>
 
         <button class="dict-btn" onclick="playSound('click'); openDictionary('전체')">
-  <span class="dict-icon">📖</span> 캐릭터 도감
-</button>
+          <span class="dict-icon">📖</span> 캐릭터 도감
+        </button>
       </div>
     </div>
     <div style="display: flex; gap: 8px; margin: -18px 15px 10px 15px;">
@@ -1421,10 +1425,11 @@ body, #app {
     <div style="font-size:15px; color:#ccc; margin-bottom:20px; text-align:center; line-height:1.6;">
         화면을 터치해 점프하세요 (최대 2단 점프)<br>
         <span style="color:var(--blue);">파란색 하락선</span>을 밟으면 즉시 게임 종료!<br>
-        1500m당 스카웃 티켓 1장 획득
+        1000m당 스카웃 티켓 1장 획득
     </div>
 
     <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:16px; font-size:20px; color:white; font-weight:bold; font-family:'Jua', sans-serif;">게임 시작</button>
+    <button id="mg-ad-recharge-btn" class="gacha-btn" style="width:220px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none;">📺 광고 보고 하트 +1</button>
 </div>
 
 <div id="mg-over-ui" class="mg-overlay" style="display:none;">
@@ -1434,9 +1439,10 @@ body, #app {
 
     <div id="mg-final-score" style="font-size:20px; color:white; margin-bottom:20px; text-align:center; line-height:1.5;">주행 거리: 0m</div>
     <button id="mg-restart-btn" class="gacha-btn secondary" style="width:200px; padding:14px; color:white; font-family: 'Jua', sans-serif;">다시 도전</button>
-</div>
-  </div>
-</div>
+    <button id="mg-over-ad-recharge-btn" class="gacha-btn" style="width:200px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none;">📺 광고 보고 하트 +1</button>
+        </div>
+      </div>
+    </div>
 
 <div id="toast-wrap"></div>
 
@@ -1494,7 +1500,7 @@ body, #app {
         <h4 class="guide-h4" style="color:#ffcc44;">[1] 자본금 & 티켓 모으기</h4>
         <ul class="guide-list">
           <li>👆 <span style="color:white; font-weight:bold;">터치 수익:</span> 메인 캐릭터를 터치해 돈을 벌어보세요. (빠르게 연속 터치 시 콤보 수익 최대 2배)</li>
-          <li>🎫 <span style="color:white; font-weight:bold;">스카웃 티켓:</span> 화면 <strong>100회 터치</strong> 또는 미니게임 <strong>1,500m 달성</strong> 시 1장 확정 지급!</li>
+          <li>🎫 <span style="color:white; font-weight:bold;">스카웃 티켓:</span> 화면 <strong>100회 터치</strong> 또는 미니게임 <strong>1,000m 달성</strong> 시 1장 확정 지급!</li>
         </ul>
       </div>
 
@@ -2217,8 +2223,12 @@ var GS = {
   biasTimer: 0, // 💡 바이어스 전용 타이머 추가!
   dividendTimer: 15, skipGachaReveal: false,
   mg_highscore: 0,
-  bgmOn: true, sfxOn: true, notiOn: true
-  
+  bgmOn: true, sfxOn: true, notiOn: true,
+  // 💡 추가: 일일 광고 시청 횟수 제한 기록용 변수
+  adTicketUses: 5,
+  // 💡 추가: 하트 광고 시청 횟수 제한용 변수
+  adHeartUses: 5,
+  lastAdDate: new Date().toDateString()
 };
 
 // --- 무결점 튜토리얼 시스템 (철통 보안 버전) ---
@@ -2579,12 +2589,13 @@ function initChars() {
 
 var _toastMax = 3;
 
-// 파라미터 맨 끝에 isNews 를 추가합니다.
-function showToast(msg, color, linkKey, duration, isNews) {
+// 💡 파라미터 맨 끝에 isNews 와 강제 표시 권한인 forceShow 를 추가합니다.
+function showToast(msg, color, linkKey, duration, isNews, forceShow) {
   if (GS.isTutorial) return; 
   
   var mgScreen = document.getElementById('screen-minigame');
-  if (mgScreen && mgScreen.classList.contains('active')) return;
+  // 💡 강제 표시(forceShow)가 아닐 때만 미니게임 화면에서 알림을 막습니다.
+  if (!forceShow && mgScreen && mgScreen.classList.contains('active')) return;
 
   var wrap = document.getElementById('toast-wrap');
   if (!wrap) return;
@@ -2758,7 +2769,10 @@ function save() {
       tradeMode: GS.tradeMode,      // 💡 추가: 수량 값 저장
       tradeLabel: GS.tradeLabel,    // 💡 추가: 수량 텍스트 저장
       bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
-      chars: outChars    }));
+      adTicketUses: GS.adTicketUses, 
+      adHeartUses: GS.adHeartUses,   // 💡 추가: 하트 광고 횟수 저장
+      lastAdDate: GS.lastAdDate,     
+      chars: outChars    }));
   } catch(e) {}
 }
 
@@ -2800,9 +2814,20 @@ function load() {
     GS.mg_highscore = d.mg_highscore || 0;
     GS.leftoverMs = d.leftoverMs || 0;
     if (d.bgmOn !== undefined) GS.bgmOn = d.bgmOn;
-    if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
-    if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
-    if (d.lastSaveTime) GS.lastSaveTime = d.lastSaveTime;
+    if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
+    if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
+    if (d.lastSaveTime) GS.lastSaveTime = d.lastSaveTime;
+
+    // 💡 추가: 날짜가 바뀌었으면 모든 광고 시청 횟수 리셋, 아니면 불러오기
+    var todayStr = new Date().toDateString();
+    if (d.lastAdDate === todayStr) {
+      GS.adTicketUses = (d.adTicketUses !== undefined) ? d.adTicketUses : 5;
+      GS.adHeartUses = (d.adHeartUses !== undefined) ? d.adHeartUses : 5;
+    } else {
+      GS.adTicketUses = 5;
+      GS.adHeartUses = 5;
+    }
+    GS.lastAdDate = todayStr;
 
     // 💡 추가: 수량 데이터가 있으면 불러오기
     if (d.tradeMode !== undefined) {
@@ -3375,12 +3400,26 @@ function goToMarket(k) {
   if (!ch) return;
   marketTab = ch.sector;
   switchScreen('market');
+
   setTimeout(function() {
+    // 💡 화면이 이동하고 애니메이션이 실제로 켜지는 정확한 시간을 기록합니다.
+    GS.highlightTarget = k;
+    GS.highlightStart = Date.now();
+    GS.highlightExpire = GS.highlightStart + 2000;
+
     var el = document.getElementById('stock-card-' + k);
     if (el) {
       el.scrollIntoView({behavior: 'smooth', block: 'center'});
       el.classList.add('flash-highlight');
-      setTimeout(function() { el.classList.remove('flash-highlight'); }, 1500);
+      
+      setTimeout(function() { 
+        GS.highlightTarget = null; 
+        var currentEl = document.getElementById('stock-card-' + k); 
+        if (currentEl) {
+            currentEl.classList.remove('flash-highlight'); 
+            currentEl.style.animationDelay = ''; // 💡 흔적 지우기
+        }
+      }, 2000);
     }
   }, 100);
 }
@@ -3908,7 +3947,11 @@ function renderMarketList() {
     var lastTick = ch.tick_history[ch.tick_history.length - 1] || 0;
     var chg = lastTick >= 0;
     var div = document.createElement('div');
-    div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '');
+    
+    // 💡 방금 누른 종목인지 확인
+    var isHighlighting = (GS.highlightTarget === k && Date.now() < GS.highlightExpire);
+    
+    div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
     div.id = 'stock-card-' + k;
 
     var holdHtml = '<div class="stock-hold" style="color:#666677">미보유</div>';
@@ -4423,8 +4466,8 @@ function endMg() {
     isNewBest = true;
   }
 
-  // 티켓 보상 로직 추가 (1,500m당 1장)
-  var earnedTickets = Math.floor(mg.score / 1500);
+  // 티켓 보상 로직 추가 (1,000m당 1장)
+  var earnedTickets = Math.floor(mg.score / 1000);
   if (earnedTickets > 0) {
     GS.tickets += earnedTickets;
   }
@@ -4833,6 +4876,31 @@ document.getElementById('reveal-card').addEventListener('click', function() {
   }
 });
 
+function showAdForHeart() {
+  // 💡 횟수 제한 체크
+  if (GS.adHeartUses <= 0) {
+    showToast("오늘 하트 충전 광고 횟수를 모두 소진했습니다.", "#ff4444", null, 3000, false, true);
+    return;
+  }
+
+  playSound('click');
+  showToast("광고를 불러오는 중입니다...", "#aaaaaa", null, 2000, false, true);
+  
+  // 💡 가짜 대기 시간 (실제 앱에서는 AdMob SDK의 show() 함수로 대체)
+  setTimeout(function() {
+    GS.adHeartUses--; // 💡 횟수 차감
+    GS.mg_hearts++;
+    playSound('event');
+    showToast("하트 충전 완료! (남은 횟수: " + GS.adHeartUses + "회)", "#ff3264", null, 3000, false, true);
+    updateMgHearts();
+    save();
+  }, 2000); // 2초 뒤 보상 지급
+}
+
+document.getElementById('mg-ad-recharge-btn').addEventListener('click', showAdForHeart);
+document.getElementById('mg-over-ad-recharge-btn').addEventListener('click', showAdForHeart);
+// ------------------------------------------------------------------
+
 var _resetStep = 0;
 function devResetStep() {
   if (_resetStep === 0) {
@@ -4971,6 +5039,25 @@ function applyCheat() {
     updateTotalAssets();
     save(); 
     renderAll();
+    
+    // 4. 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
+
+  } else if (code === '광고초기화') { // 💡 개발자 테스트용: 하트 광고 횟수 리셋
+    // 1. 하트 광고 횟수 초기화
+    GS.adHeartUses = 5;
+
+    // 2. 미니게임 하트 광고 UI 즉시 복구
+    var heartCounts = document.querySelectorAll('.ad-heart-count');
+    heartCounts.forEach(function(el) { 
+        el.textContent = GS.adHeartUses;
+        el.parentElement.style.opacity = "1";
+    });
+
+    // 3. 연출 및 저장
+    playSound('event'); 
+    showToast("하트 광고 시청 횟수가 초기화되었습니다!", "#66ff88", null, 3000); 
+    save();
     
     // 4. 설정창 자동으로 닫기
     document.getElementById('settings-modal').classList.remove('active');
@@ -5297,25 +5384,35 @@ function updateMgHearts() {
         timerEl.textContent = "다음 충전까지 " + min + ":" + (sec < 10 ? '0' : '') + sec;
     }
 
-    // 💡 하트가 없을 때: 두 버튼 모두 회색으로 만들고 글씨를 바꿔요!
+    // 💡 하트가 없을 때: 버튼 비활성화 + 광고 버튼 표시
     if (GS.mg_hearts <= 0) {
         btn.classList.add('disabled');
         btn.textContent = "하트 부족";
         btn.style.opacity = "0.5";
+        document.getElementById('mg-ad-recharge-btn').style.display = 'block';
 
         restartBtn.classList.add('disabled');
         restartBtn.textContent = "하트 부족";
         restartBtn.style.opacity = "0.5";
+        document.getElementById('mg-over-ad-recharge-btn').style.display = 'block';
+
+        // 💡 남은 횟수 텍스트가 사라졌으므로, 횟수에 따라 버튼 투명도만 조절합니다.
+        var adBtn1 = document.getElementById('mg-ad-recharge-btn');
+        var adBtn2 = document.getElementById('mg-over-ad-recharge-btn');
+        if (adBtn1) adBtn1.style.opacity = GS.adHeartUses > 0 ? "1" : "0.5";
+        if (adBtn2) adBtn2.style.opacity = GS.adHeartUses > 0 ? "1" : "0.5";
     } 
-    // 💡 하트가 있을 때: 원래 글씨와 색깔로 되돌려요!
+    // 💡 하트가 있을 때: 원래 글씨로 복구 + 광고 버튼 숨김
     else {
         btn.classList.remove('disabled');
         btn.textContent = "게임 시작";
         btn.style.opacity = "1";
+        document.getElementById('mg-ad-recharge-btn').style.display = 'none';
 
         restartBtn.classList.remove('disabled');
         restartBtn.textContent = "다시 도전";
         restartBtn.style.opacity = "1";
+        document.getElementById('mg-over-ad-recharge-btn').style.display = 'none';
     }
 }
 // 1초마다 하트 체크하기
