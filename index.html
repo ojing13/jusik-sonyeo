@@ -1187,6 +1187,53 @@ body, #app {
   animation: none !important;
   transform: scale(1) !important;
 }
+
+/* 💡 양방향 스와이프 안내 화살표 래퍼 */
+.swipe-arrow-wrapper {
+  position: relative;
+  z-index: 9;
+  flex-shrink: 0;
+}
+
+/* 💡 공통 화살표 스타일 */
+.swipe-arrow-icon {
+  position: absolute;
+  top: 0; bottom: 0;
+  display: flex; align-items: center;
+  color: rgba(255, 204, 68, 0.95);
+  font-size: 16px; font-weight: bold;
+  pointer-events: none; /* 터치 방해 금지 */
+  z-index: 20;
+  transition: opacity 0.2s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
+
+/* 왼쪽 화살표: 초기 숨김 처리는 JS(.hidden)에게 맡깁니다 */
+.swipe-arrow-icon.left {
+  left: 4px;
+  animation: swipeBounceLeft 1.2s infinite ease-in-out;
+}
+
+/* 오른쪽 화살표: 기본적으로 보임 상태 */
+.swipe-arrow-icon.right {
+  right: 12px;
+  animation: swipeBounceRight 1.2s infinite ease-in-out;
+}
+
+/* 자바스크립트가 붙일 숨김 클래스 */
+.swipe-arrow-icon.hidden {
+  opacity: 0 !important;
+}
+
+/* 좌우 각각 튀는 애니메이션 */
+@keyframes swipeBounceRight {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+@keyframes swipeBounceLeft {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-4px); }
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -5088,6 +5135,64 @@ function preloadCharacterImages() {
   });
 }
 
+// 💡 양방향 탭 스와이프 화살표 자동 제어 함수 (완벽 수정본)
+function initSwipeArrows() {
+  var tabIds = ['market-tabs', 'port-tabs', 'mission-tabs', 'dict-tabs'];
+  
+  tabIds.forEach(function(id) {
+    var tabsEl = document.getElementById(id);
+    if (!tabsEl || tabsEl.dataset.arrowInit) return;
+    tabsEl.dataset.arrowInit = 'true';
+    
+    var wrapper = document.createElement('div');
+    wrapper.className = 'swipe-arrow-wrapper';
+    tabsEl.parentNode.insertBefore(wrapper, tabsEl);
+    wrapper.appendChild(tabsEl);
+    
+    var arrowLeft = document.createElement('div');
+    arrowLeft.className = 'swipe-arrow-icon left hidden'; // 처음엔 hidden으로 숨김
+    arrowLeft.textContent = '❮';
+    wrapper.appendChild(arrowLeft);
+    
+    var arrowRight = document.createElement('div');
+    arrowRight.className = 'swipe-arrow-icon right hidden';
+    arrowRight.textContent = '❯';
+    wrapper.appendChild(arrowRight);
+    
+    function updateArrows() {
+      // 💡 화면이 display: none 이라서 너비가 0일 때는 계산을 건너뜁니다!
+      if (tabsEl.offsetWidth === 0) return;
+      
+      var maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+      
+      if (tabsEl.scrollLeft > 10) arrowLeft.classList.remove('hidden');
+      else arrowLeft.classList.add('hidden');
+      
+      if (maxScroll > 0 && (maxScroll - tabsEl.scrollLeft > 10)) arrowRight.classList.remove('hidden');
+      else arrowRight.classList.add('hidden');
+    }
+
+    // 1. 유저가 직접 손으로 스크롤 할 때 즉시 갱신
+    tabsEl.addEventListener('scroll', updateArrows, {passive: true});
+    
+    // 2. 다른 메뉴에 있다가 화면이 '짠' 하고 눈앞에 나타날 때 크기 다시 재기
+    if (window.IntersectionObserver) {
+      var observer = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) setTimeout(updateArrows, 100);
+      });
+      observer.observe(tabsEl);
+    }
+
+    // 3. 탭 안에 버튼이 추가되거나 내용이 바뀔 때 크기 다시 재기
+    if (window.MutationObserver) {
+      var mutObserver = new MutationObserver(function() {
+        setTimeout(updateArrows, 100);
+      });
+      mutObserver.observe(tabsEl, { childList: true, subtree: true });
+    }
+  });
+}
+
 function initializeGame() {
   // preloadCharacterImages();
   initChars(); initMissions(); load();
@@ -5099,7 +5204,7 @@ function initializeGame() {
     var offlineMs = (now - GS.lastSaveTime) + (GS.leftoverMs || 0);
     var elapsedTicks = Math.floor(offlineMs / 5000); 
 
-    // 💡 [추가] 24시간(17,280틱) 상한선 설정으로 프리징 방지
+    // 💡 24시간(17,280틱) 상한선 설정으로 프리징 방지
     var MAX_OFFLINE_TICKS = 17280;
     elapsedTicks = Math.min(elapsedTicks, MAX_OFFLINE_TICKS);
     
@@ -5116,6 +5221,9 @@ function initializeGame() {
   }
 
   if (!GS.missions['first_trade'] || GS.missions['first_trade'].progress === 0) { marketTab = 'IT'; portTab = '보유'; }
+  
+  // 💡 여기에 탭 스와이프 화살표 생성 함수를 추가합니다!
+  initSwipeArrows();
   
   updateMissions(); updateTotalAssets(); updateDialogState(true); renderAll();
   if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
