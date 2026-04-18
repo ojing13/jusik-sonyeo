@@ -1531,6 +1531,7 @@ body, #app {
           <li>💰 <span style="color:white; font-weight:bold;">1분마다 현금 지급:</span> 주식을 보유하기만 해도 1분마다 배당금이 들어옵니다. (캐릭터 레벨에 따라 복리로 증가)</li>
           <li>💎 <span style="color:white; font-weight:bold;">등급별 기본 배당 (1분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.05%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.03%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.02%</span> / N <span style="color:#888899; font-weight:bold;">0.01%</span></li>
           <li>📊 <span style="color:white; font-weight:bold;">분산 투자 보너스:</span> 전체 투자금의 10% 이상을 차지하는 섹터가 <strong>3개면 총 배당금 1.2배</strong>, <strong>5개면 1.5배</strong> 보너스!</li>
+          <li>💤 <span style="color:white; font-weight:bold;">오프라인 수익:</span> 게임을 꺼두어도 배당금은 쌓이지만, <strong>최대 24시간까지만 누적</strong>됩니다.</li>
         </ul>
 
         <div style="margin-top:10px; background:#0d0d18; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
@@ -5097,6 +5098,10 @@ function initializeGame() {
     // 마지막 저장 후 흐른 시간 + 저장되어 있던 자투리 시간 합산
     var offlineMs = (now - GS.lastSaveTime) + (GS.leftoverMs || 0);
     var elapsedTicks = Math.floor(offlineMs / 5000); 
+
+    // 💡 [추가] 24시간(17,280틱) 상한선 설정으로 프리징 방지
+    var MAX_OFFLINE_TICKS = 17280;
+    elapsedTicks = Math.min(elapsedTicks, MAX_OFFLINE_TICKS);
     
     // 이번에 쓰고 남은 자투리 시간은 다시 저장
     GS.leftoverMs = offlineMs % 5000;
@@ -5104,7 +5109,7 @@ function initializeGame() {
     if (elapsedTicks > 0) {
       var moneyBefore = GS.money;
       for (var i = 0; i < elapsedTicks; i++) {
-        tick(true); // 밀린 틱만큼 연산 (한도 제한 없음)
+        tick(true); // 밀린 틱만큼 연산
       }
       window.offlineEarnedAmount = Math.max(0, GS.money - moneyBefore);
     }
@@ -5320,9 +5325,12 @@ document.addEventListener('visibilitychange', function() {
     var elapsedTicks = Math.floor(offlineMs / 5000);
     GS.leftoverMs = offlineMs % 5000; 
 
+    // 💡 [추가] 24시간(17,280틱) 상한선 설정
+    var MAX_OFFLINE_TICKS = 17280;
+    elapsedTicks = Math.min(elapsedTicks, MAX_OFFLINE_TICKS);
+
     if (elapsedTicks > 0) {
       var moneyBefore = GS.money;
-      // ⚠️ 유저 요청에 따라 MAX_OFFLINE_TICKS 제한 없이 모두 연산합니다.
       for (var i = 0; i < elapsedTicks; i++) {
         tick(true); 
       }
