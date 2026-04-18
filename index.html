@@ -1303,7 +1303,7 @@ body, #app {
         </div>
         <div class="char-border" id="char-border"></div>
       </div>
-      <div class="char-name" id="char-name">네프리 Lv.1</div>
+      <div class="char-name" id="char-name">노아 Lv.1</div>
       <div class="energy-wrap">
         <div class="energy-bar-bg">
           <div class="energy-bar-fill" id="energy-fill" style="width:100%;background:#22cc44"></div>
@@ -1327,13 +1327,13 @@ body, #app {
     <div class="gacha-content-wrapper">
       
       <div class="gacha-left-col">
-        <div class="ssr-image-row">
-          <span class="arrow-btn" id="ssr-left-arrow">&#x276E;</span> 
-          <img src="imgs/ssr_aeprin.png" id="ssr-character-image"> 
-          <span class="arrow-btn" id="ssr-right-arrow">&#x276F;</span>
-        </div>
-        <div id="ssr-character-name" style="color: var(--gold); font-weight: bold; font-size: 15px; text-align: center;">SSR 애프린</div>
-      </div>
+            <div class="ssr-image-row">
+              <span class="arrow-btn" id="ssr-left-arrow">&#x276E;</span> 
+              <img src="imgs/ssr_aeprin.png" id="ssr-character-image"> 
+              <span class="arrow-btn" id="ssr-right-arrow">&#x276F;</span>
+            </div>
+            <div id="ssr-character-name" style="color: var(--gold); font-weight: bold; font-size: 15px; text-align: center;">SSR 아리스</div>
+          </div>
       
      <div class="gacha-right-col">
         <div class="ticket-box" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
@@ -1373,25 +1373,25 @@ body, #app {
     <div class="rate-row">
       <div class="rate-badge badge-ssr">SSR</div>
       <div class="rate-pct">2.0%</div>
-      <div class="rate-chars">애프린, 엔비아, 구그리, 아마조네, 메타링, 테스리나, 마이소</div>
+      <div class="rate-chars">아리스, 실비아, 루나, 아이샤, 미오, 티아, 메르헨</div>
     </div>
     
     <div class="rate-row">
       <div class="rate-badge badge-sr">SR</div>
       <div class="rate-pct">7.0%</div>
-      <div class="rate-chars">티에스미, 버크샤, 애스멜, 브로디 외 8명</div>
+      <div class="rate-chars">세리아, 벨라, 엘린, 비올라 외 8명</div>
     </div>
     
     <div class="rate-row">
       <div class="rate-badge badge-r">R</div>
       <div class="rate-pct">21.0%</div>
-      <div class="rate-chars">디즈닝, 네이키, 맥도나, 아도비 외 21명</div>
+      <div class="rate-chars">디아나, 나나, 마코, 아멜리아 외 21명</div>
     </div>
     
     <div class="rate-row">
       <div class="rate-badge badge-n">N</div>
       <div class="rate-pct">70.0%</div>
-      <div class="rate-chars">네프리, 뱅아, 웰스, 모가니, 아멕시 외 45명</div>
+      <div class="rate-chars">노아, 베티, 위니아, 모모, 아카리 외 45명</div>
     </div>
   </div>
     <div id="g-action" style="text-align:center;padding:8px;font-size:16px;color:var(--red)"></div>
@@ -1724,7 +1724,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1.5</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1.6</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -1907,100 +1907,100 @@ function playSound(type) {
 
 // 캐릭터 이름 수정 반영
 var CHARS_DEF = {
-aapl: {name:'애프린',ticker:'AAPL',sector:'IT',price:25960,rarity:'SSR',color:'#4a90d9',unlocked:false},
-nvda: {name:'엔비아',ticker:'NVDA',sector:'반도체',price:18383,rarity:'SSR',color:'#76b900',unlocked:false},
-googl:{name:'구그리',ticker:'GOOGL',sector:'IT',price:30669,rarity:'SSR',color:'#4285f4',unlocked:false},
-msft: {name:'마이소',ticker:'MSFT',sector:'IT',price:40296,rarity:'SSR',color:'#00a4ef',unlocked:false},
-amzn: {name:'아마조네',ticker:'AMZN',sector:'IT',price:19822,rarity:'SSR',color:'#ff9900',unlocked:false},
-meta: {name:'메타링',ticker:'META',sector:'IT',price:64399,rarity:'SSR',color:'#0668e1',unlocked:false},
-tsla: {name:'테스리나',ticker:'TSLA',sector:'제조',price:41593,rarity:'SSR',color:'#e31937',unlocked:false},
-tsm:  {name:'티에스미',ticker:'TSM',sector:'반도체',price:36794,rarity:'SR',color:'#0070ad',unlocked:false},
-brk:  {name:'버크샤',ticker:'BRK.B',sector:'금융',price:49709,rarity:'SR',color:'#4a3000',unlocked:false},
-asml: {name:'애스멜',ticker:'ASML',sector:'반도체',price:142639,rarity:'SR',color:'#0055a5',unlocked:false},
-avgo: {name:'브로디',ticker:'AVGO',sector:'반도체',price:32880,rarity:'SR',color:'#cc0000',unlocked:false},
-jpm:  {name:'제이피',ticker:'JPM',sector:'금융',price:30217,rarity:'SR',color:'#005587',unlocked:false},
-wmt:  {name:'월마티',ticker:'WMT',sector:'소비재',price:13250,rarity:'SR',color:'#007dc6',unlocked:false},
-lly:  {name:'엘리릴리',ticker:'LLY',sector:'헬스케어',price:105611,rarity:'SR',color:'#cc0066',unlocked:false},
-v:    {name:'비자링',ticker:'V',sector:'금융',price:32093,rarity:'SR',color:'#1a1f71',unlocked:false},
-jnj:  {name:'조스조스',ticker:'JNJ',sector:'헬스케어',price:24295,rarity:'SR',color:'#cc0000',unlocked:false},
-ma:   {name:'마스니',ticker:'MA',sector:'금융',price:52448,rarity:'SR',color:'#eb001b',unlocked:false},
-xom:  {name:'엑소니',ticker:'XOM',sector:'에너지',price:14990,rarity:'SR',color:'#cc0000',unlocked:false},
-cost: {name:'코코',ticker:'COST',sector:'소비재',price:101200,rarity:'SR',color:'#005daa',unlocked:false},
-dis:  {name:'디즈닝',ticker:'DIS',sector:'소비재',price:11200,rarity:'R',color:'#1a78c2',unlocked:false},
-nke:  {name:'네이키',ticker:'NKE',sector:'소비재',price:7850,rarity:'R',color:'#ff6b00',unlocked:false},
-mcd:  {name:'맥도나',ticker:'MCD',sector:'소비재',price:31200,rarity:'R',color:'#ffc72c',unlocked:false},
-unh:  {name:'유나',ticker:'UNH',sector:'헬스케어',price:48200,rarity:'R',color:'#0070cc',unlocked:false},
-gs2:  {name:'골디',ticker:'GS',sector:'금융',price:56800,rarity:'R',color:'#7399c6',unlocked:false},
-adbe: {name:'아도비',ticker:'ADBE',sector:'IT',price:38900,rarity:'R',color:'#ff0000',unlocked:false},
-crm:  {name:'세일리',ticker:'CRM',sector:'IT',price:32400,rarity:'R',color:'#00a1e0',unlocked:false},
-qcom: {name:'퀄리',ticker:'QCOM',sector:'반도체',price:16800,rarity:'R',color:'#3253dc',unlocked:false},
-ko:   {name:'코코라',ticker:'KO',sector:'소비재',price:7837,rarity:'R',color:'#f40009',unlocked:false},
-sbux: {name:'스타바',ticker:'SBUX',sector:'소비재',price:8920,rarity:'R',color:'#00704a',unlocked:false},
-pltr: {name:'팔라티',ticker:'PLTR',sector:'IT',price:13076,rarity:'R',color:'#4a90d9',unlocked:false},
-amd:  {name:'아메다',ticker:'AMD',sector:'반도체',price:20778,rarity:'R',color:'#ed1c24',unlocked:false},
-mu:   {name:'마이코',ticker:'MU',sector:'반도체',price:40565,rarity:'R',color:'#0070c0',unlocked:false},
-arm:  {name:'아르미',ticker:'ARM',sector:'반도체',price:13800,rarity:'R',color:'#0091bd',unlocked:false},
-intc: {name:'인테리',ticker:'INTC',sector:'반도체',price:2390,rarity:'R',color:'#0068b5',unlocked:false},
-orcl: {name:'오라크라',ticker:'ORCL',sector:'IT',price:15882,rarity:'R',color:'#f80000',unlocked:false},
-ibm:  {name:'아이비',ticker:'IBM',sector:'IT',price:26800,rarity:'R',color:'#1f70c1',unlocked:false},
-csco: {name:'시스코',ticker:'CSCO',sector:'IT',price:6420,rarity:'R',color:'#1ba0d7',unlocked:false},
-now:  {name:'서비나',ticker:'NOW',sector:'IT',price:91500,rarity:'R',color:'#81b5a1',unlocked:false},
-uber: {name:'우베르',ticker:'UBER',sector:'IT',price:8100,rarity:'R',color:'#333333',unlocked:false},
-spot: {name:'포티',ticker:'SPOT',sector:'IT',price:62000,rarity:'R',color:'#1db954',unlocked:false},
-shop: {name:'쇼피',ticker:'SHOP',sector:'IT',price:10800,rarity:'R',color:'#96bf48',unlocked:false},
-coin: {name:'코베',ticker:'COIN',sector:'금융',price:24300,rarity:'R',color:'#0052ff',unlocked:false},
-hd:   {name:'디포',ticker:'HD',sector:'소비재',price:39003,rarity:'R',color:'#f96302',unlocked:false},
-nflx: {name:'네프리',ticker:'NFLX',sector:'IT',price:76500,rarity:'N',color:'#e50914',unlocked:true},
-bac:  {name:'뱅아',ticker:'BAC',sector:'금융',price:5237,rarity:'N',color:'#e31837',unlocked:false},
-wfc:  {name:'웰스',ticker:'WFC',sector:'금융',price:7800,rarity:'N',color:'#d71e28',unlocked:false},
-ms2:  {name:'모가니',ticker:'MS',sector:'금융',price:13200,rarity:'N',color:'#002b5c',unlocked:false},
-axp:  {name:'아멕시',ticker:'AXP',sector:'금융',price:29400,rarity:'N',color:'#007bc1',unlocked:false},
-schw: {name:'찰슈',ticker:'SCHW',sector:'금융',price:8900,rarity:'N',color:'#00adef',unlocked:false},
-spgi: {name:'에스피',ticker:'SPGI',sector:'금융',price:48900,rarity:'N',color:'#ee3124',unlocked:false},
-abbv: {name:'아비',ticker:'ABBV',sector:'헬스케어',price:23135,rarity:'N',color:'#071d49',unlocked:false},
-mrk:  {name:'메르카',ticker:'MRK',sector:'헬스케어',price:12192,rarity:'N',color:'#009a44',unlocked:false},
-pfe:  {name:'피파이',ticker:'PFE',sector:'헬스케어',price:2760,rarity:'N',color:'#0093d0',unlocked:false},
-tmo:  {name:'써모',ticker:'TMO',sector:'헬스케어',price:46800,rarity:'N',color:'#3f7abf',unlocked:false},
-isrg: {name:'인투',ticker:'ISRG',sector:'헬스케어',price:54200,rarity:'N',color:'#0066cc',unlocked:false},
-cvx:  {name:'셰브니',ticker:'CVX',sector:'에너지',price:18283,rarity:'R',color:'#009bde',unlocked:false},
-cop:  {name:'코노코',ticker:'COP',sector:'에너지',price:10200,rarity:'N',color:'#cc0000',unlocked:false},
-nee:  {name:'넥스트',ticker:'NEE',sector:'에너지',price:6800,rarity:'N',color:'#00a0df',unlocked:false},
-cat:  {name:'캐티',ticker:'CAT',sector:'제조',price:77400,rarity:'N',color:'#ffcd11',unlocked:false},
-ge:   {name:'지에',ticker:'GE',sector:'제조',price:32151,rarity:'N',color:'#0066cc',unlocked:false},
-ba:   {name:'보잉이',ticker:'BA',sector:'제조',price:17200,rarity:'N',color:'#1d4289',unlocked:false},
-lmt:  {name:'로키',ticker:'LMT',sector:'제조',price:45300,rarity:'N',color:'#1c639e',unlocked:false},
-rtx:  {name:'알티',ticker:'RTX',sector:'제조',price:12800,rarity:'N',color:'#00205b',unlocked:false},
-hon:  {name:'하니',ticker:'HON',sector:'제조',price:21600,rarity:'N',color:'#cc2031',unlocked:false},
-de:   {name:'디아',ticker:'DE',sector:'제조',price:44800,rarity:'N',color:'#367c2b',unlocked:false},
-tgt:  {name:'타게티',ticker:'TGT',sector:'소비재',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
-low:  {name:'로위',ticker:'LOW',sector:'소비재',price:24600,rarity:'N',color:'#004990',unlocked:false},
-pep:  {name:'페시',ticker:'PEP',sector:'소비재',price:14700,rarity:'N',color:'#004b93',unlocked:false},
-pg:   {name:'피애지',ticker:'PG',sector:'소비재',price:16055,rarity:'N',color:'#003087',unlocked:false},
-pm:   {name:'모리스',ticker:'PM',sector:'소비재',price:14500,rarity:'N',color:'#cc0000',unlocked:false},
-race: {name:'페라',ticker:'RACE',sector:'제조',price:45600,rarity:'N',color:'#cc0000',unlocked:false},
-nvo:  {name:'노보',ticker:'NVO',sector:'헬스케어',price:8200,rarity:'N',color:'#0099cc',unlocked:false},
-sap:  {name:'사피',ticker:'SAP',sector:'IT',price:26400,rarity:'N',color:'#008fd3',unlocked:false},
-app2: {name:'러빈',ticker:'APP',sector:'IT',price:32400,rarity:'N',color:'#6c3483',unlocked:false},
-oxy:  {name:'옥시',ticker:'OXY',sector:'에너지',price:4800,rarity:'N',color:'#cc0000',unlocked:false},
-mco:  {name:'무디',ticker:'MCO',sector:'금융',price:49200,rarity:'N',color:'#0056a2',unlocked:false},
-bx:   {name:'블래키',ticker:'BX',sector:'금융',price:17800,rarity:'N',color:'#333333',unlocked:false},
-txn:  {name:'티아이',ticker:'TXN',sector:'반도체',price:18900,rarity:'N',color:'#c1121f',unlocked:false},
-amat: {name:'어플리',ticker:'AMAT',sector:'반도체',price:18200,rarity:'N',color:'#0066cc',unlocked:false},
-klac: {name:'클라',ticker:'KLAC',sector:'반도체',price:82700,rarity:'N',color:'#0099cc',unlocked:false},
-mrvl: {name:'마벨',ticker:'MRVL',sector:'반도체',price:8700,rarity:'N',color:'#cc0000',unlocked:false},
-regn: {name:'리제',ticker:'REGN',sector:'헬스케어',price:62800,rarity:'N',color:'#00529b',unlocked:false},
-vrtx: {name:'버티',ticker:'VRTX',sector:'헬스케어',price:44600,rarity:'N',color:'#6c3483',unlocked:false},
-amgn: {name:'암제니',ticker:'AMGN',sector:'헬스케어',price:29100,rarity:'N',color:'#0066cc',unlocked:false},
-gild: {name:'길리',ticker:'GILD',sector:'헬스케어',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
-abt:  {name:'애보티',ticker:'ABT',sector:'헬스케어',price:13400,rarity:'N',color:'#005eb8',unlocked:false},
-ups:  {name:'유피',ticker:'UPS',sector:'제조',price:11900,rarity:'N',color:'#330000',unlocked:false},
-pypl: {name:'페이파라',ticker:'PYPL',sector:'금융',price:8700,rarity:'N',color:'#003087',unlocked:false},
-abnb: {name:'에어비',ticker:'ABNB',sector:'IT',price:13600,rarity:'N',color:'#ff5a5f',unlocked:false},
-snow: {name:'스노아',ticker:'SNOW',sector:'IT',price:19200,rarity:'N',color:'#29b5e8',unlocked:false},
-f:    {name:'포디',ticker:'F',sector:'제조',price:1000,rarity:'N',color:'#003476',unlocked:false},
-gm:   {name:'지엠',ticker:'GM',sector:'제조',price:5600,rarity:'N',color:'#0059a3',unlocked:false},
-vz:   {name:'라이자',ticker:'VZ',sector:'IT',price:4500,rarity:'N',color:'#cd040b',unlocked:false},
-t2:   {name:'에이티',ticker:'T',sector:'IT',price:2800,rarity:'N',color:'#00a8e0',unlocked:false}
+aapl: {name:'아리스',ticker:'AAPL',sector:'IT',price:25960,rarity:'SSR',color:'#4a90d9',unlocked:false},
+nvda: {name:'실비아',ticker:'NVDA',sector:'반도체',price:18383,rarity:'SSR',color:'#76b900',unlocked:false},
+googl:{name:'루나',ticker:'GOOGL',sector:'IT',price:30669,rarity:'SSR',color:'#4285f4',unlocked:false},
+msft: {name:'메르헨',ticker:'MSFT',sector:'IT',price:40296,rarity:'SSR',color:'#00a4ef',unlocked:false},
+amzn: {name:'아이샤',ticker:'AMZN',sector:'IT',price:19822,rarity:'SSR',color:'#ff9900',unlocked:false},
+meta: {name:'미오',ticker:'META',sector:'IT',price:64399,rarity:'SSR',color:'#0668e1',unlocked:false},
+tsla: {name:'티아',ticker:'TSLA',sector:'제조',price:41593,rarity:'SSR',color:'#e31937',unlocked:false},
+tsm:  {name:'세리아',ticker:'TSM',sector:'반도체',price:36794,rarity:'SR',color:'#0070ad',unlocked:false},
+brk:  {name:'벨라',ticker:'BRK.B',sector:'금융',price:49709,rarity:'SR',color:'#4a3000',unlocked:false},
+asml: {name:'엘린',ticker:'ASML',sector:'반도체',price:142639,rarity:'SR',color:'#0055a5',unlocked:false},
+avgo: {name:'비올라',ticker:'AVGO',sector:'반도체',price:32880,rarity:'SR',color:'#cc0000',unlocked:false},
+jpm:  {name:'제니스',ticker:'JPM',sector:'금융',price:30217,rarity:'SR',color:'#005587',unlocked:false},
+wmt:  {name:'윈터',ticker:'WMT',sector:'소비재',price:13250,rarity:'SR',color:'#007dc6',unlocked:false},
+lly:  {name:'리리아',ticker:'LLY',sector:'헬스케어',price:105611,rarity:'SR',color:'#cc0066',unlocked:false},
+v:    {name:'비비안',ticker:'V',sector:'금융',price:32093,rarity:'SR',color:'#1a1f71',unlocked:false},
+jnj:  {name:'클로에',ticker:'JNJ',sector:'헬스케어',price:24295,rarity:'SR',color:'#cc0000',unlocked:false},
+ma:   {name:'웬디',ticker:'MA',sector:'금융',price:52448,rarity:'SR',color:'#eb001b',unlocked:false},
+xom:  {name:'에르나',ticker:'XOM',sector:'에너지',price:14990,rarity:'SR',color:'#cc0000',unlocked:false},
+cost: {name:'코하나',ticker:'COST',sector:'소비재',price:101200,rarity:'SR',color:'#005daa',unlocked:false},
+dis:  {name:'디아나',ticker:'DIS',sector:'소비재',price:11200,rarity:'R',color:'#1a78c2',unlocked:false},
+nke:  {name:'나나',ticker:'NKE',sector:'소비재',price:7850,rarity:'R',color:'#ff6b00',unlocked:false},
+mcd:  {name:'마코',ticker:'MCD',sector:'소비재',price:31200,rarity:'R',color:'#ffc72c',unlocked:false},
+unh:  {name:'유이',ticker:'UNH',sector:'헬스케어',price:48200,rarity:'R',color:'#0070cc',unlocked:false},
+gs2:  {name:'글로리아',ticker:'GS',sector:'금융',price:56800,rarity:'R',color:'#7399c6',unlocked:false},
+adbe: {name:'아멜리아',ticker:'ADBE',sector:'IT',price:38900,rarity:'R',color:'#ff0000',unlocked:false},
+crm:  {name:'세실',ticker:'CRM',sector:'IT',price:32400,rarity:'R',color:'#00a1e0',unlocked:false},
+qcom: {name:'큐이',ticker:'QCOM',sector:'반도체',price:16800,rarity:'R',color:'#3253dc',unlocked:false},
+ko:   {name:'카렌',ticker:'KO',sector:'소비재',price:7837,rarity:'R',color:'#f40009',unlocked:false},
+sbux: {name:'스텔라',ticker:'SBUX',sector:'소비재',price:8920,rarity:'R',color:'#00704a',unlocked:false},
+pltr: {name:'피오나',ticker:'PLTR',sector:'IT',price:13076,rarity:'R',color:'#4a90d9',unlocked:false},
+amd:  {name:'아니스',ticker:'AMD',sector:'반도체',price:20778,rarity:'R',color:'#ed1c24',unlocked:false},
+mu:   {name:'미쿠',ticker:'MU',sector:'반도체',price:40565,rarity:'R',color:'#0070c0',unlocked:false},
+arm:  {name:'아이리',ticker:'ARM',sector:'반도체',price:13800,rarity:'R',color:'#0091bd',unlocked:false},
+intc: {name:'일리아',ticker:'INTC',sector:'반도체',price:2390,rarity:'R',color:'#0068b5',unlocked:false},
+orcl: {name:'오필리아',ticker:'ORCL',sector:'IT',price:15882,rarity:'R',color:'#f80000',unlocked:false},
+ibm:  {name:'이리스',ticker:'IBM',sector:'IT',price:26800,rarity:'R',color:'#1f70c1',unlocked:false},
+csco: {name:'샤를',ticker:'CSCO',sector:'IT',price:6420,rarity:'R',color:'#1ba0d7',unlocked:false},
+now:  {name:'소피아',ticker:'NOW',sector:'IT',price:91500,rarity:'R',color:'#81b5a1',unlocked:false},
+uber: {name:'유벨',ticker:'UBER',sector:'IT',price:8100,rarity:'R',color:'#333333',unlocked:false},
+spot: {name:'페넬로페',ticker:'SPOT',sector:'IT',price:62000,rarity:'R',color:'#1db954',unlocked:false},
+shop: {name:'셜리',ticker:'SHOP',sector:'IT',price:10800,rarity:'R',color:'#96bf48',unlocked:false},
+coin: {name:'코하루',ticker:'COIN',sector:'금융',price:24300,rarity:'R',color:'#0052ff',unlocked:false},
+hd:   {name:'델리아',ticker:'HD',sector:'소비재',price:39003,rarity:'R',color:'#f96302',unlocked:false},
+nflx: {name:'노아',ticker:'NFLX',sector:'IT',price:76500,rarity:'N',color:'#e50914',unlocked:true},
+bac:  {name:'베티',ticker:'BAC',sector:'금융',price:5237,rarity:'N',color:'#e31837',unlocked:false},
+wfc:  {name:'위니아',ticker:'WFC',sector:'금융',price:7800,rarity:'N',color:'#d71e28',unlocked:false},
+ms2:  {name:'모모',ticker:'MS',sector:'금융',price:13200,rarity:'N',color:'#002b5c',unlocked:false},
+axp:  {name:'아카리',ticker:'AXP',sector:'금융',price:29400,rarity:'N',color:'#007bc1',unlocked:false},
+schw: {name:'셀린',ticker:'SCHW',sector:'금융',price:8900,rarity:'N',color:'#00adef',unlocked:false},
+spgi: {name:'에스텔',ticker:'SPGI',sector:'금융',price:48900,rarity:'N',color:'#ee3124',unlocked:false},
+abbv: {name:'아비게일',ticker:'ABBV',sector:'헬스케어',price:23135,rarity:'N',color:'#071d49',unlocked:false},
+mrk:  {name:'메리',ticker:'MRK',sector:'헬스케어',price:12192,rarity:'N',color:'#009a44',unlocked:false},
+pfe:  {name:'피피',ticker:'PFE',sector:'헬스케어',price:2760,rarity:'N',color:'#0093d0',unlocked:false},
+tmo:  {name:'세나',ticker:'TMO',sector:'헬스케어',price:46800,rarity:'N',color:'#3f7abf',unlocked:false},
+isrg: {name:'이리나',ticker:'ISRG',sector:'헬스케어',price:54200,rarity:'N',color:'#0066cc',unlocked:false},
+cvx:  {name:'셰리',ticker:'CVX',sector:'에너지',price:18283,rarity:'R',color:'#009bde',unlocked:false},
+cop:  {name:'코토네',ticker:'COP',sector:'에너지',price:10200,rarity:'N',color:'#cc0000',unlocked:false},
+nee:  {name:'네네',ticker:'NEE',sector:'에너지',price:6800,rarity:'N',color:'#00a0df',unlocked:false},
+cat:  {name:'카티아',ticker:'CAT',sector:'제조',price:77400,rarity:'N',color:'#ffcd11',unlocked:false},
+ge:   {name:'지젤',ticker:'GE',sector:'제조',price:32151,rarity:'N',color:'#0066cc',unlocked:false},
+ba:   {name:'보미',ticker:'BA',sector:'제조',price:17200,rarity:'N',color:'#1d4289',unlocked:false},
+lmt:  {name:'루비',ticker:'LMT',sector:'제조',price:45300,rarity:'N',color:'#1c639e',unlocked:false},
+rtx:  {name:'리타',ticker:'RTX',sector:'제조',price:12800,rarity:'N',color:'#00205b',unlocked:false},
+hon:  {name:'하나',ticker:'HON',sector:'제조',price:21600,rarity:'N',color:'#cc2031',unlocked:false},
+de:   {name:'다나',ticker:'DE',sector:'제조',price:44800,rarity:'N',color:'#367c2b',unlocked:false},
+tgt:  {name:'티타니아',ticker:'TGT',sector:'소비재',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
+low:  {name:'루아',ticker:'LOW',sector:'소비재',price:24600,rarity:'N',color:'#004990',unlocked:false},
+pep:  {name:'페코',ticker:'PEP',sector:'소비재',price:14700,rarity:'N',color:'#004b93',unlocked:false},
+pg:   {name:'피아',ticker:'PG',sector:'소비재',price:16055,rarity:'N',color:'#003087',unlocked:false},
+pm:   {name:'미리암',ticker:'PM',sector:'소비재',price:14500,rarity:'N',color:'#cc0000',unlocked:false},
+race: {name:'플로라',ticker:'RACE',sector:'제조',price:45600,rarity:'N',color:'#cc0000',unlocked:false},
+nvo:  {name:'노엘',ticker:'NVO',sector:'헬스케어',price:8200,rarity:'N',color:'#0099cc',unlocked:false},
+sap:  {name:'사야',ticker:'SAP',sector:'IT',price:26400,rarity:'N',color:'#008fd3',unlocked:false},
+app2: {name:'로라',ticker:'APP',sector:'IT',price:32400,rarity:'N',color:'#6c3483',unlocked:false},
+oxy:  {name:'오를리',ticker:'OXY',sector:'에너지',price:4800,rarity:'N',color:'#cc0000',unlocked:false},
+mco:  {name:'미디아',ticker:'MCO',sector:'금융',price:49200,rarity:'N',color:'#0056a2',unlocked:false},
+bx:   {name:'비앙카',ticker:'BX',sector:'금융',price:17800,rarity:'N',color:'#333333',unlocked:false},
+txn:  {name:'티오',ticker:'TXN',sector:'반도체',price:18900,rarity:'N',color:'#c1121f',unlocked:false},
+amat: {name:'앨리스',ticker:'AMAT',sector:'반도체',price:18200,rarity:'N',color:'#0066cc',unlocked:false},
+klac: {name:'클라라',ticker:'KLAC',sector:'반도체',price:82700,rarity:'N',color:'#0099cc',unlocked:false},
+mrvl: {name:'마리아',ticker:'MRVL',sector:'반도체',price:8700,rarity:'N',color:'#cc0000',unlocked:false},
+regn: {name:'리네아',ticker:'REGN',sector:'헬스케어',price:62800,rarity:'N',color:'#00529b',unlocked:false},
+vrtx: {name:'베로니카',ticker:'VRTX',sector:'헬스케어',price:44600,rarity:'N',color:'#6c3483',unlocked:false},
+amgn: {name:'안나',ticker:'AMGN',sector:'헬스케어',price:29100,rarity:'N',color:'#0066cc',unlocked:false},
+gild: {name:'가넷',ticker:'GILD',sector:'헬스케어',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
+abt:  {name:'에바',ticker:'ABT',sector:'헬스케어',price:13400,rarity:'N',color:'#005eb8',unlocked:false},
+ups:  {name:'유즈',ticker:'UPS',sector:'제조',price:11900,rarity:'N',color:'#330000',unlocked:false},
+pypl: {name:'파르페',ticker:'PYPL',sector:'금융',price:8700,rarity:'N',color:'#003087',unlocked:false},
+abnb: {name:'에이미',ticker:'ABNB',sector:'IT',price:13600,rarity:'N',color:'#ff5a5f',unlocked:false},
+snow: {name:'시논',ticker:'SNOW',sector:'IT',price:19200,rarity:'N',color:'#29b5e8',unlocked:false},
+f:    {name:'폴라',ticker:'F',sector:'제조',price:1000,rarity:'N',color:'#003476',unlocked:false},
+gm:   {name:'젬마',ticker:'GM',sector:'제조',price:5600,rarity:'N',color:'#0059a3',unlocked:false},
+vz:   {name:'라일라',ticker:'VZ',sector:'IT',price:4500,rarity:'N',color:'#cd040b',unlocked:false},
+t2:   {name:'에일린',ticker:'T',sector:'IT',price:2800,rarity:'N',color:'#00a8e0',unlocked:false}
 };
 
 var SECTOR_COLORS = {
@@ -2299,10 +2299,10 @@ var TUT = {
     { type: 'action', target: '.nav-btn[data-screen="market"]', action: 'switch_market', text: '이제 하단의 [거래소] 탭을 눌러 주식 시장으로 이동해봐요!' },
     { type: 'dialog', text: '가상의 주식 시장이에요. 주가는 5초마다 실시간으로 변동하며, AI 붐, 금융주 강세, 시장 대폭락 같은 테마장이 랜덤하게 발생해요.' },
     { type: 'dialog', text: '또한 하단에 뜨는 속보나 실적 발표 뉴스에 따라 주가가 크게 요동치니 뉴스를 잘 확인하세요.' },
-    { type: 'action', target: '.stock-btn.buy[data-key="nflx"]', action: 'buy_nflx', text: '그럼 거래소 목록에 있는 \'네프리\'의 [매수] 버튼을 눌러 직접 1주를 사볼까요?' },
-    { type: 'action', target: '.nav-btn[data-screen="portfolio"]', action: 'switch_portfolio', text: '매수한 주식을 확인하기 위해 하단의 [포트폴리오] 탭을 눌러 이동해보세요!' },
-    { type: 'dialog', text: '이곳에선 매수한 주식의 평균 단가와 수익률 등 보유 현황을 한눈에 볼 수 있어요.' },
-    { type: 'action', target: '.port-card[data-key="nflx"]', action: 'open_detail', text: '방금 매수한 \'네프리\' 종목 카드를 눌러 상세 정보를 확인해 볼까요?' },
+        { type: 'action', target: '.stock-btn.buy[data-key="nflx"]', action: 'buy_nflx', text: '그럼 거래소 목록에 있는 \'노아\'의 [매수] 버튼을 눌러 직접 1주를 사볼까요?' },
+        { type: 'action', target: '.nav-btn[data-screen="portfolio"]', action: 'switch_portfolio', text: '매수한 주식을 확인하기 위해 하단의 [포트폴리오] 탭을 눌러 이동해보세요!' },
+        { type: 'dialog', text: '이곳에선 매수한 주식의 평균 단가와 수익률 등 보유 현황을 한눈에 볼 수 있어요.' },
+        { type: 'action', target: '.port-card[data-key="nflx"]', action: 'open_detail', text: '방금 매수한 \'노아\' 종목 카드를 눌러 상세 정보를 확인해 볼까요?' },
     { type: 'dialog', text: '한 종목을 많이 사서 목표 금액에 도달하면 경영권을 얻어요. 경영권을 따내면 그 종목의 터치 수익이 2배, 배당금이 1.5배로 영구 상승해요.' },
     { type: 'dialog', text: '배당금은 주식을 가지고만 있어도 1분마다 들어와요. 여러 섹터에 골고루 분산 투자하면 배당금을 최대 1.5배 더 받을 수 있어요.' },
     { type: 'action', target: '#stock-detail-modal .modal-close', action: 'close_detail', text: '확인하셨다면 우측 상단의 [✖ 닫기] 버튼을 눌러 창을 닫아주세요.' },
@@ -5315,13 +5315,13 @@ function closeStockDetail() {
 }
 // --- 가챠 화면 SSR 슬라이드쇼 ---
 var ssrShowcaseList = [
-  { name: 'SSR 애프린', img: 'imgs/ssr_aeprin.png' },
-  { name: 'SSR 엔비아', img: 'imgs/ssr_envia.png' },
-  { name: 'SSR 구그리', img: 'imgs/ssr_googri.png' },
-  { name: 'SSR 아마조네', img: 'imgs/ssr_amazone.png' },
-  { name: 'SSR 메타링', img: 'imgs/ssr_metaling.png' },
-  { name: 'SSR 테스리나', img: 'imgs/ssr_tesrina.png' },
-  { name: 'SSR 마이소', img: 'imgs/ssr_myso.png' }
+  { name: 'SSR 아리스', img: 'imgs/ssr_aeprin.png' },
+  { name: 'SSR 실비아', img: 'imgs/ssr_envia.png' },
+  { name: 'SSR 루나', img: 'imgs/ssr_googri.png' },
+  { name: 'SSR 아이샤', img: 'imgs/ssr_amazone.png' },
+  { name: 'SSR 미오', img: 'imgs/ssr_metaling.png' },
+  { name: 'SSR 티아', img: 'imgs/ssr_tesrina.png' },
+  { name: 'SSR 메르헨', img: 'imgs/ssr_myso.png' }
 ];
 var currentSsrIdx = 0;
 var ssrAutoTimer = null; 
