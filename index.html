@@ -1473,7 +1473,7 @@ body, #app {
     <div style="font-size:15px; color:#ccc; margin-bottom:20px; text-align:center; line-height:1.6;">
         화면을 터치해 점프하세요 (최대 2단 점프)<br>
         <span style="color:var(--blue);">파란색 하락선</span>을 밟으면 즉시 게임 종료!<br>
-        1000m당 스카웃 티켓 1장 획득
+        1000m당 스카웃 티켓 1장 획득 (판당 최대 5장)
     </div>
 
     <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:16px; font-size:20px; color:white; font-weight:bold; font-family:'Jua', sans-serif;">게임 시작</button>
@@ -4519,15 +4519,23 @@ function endMg() {
     isNewBest = true;
   }
 
-  // 티켓 보상 로직 추가 (1,000m당 1장)
+  // 💡 티켓 보상 로직 추가 (1,000m당 1장, 최대 5장 제한)
   var earnedTickets = Math.floor(mg.score / 1000);
+  var isCapped = false;
+  
+  if (earnedTickets > 5) {
+    earnedTickets = 5;
+    isCapped = true; // 최대치에 도달했음을 기록
+  }
+  
   if (earnedTickets > 0) {
     GS.tickets += earnedTickets;
   }
 
   var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm<br>';
   if (earnedTickets > 0) {
-    finalHtml += '<span style="color:var(--purple); font-weight:bold; font-size:16px; margin-top:6px; display:flex; justify-content:center; align-items:center; gap:4px;"> <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px;"> ' + earnedTickets + '장 획득!</span>';
+    var capText = isCapped ? ' <span style="font-size:12px; color:#aaa; margin-left:4px;">(최대치)</span>' : '';
+    finalHtml += '<span style="color:var(--purple); font-weight:bold; font-size:16px; margin-top:6px; display:flex; justify-content:center; align-items:center; gap:4px;"> <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px;"> ' + earnedTickets + '장 획득!' + capText + '</span>';
   }
   finalHtml += (isNewBest ? '<span style="color:var(--gold); font-weight:bold; margin-top:8px; display:block;"> 최고 기록 경신! </span>' : '<span style="color:#aaa; font-size:14px; margin-top:8px; display:block;">최고 기록: ' + Math.floor(GS.mg_highscore) + 'm</span>');
   
@@ -4537,10 +4545,11 @@ function endMg() {
   save(); 
 }
 
-// 기존 function updateMg() { ... } 를 아래 코드로 전체 교체하세요.
 function updateMg(ts) {
-  if (mg.score > 500 && mg.score <= 5000) {
-    mg.baseSpeed += 0.0015 * ts; 
+  if (mg.score > 500) {
+    if (mg.baseSpeed < 18.0) { 
+      mg.baseSpeed += 0.0025 * ts; 
+    }
   }
   mg.speed = mg.baseSpeed;
   
@@ -4651,6 +4660,7 @@ function updateMg(ts) {
     endMg(); 
   }
 }
+
 function drawMg() {
   // 💡 무거운 그라데이션을 1초에 60번씩 생성하지 않고, 한 번만 만들어서 저장(캐싱)해둠!
   if (!mg.bgGradient) {
