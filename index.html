@@ -3051,7 +3051,7 @@ function tick(silent) {
     var ch = GS.chars[k];
     if (ch.earningCooldown > 0) ch.earningCooldown--;
     if (ch.energy < ch.max_energy) {
-      var regenPct = 0.01
+      var regenPct = 0.015
       var regenAmount = ch.max_energy * regenPct;
       ch.energy = Math.min(ch.max_energy, ch.energy + regenAmount);
       if (ch.energy > ch.max_energy - 1) ch.energy = ch.max_energy; else ch.energy = Math.round(ch.energy);
