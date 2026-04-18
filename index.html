@@ -3047,17 +3047,13 @@ function tick(silent) {
     if (GS.earningPending.waitTicks <= 0) { fireEarning(GS.earningPending, silent); GS.earningPending = null; }
   }
 
-  Object.keys(GS.chars).forEach(function(k) {
-    var ch = GS.chars[k];
-    if (ch.earningCooldown > 0) ch.earningCooldown--;
-    if (ch.energy < ch.max_energy) {
-      // 💡 기본 1.25%(0.0125), 레벨당 0.125%(0.00125) 회복으로 속도를 늦췄습니다.
-      var regenPct = 0.0125 + (ch.level * 0.00125); 
+  if (ch.energy < ch.max_energy) {
+      // 💡 레벨에 상관없이 고정적으로 최대 체력의 1.25%씩 회복합니다.
+      var regenPct = 0.0125; 
       var regenAmount = ch.max_energy * regenPct;
       ch.energy = Math.min(ch.max_energy, ch.energy + regenAmount);
       if (ch.energy > ch.max_energy - 1) ch.energy = ch.max_energy; else ch.energy = Math.round(ch.energy);
     }
-  });
 
   if (GS.inCrash) {
     GS.newsLinkKey = null; GS.currentNews = '⚡ 시장 대폭락 진행 중';
