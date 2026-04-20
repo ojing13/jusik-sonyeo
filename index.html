@@ -3912,53 +3912,68 @@ frameEl.style.border = '1px solid rgba(255, 255, 255, 0.1)';
   document.getElementById('dividend-bar').textContent = '다음 배당까지 ' + GS.dividendTimer + '틱 (' + (GS.dividendTimer * 5) + '초) | 유효섹터: ' + validSectors + '개' + bonusTxt;
 }
 
-function drawChangeGraph(canvas, tickHistory, compact) {
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var hist = tickHistory;
-  if (!hist || hist.length < 2) hist = [0,0];
+function drawChangeGraph(canvas, tickHistory, currentPrice, compact) {
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var hist = tickHistory;
+  if (!hist || hist.length < 2) hist = [0, 0];
 
-  var dpr = window.devicePixelRatio || 1;
-  var w = canvas.offsetWidth, h = canvas.offsetHeight;
-  if (w === 0 || h === 0) return;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, w, h);
+  var prices = new Array(hist.length);
+  prices[prices.length - 1] = currentPrice;
+  for (var i = hist.length - 2; i >= 0; i--) {
+    var changeRate = hist[i + 1] / 100;
+    prices[i] = prices[i + 1] / (1 + changeRate);
+  }
 
-  var pad = compact ? 3 : 8;
-  var last = hist[hist.length-1];
-  var isUp = last >= 0;
-  var col = isUp ? '#ff4455' : '#4477ff';
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.offsetWidth, h = canvas.offsetHeight;
+  if (w === 0 || h === 0) return;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
 
-  var mn = Math.min.apply(null, hist.concat([0])) - 0.5;
-  var mx = Math.max.apply(null, hist.concat([0])) + 0.5;
-  var range = mx - mn || 1;
-  var zeroY = h - pad - ((0 - mn) / range) * (h - pad*2);
+  var pad = compact ? 3 : 8;
+  var minP = Math.min.apply(null, prices);
+  var maxP = Math.max.apply(null, prices);
+  
+  if (maxP === minP) {
+    maxP = currentPrice * 1.01;
+    minP = currentPrice * 0.99;
+  }
+  var range = maxP - minP;
 
-  ctx.strokeStyle = '#444455'; ctx.lineWidth = 1; ctx.setLineDash([2,2]);
-  ctx.beginPath(); ctx.moveTo(pad, zeroY); ctx.lineTo(w-pad, zeroY); ctx.stroke();
-  ctx.setLineDash([]);
+  var lastTick = hist[hist.length - 1];
+  var col = lastTick >= 0 ? '#ff4455' : '#4477ff';
 
-  ctx.beginPath();
-  hist.forEach(function(p, i) {
-    var x = pad + (i / (hist.length-1)) * (w - pad*2);
-    var y = h - pad - ((p - mn) / range) * (h - pad*2);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  });
-  var lx = pad + (w - pad*2);
-  var ly = h - pad - ((last - mn) / range) * (h - pad*2);
-  ctx.strokeStyle = col; ctx.lineWidth = compact ? 1.5 : 2; ctx.stroke();
+  var startY = h - pad - ((prices[0] - minP) / range) * (h - pad * 2);
+  ctx.strokeStyle = '#444455'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+  ctx.beginPath(); ctx.moveTo(pad, startY); ctx.lineTo(w - pad, startY); ctx.stroke();
+  ctx.setLineDash([]);
 
-  ctx.fillStyle = col;
-  ctx.beginPath(); ctx.arc(lx, ly, compact ? 2 : 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  prices.forEach(function(p, i) {
+    var x = pad + (i / (prices.length - 1)) * (w - pad * 2);
+    var y = h - pad - ((p - minP) / range) * (h - pad * 2);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  
+  ctx.strokeStyle = col; ctx.lineWidth = compact ? 1.5 : 2; ctx.stroke();
 
-  if (!compact) {
-    ctx.textAlign = 'right'; ctx.font = 'bold 11px sans-serif';
-    ctx.fillText((last >= 0 ? '+' : '') + last.toFixed(2) + '%', w - pad, pad + 12);
-  }
+  var lx = pad + (w - pad * 2);
+  var ly = h - pad - ((prices[prices.length - 1] - minP) / range) * (h - pad * 2);
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(lx, ly, compact ? 2 : 3, 0, Math.PI * 2); ctx.fill();
+
+  if (!compact) {
+    ctx.textAlign = 'right'; ctx.font = 'bold 11px sans-serif';
+    ctx.fillText((lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%', w - pad, pad + 12);
+  }
 }
 
-function drawGraph() { drawChangeGraph(document.getElementById('graph-canvas'), GS.chars[GS.mainChar].tick_history, false); }
+function drawGraph() {
+  var ch = GS.chars[GS.mainChar];
+  drawChangeGraph(document.getElementById('graph-canvas'), ch.tick_history, ch.price, false);
+}
 
 function renderGacha() {
   document.getElementById('g-ticket-count').textContent = GS.tickets + '장';
@@ -4053,12 +4068,12 @@ div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></d
     if (!btn) return; trade(btn.dataset.key, btn.dataset.buy === '1');
   };
   requestAnimationFrame(function() {
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (!ch.unlocked || ch.sector !== marketTab) return;
-      drawChangeGraph(document.getElementById('mc-' + k), ch.tick_history, true);
-    });
-  });
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (!ch.unlocked || ch.sector !== marketTab) return;
+      drawChangeGraph(document.getElementById('mc-' + k), ch.tick_history, ch.price, true);
+    });
+  });
 }
 
 function renderMarket() {
