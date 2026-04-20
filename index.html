@@ -1725,7 +1725,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1.8</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1.9</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -2751,23 +2751,36 @@ function fmoney(v) {
   return Math.floor(Math.abs(v)).toLocaleString();
 }
 
-// 돈을 예쁘고 안전하게 보여주는 하이브리드 마법 (1조 기준!)
+// 돈을 완벽하게 한국어 단위로 읽어주는 마법! (1억 미만은 그대로, 1억 이상은 예: 1억 2,500만)
 function fcomma(v) {
-  // 💡 1조(1,000,000,000,000) 미만일 때는 1원 단위까지 쉼표를 찍어줍니다.
-  if (v < 1000000000000) { 
-    return Math.floor(v).toLocaleString();
+  var isNegative = v < 0;
+  var absV = Math.floor(Math.abs(v));
+
+  // 💡 1억 미만(100,000,000)은 1원 단위까지 쉼표만 찍어서 반환 (예: 99,999,999)
+  if (absV < 100000000) {
+    return (isNegative ? "-" : "") + absV.toLocaleString();
   }
 
-  // 💡 1조 이상부터는 '조, 경, 해...' 단위로 요약합니다!
   var units = ["", "만", "억", "조", "경", "해", "자", "양", "구", "간", "정", "재", "극"];
-  var unitIndex = Math.floor(Math.log10(v) / 4);
-  
+  var unitIndex = Math.floor(Math.log10(absV) / 4);
+
   if (unitIndex >= units.length) {
     unitIndex = units.length - 1; 
   }
 
-  var unitValue = v / Math.pow(10000, unitIndex);
-  return unitValue.toFixed(2) + units[unitIndex]; 
+  // 제일 큰 단위 추출 (예: 1억 2500만 -> 1)
+  var majorValue = Math.floor(absV / Math.pow(10000, unitIndex));
+  // 두 번째로 큰 단위 추출 (예: 1억 2500만 -> 2500)
+  var minorValue = Math.floor(absV / Math.pow(10000, unitIndex - 1)) % 10000;
+
+  var result = majorValue.toLocaleString() + units[unitIndex];
+
+  // 두 번째 단위가 0이 아니면 이어서 붙여줌
+  if (minorValue > 0 && unitIndex > 0) {
+    result += " " + minorValue.toLocaleString() + units[unitIndex - 1];
+  }
+
+  return (isNegative ? "-" : "") + result;
 }
 
 function fshare(v) {
