@@ -455,7 +455,6 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
   padding: 6px 18px; /* 글자 주변 여백을 살짝 다듬었어요 */
   border-radius: 20px;
   font-size: 13px;
-  font-weight: bold;
   width: fit-content;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
@@ -779,8 +778,7 @@ nav, .nav,
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 #ssr-character-name {
-  color: var(--gold); 
-  font-weight: bold; 
+  color: var(--gold);  
   font-size: 15px; 
   text-align: center;
 }
@@ -841,7 +839,7 @@ nav, .nav,
 
 .rate-badge {
   width: 32px; text-align: center; padding: 2px 0; 
-  border-radius: 4px; font-size: 10px; font-weight: bold;
+  border-radius: 4px; font-size: 10px;
   margin-right: 8px; flex-shrink: 0;
   border: 1px solid transparent;
 }
@@ -870,7 +868,6 @@ nav, .nav,
   padding: 2px 4px 1px; /* 폰트 특유의 미세한 위아래 여백 차이를 픽셀 단위로 보정 (상, 좌우, 하) */
   border-radius: 4px;
   font-size: 9px; 
-  font-weight: bold; 
   line-height: 1; /* 보이지 않는 불필요한 줄간격(여백) 싹 제거 */
   vertical-align: middle;
 }
@@ -1121,7 +1118,7 @@ body, #app {
   text-align: center; 
   background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.9) 100%); /* 반투명 단색 -> 그라데이션 변경 */
   border-radius: 0 0 6px 6px; z-index: 3;
-} .dict-name { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; color: #fff;} .dict-level { font-size: 10px; color: var(--accent); } .dict-card.locked .dict-name { color: #888; } .dict-locked-text { font-size: 10px; color: #666; margin-top: 2px; } /* 💡 뱃지 및 왕관 가독성 향상 */ .dict-card .neon-badge { position: absolute; top: 4px; left: 4px; z-index: 4; background: rgba(0, 0, 0, 0.85) !important; padding: 2px 4px !important; font-size: 9px !important; border-radius: 4px !important; } .dict-vip-crown { position: absolute; top: 0px; right: 0px; width: 22px; height: 22px; z-index: 5; }
+} .dict-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; color: #fff;} .dict-level { font-size: 10px; color: var(--accent); } .dict-card.locked .dict-name { color: #888; } .dict-locked-text { font-size: 10px; color: #666; margin-top: 2px; } /* 💡 뱃지 및 왕관 가독성 향상 */ .dict-card .neon-badge { position: absolute; top: 4px; left: 4px; z-index: 4; background: rgba(0, 0, 0, 0.85) !important; padding: 2px 4px !important; font-size: 9px !important; border-radius: 4px !important; } .dict-vip-crown { position: absolute; top: 0px; right: 0px; width: 22px; height: 22px; z-index: 5; }
 /* 💡 발열 구조대: 폰의 GPU를 혹사시키는 유리창(블러) 효과 전면 금지! */
 .home-header, .market-header, .port-header, .gacha-header,
 .sector-tabs, .stock-card, .port-card, .stock-locked, .port-locked,
@@ -1138,7 +1135,6 @@ body, #app {
   border-radius: 12px;
   color: #f2d9ff;
   font-size: 15px;
-  font-weight: bold;
   font-family: 'Jua', sans-serif;
   cursor: pointer;
   display: flex !important;
@@ -1206,7 +1202,7 @@ body, #app {
   top: 0; bottom: 0;
   display: flex; align-items: center;
   color: rgba(255, 204, 68, 0.95);
-  font-size: 16px; font-weight: bold;
+  font-size: 16px;
   pointer-events: none; /* 터치 방해 금지 */
   z-index: 20;
   transition: opacity 0.2s ease;
@@ -1264,7 +1260,6 @@ body, #app {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
-  font-weight: bold;
   pointer-events: none;
   transform: translateX(-50%);
   white-space: nowrap;
@@ -1302,7 +1297,6 @@ body, #app {
 }
 .chart-info-val {
   font-size: 14px;
-  font-weight: bold;
 }
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1412,7 +1406,7 @@ body, #app {
               <img src="imgs/ssr_aeprin.png" id="ssr-character-image"> 
               <span class="arrow-btn" id="ssr-right-arrow">&#x276F;</span>
             </div>
-            <div id="ssr-character-name" style="color: var(--gold); font-weight: bold; font-size: 15px; text-align: center;">SSR 아리스</div>
+            <div id="ssr-character-name" style="color: var(--gold); font-size: 15px; text-align: center;">SSR 아리스</div>
           </div>
       
      <div class="gacha-right-col">
@@ -1804,7 +1798,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.0</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.1</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -4277,7 +4271,7 @@ function renderMarketList() {
     div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
     div.id = 'stock-card-' + k;
 
-    var holdHtml = '<div class="stock-hold" style="color:#666677">미보유</div>';
+    var holdHtml = '<div class="stock-hold" style="color:#666677; font-size:16px;">미보유</div>';
     if (ch.owned > 0) {
       var val = ch.price * ch.owned;
       var tax = Math.floor(val * 0.01);
@@ -4287,7 +4281,7 @@ function renderMarketList() {
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
       
       // 💡 거래소 보유 주식 수익률 색상: 상승=초록, 하락=빨강
-      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
+      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + '; font-size:16px;">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
     }
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
@@ -4297,25 +4291,25 @@ function renderMarketList() {
     + '<div class="stock-card-inner" style="padding:11px 11px 11px 16px;">'
 
     // 1행: 종목명
-    + '<div style="display:flex; align-items:center; gap:5px; font-size:19px; font-weight:bold; margin-bottom:6px;">'
-    +   (ch.is_vip ? '<img src="imgs/crown.png" style="width:18px;height:18px;object-fit:contain;">' : '')
+    + '<div style="display:flex; align-items:center; gap:5px; font-size:17px; margin-bottom:6px;">'
+    +   (ch.is_vip ? '<img src="imgs/crown.png" style="width:16px;height:16px;object-fit:contain;">' : '')
     +   ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
     + '</div>'
 
     // 2행: 차트 + 버튼
     + '<div style="display:flex; justify-content:space-between; align-items:stretch; gap:8px; margin-bottom:7px;">'
-    +   '<div style="height:40px; width:210px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
+    +   '<div style="height:36px; width:210px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
     +   '<div style="display:flex; gap:5px; flex-shrink:0; align-items:center;">'
-    +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:40px; width:66px; font-size:15px; padding:0; border-radius:8px;">매수</button>'
-    +     '<button class="stock-btn sell" data-key="' + k + '" data-buy="0" style="height:40px; width:66px; font-size:15px; padding:0; border-radius:8px;">매도</button>'
+    +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매수</button>'
+    +     '<button class="stock-btn sell" data-key="' + k + '" data-buy="0" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매도</button>'
     +   '</div>'
     + '</div>'
 
     // 3행: 현재가 + 등락률 나란히 + 보유현황
     + '<div style="display:flex; align-items:baseline; gap:8px;">'
-    +   '<span style="font-size:16px; color:#eeeeee; font-weight:bold;">' + fcomma(ch.price) + '원</span>'
+    +   '<span style="font-size:14px; color:#eeeeee; font-weight:bold;">' + fcomma(ch.price) + '원</span>'
     +   '<span style="font-size:14px; font-weight:bold; color:' + (chg ? '#44ee77' : '#ff4455') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
-    +   '<span style="margin-left:auto;">' + holdHtml.replace('<div class="stock-hold"', '<span').replace('</div>', '</span>') + '</span>'
+    +   '<span style="margin-left:auto; font-size:14px;">' + holdHtml.replace('<div class="stock-hold"', '<span').replace('</div>', '</span>') + '</span>'
     + '</div>'
 
     + '</div>';
