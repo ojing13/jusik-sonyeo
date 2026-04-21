@@ -152,12 +152,41 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .home-pity { font-size:12px; color:#9966cc; text-align:right; margin-top:1px; }
 .toast-item {
   display:flex; align-items:center; justify-content:space-between;
-  padding:9px 14px; font-size:15px;
+  padding:10px 14px 15px 14px; /* 아래쪽 여백을 조금 늘려서 핸들 공간 확보 */
+  font-size:15px;
   background:rgba(18,18,30,0.96); border:1px solid #3a3a4a; border-radius:10px;
   pointer-events:all;
   word-break:keep-all; line-height:1.4;
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   animation: toastIn 0.2s ease forwards;
+  
+  /* 💡 스와이프 기능을 위한 추가 속성 */
+  position: relative;
+  touch-action: none; /* 스와이프 시 뒷배경이 같이 스크롤되는 것 방지 */
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+}
+
+/* 드래그 중에는 애니메이션을 꺼서 손가락에 딜레이 없이 쫀득하게 달라붙게 함 */
+.toast-item.dragging {
+  transition: none; 
+}
+
+/* 💡 직관적인 터치 유도: 숨쉬듯 반짝이는 하단 손잡이(Handle) */
+.toast-swipe-handle {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  pointer-events: none;
+  animation: handlePulse 2s infinite; /* 스르륵 반짝이는 애니메이션 */
+}
+@keyframes handlePulse {
+  0%, 100% { opacity: 0.5; width: 32px; }
+  50% { opacity: 1; width: 44px; background: rgba(255, 255, 255, 0.5); }
 }
 @keyframes toastIn {
   from { opacity:0; transform:translateY(8px); }
@@ -2756,30 +2785,89 @@ function showToast(msg, color, linkKey, duration, isNews, forceShow) {
   // 💡 뉴스라면 보호막 꼬리표를 달아줍니다.
   if (isNews) item.dataset.isNews = 'true';
 
-  var tx = document.createElement('span');
-  tx.className = 'toast-item-text';
-  tx.textContent = msg;
-  tx.style.color = color || '#66ff88';
-  item.appendChild(tx);
+      // 💡 알림창에 스와이프 핸들(손잡이) 추가
+      var handle = document.createElement('div');
+      handle.className = 'toast-swipe-handle';
+      item.appendChild(handle);
 
-  if (linkKey && GS.chars && GS.chars[linkKey]) {
-    var lk = document.createElement('span');
-    lk.className = 'toast-item-link';
-    lk.textContent = GS.chars[linkKey].name + ' ➔';
-    lk.onclick = (function(k){ return function(){ goToMarket(k); }; })(linkKey);
-    item.appendChild(lk);
-  }
+      var tx = document.createElement('span');
+      tx.className = 'toast-item-text';
+      tx.textContent = msg;
+      tx.style.color = color || '#66ff88';
+      item.appendChild(tx);
 
-  wrap.appendChild(item);
+      if (linkKey && GS.chars && GS.chars[linkKey]) {
+        var lk = document.createElement('span');
+        lk.className = 'toast-item-link';
+        lk.textContent = GS.chars[linkKey].name + ' ➔';
+        lk.onclick = (function(k){ return function(){ goToMarket(k); }; })(linkKey);
+        item.appendChild(lk);
+      }
 
-  var ms = duration || 4000;
-  item._hideTimer = setTimeout(function() {
-    item.classList.add('hiding');
-    setTimeout(function() {
-      if (item.parentNode) item.parentNode.removeChild(item);
-    }, 320);
-  }, ms);
-}
+      wrap.appendChild(item);
+
+      var ms = duration || 4000;
+      
+      // 💡 타이머를 함수로 분리해서 터치 조작 시 재사용 가능하게 만듦
+      function startHideTimer(time) {
+        item._hideTimer = setTimeout(function() {
+          item.classList.add('hiding');
+          setTimeout(function() {
+            if (item.parentNode) item.parentNode.removeChild(item);
+          }, 320);
+        }, time);
+      }
+      startHideTimer(ms);
+
+      // 🚀 제스처(스와이프) 드래그 및 삭제 로직 추가
+      var startX = 0, startY = 0;
+      var currentX = 0, currentY = 0;
+      var isDragging = false;
+
+      item.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        item.classList.add('dragging');
+        clearTimeout(item._hideTimer); // 💡 손으로 잡고 있는 동안은 사라지지 않게 타이머 일시정지!
+      }, {passive: true});
+
+      item.addEventListener('touchmove', function(e) {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX - startX;
+        currentY = e.touches[0].clientY - startY;
+        
+        // 💡 위로 올리는 건 고무줄처럼 뻑뻑하게 저항감을 주고, 아래나 양옆은 부드럽게 따라오게
+        var moveY = currentY < 0 ? currentY * 0.2 : currentY; 
+        
+        item.style.transform = 'translate(' + currentX + 'px, ' + moveY + 'px)';
+        
+        // 멀어질수록 서서히 투명해지는 예쁜 디테일
+        item.style.opacity = 1 - (Math.max(Math.abs(currentX), Math.max(0, currentY)) / 150);
+      }, {passive: true});
+
+      item.addEventListener('touchend', function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        item.classList.remove('dragging');
+        
+        // 💡 좌우로 60px 이상, 혹은 아래로 40px 이상 스와이프 했을 때 "삭제" 판정!
+        if (Math.abs(currentX) > 60 || currentY > 40) {
+          item.style.transition = 'transform 0.3s ease, opacity 0.2s ease';
+          // 유저가 밀어낸 방향으로 휙! 하고 가속도 붙어 날아가며 사라짐
+          item.style.transform = 'translate(' + (currentX > 0 ? 100 : (currentX < 0 ? -100 : 0)) + 'vw, ' + (currentY > 40 ? 100 : 0) + 'px)';
+          item.style.opacity = '0';
+          setTimeout(function() {
+            if (item.parentNode) item.parentNode.removeChild(item);
+          }, 300);
+        } else {
+          // 💡 조금만 밀다가 놓으면 다시 원래 자리로 고무줄처럼 팅~ 튕겨 돌아옴
+          item.style.transform = '';
+          item.style.opacity = '';
+          startHideTimer(2000); // 놓은 후 2초 뒤에 자연스럽게 사라짐
+        }
+      }, {passive: true});
+    }
 
 function showNewsToast(msg, color, linkKey) {
   if (!GS.notiOn) return;
