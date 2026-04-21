@@ -1510,12 +1510,15 @@ body, #app {
 
 <div id="screen-market" class="screen">
   <div class="market-header">
-    <div class="market-top">
-      <span class="market-title">거래소</span>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span id="m-cash" style="font-size:15px; color:var(--gold);">0원</span>
-        <div style="position:relative;">
-          <div class="qty-btn" id="qty-btn" onclick="toggleQtyDropdown()">수량: 1주 ▼</div>
+    <div class="market-top" style="width: 100%;">
+      <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
+        <span class="market-title" style="white-space: nowrap; flex-shrink: 0;">거래소</span>
+        <button onclick="openMarketHistory()" style="background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text2); font-size:11px; padding:4px 8px; cursor:pointer; font-family:'Jua',sans-serif; white-space: nowrap; flex-shrink: 0;">시황 기록</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
+        <span id="m-cash" style="font-size:15px; color:var(--gold); white-space: nowrap; flex-shrink: 0;">0원</span>
+        <div style="position:relative; flex-shrink: 0;">
+          <div class="qty-btn" id="qty-btn" onclick="toggleQtyDropdown()" style="white-space: nowrap;">수량: 1주 ▼</div>
           <div id="qty-dropdown" class="qty-dropdown">
             <div class="qty-option" onclick="selectQty(1, '1주')">1주</div>
             <div class="qty-option" onclick="selectQty(10, '10주')">10주</div>
@@ -2392,8 +2395,36 @@ var GS = {
   // 💡 추가: 하트 광고 시청 횟수 제한용 변수
   adHeartUses: 5,
   lastAdDate: new Date().toDateString(),
-  showEventMarkers: true // 💡 차트 이벤트 마커 표시 여부
+  showEventMarkers: true, // 💡 차트 이벤트 마커 표시 여부
+  marketHistory: [] // 💡 시황 기록 배열
 };
+
+function addMarketHistory(msg, color) {
+  var d = new Date(GS.virtual_time || Date.now());
+  var hh = (d.getHours() < 10 ? '0' : '') + d.getHours();
+  var mm = (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+  var timeStr = hh + ':' + mm;
+
+  GS.marketHistory.unshift({ time: timeStr, msg: msg, color: color });
+  if (GS.marketHistory.length > 100) GS.marketHistory.pop();
+}
+
+function openMarketHistory() {
+  playSound('click');
+  var list = document.getElementById('market-history-list');
+  list.innerHTML = '';
+  
+  if (GS.marketHistory.length === 0) {
+    list.innerHTML = '<div style="text-align:center; color:#666; margin-top:20px;">기록된 시황이 없습니다.</div>';
+  } else {
+    GS.marketHistory.forEach(function(h) {
+      list.innerHTML += '<div style="margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:8px;">' +
+                        '<span style="color:#888; margin-right:6px;">[' + h.time + ']</span>' +
+                        '<span style="color:' + h.color + ';">' + h.msg + '</span></div>';
+    });
+  }
+  document.getElementById('market-history-modal').classList.add('active');
+}
 
 // --- 무결점 튜토리얼 시스템 (철통 보안 버전) ---
 var TUT = {
@@ -3035,8 +3066,9 @@ function save() {
       adTicketUses: GS.adTicketUses, 
       adHeartUses: GS.adHeartUses, 
       lastAdDate: GS.lastAdDate,     
-      chars: outChars    
-    }));
+      marketHistory: GS.marketHistory,
+      chars: outChars    
+    }));
   } catch(e) {}
 }
 
@@ -3093,10 +3125,12 @@ function load() {
     } else {
       GS.adTicketUses = 5;
       GS.adHeartUses = 5;
-    }
-    GS.lastAdDate = todayStr;
+    }
+    GS.lastAdDate = todayStr;
 
-    if (d.tradeMode !== undefined) {
+    if (d.marketHistory) GS.marketHistory = d.marketHistory;
+
+    if (d.tradeMode !== undefined) {
       GS.tradeMode = d.tradeMode;
       GS.tradeLabel = d.tradeLabel || '1주';
       tradeMode = GS.tradeMode; 
@@ -3344,21 +3378,23 @@ function tick(silent) {
   if (GS.currentTheme.target !== '없음') {
     if (Math.random() < 0.1) generateNews(silent);
   } else {
-    GS.noThemeTicks++;
-    if (GS.noThemeTicks >= 40 && Math.random() < 0.015) {
-    if (Math.random() < 0.5) {
-      GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
-      if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
-      Object.keys(GS.chars).forEach(function(k) {
+        GS.noThemeTicks++;
+        if (GS.noThemeTicks >= 60 && Math.random() < 0.005) {
+        if (Math.random() < 0.5) {
+      GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
+      if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
+      addMarketHistory('⚡ 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
+      Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
           if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
           ch._earningApplied = false; applyPriceChange(k);
       });
     } else {
-      GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
-      if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
-      Object.keys(GS.chars).forEach(function(k) {
+      GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
+      if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
+      addMarketHistory('📈 글로벌 대세 상승장 진입!', '#ff33aa');
+      Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
           if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
@@ -3368,17 +3404,18 @@ function tick(silent) {
       if (!silent) playSound('event');
       updateTotalAssets(); updateMissions(); updateDialogState();
       if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-      return;
-    }
-    var shouldTrigger = (GS.noThemeTicks >= 80) || (GS.noThemeTicks >= 35 && Math.random() < 0.05);
+      return;
+    }
+    var shouldTrigger = (GS.noThemeTicks >= 60 && Math.random() < 0.025);
   if (shouldTrigger) {
     GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
-    var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
-    var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
-    GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
-    if (!silent) showNewsToast(GS.currentNews, color, null);
-    if (!silent) playSound('event');
-  } else {
+    var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
+    var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
+    GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
+    if (!silent) showNewsToast(GS.currentNews, color, null);
+    addMarketHistory(icon + ' 「' + GS.currentTheme.name + '」 시작', color);
+    if (!silent) playSound('event');
+  } else {
       if (Math.random() < 0.06) generateNews(silent);
     }
   }
@@ -3517,12 +3554,13 @@ function scheduleEarning(silent) {
   var keys = Object.keys(GS.chars).filter(function(k){ return GS.chars[k].earningCooldown <= 0; });
   if (!keys.length) return;
   if (Math.random() < 0.05 && GS.earningSeasonTicks === 0) {
-    GS.earningSeasonTicks = 6;
-    GS.newsLinkKey = null;
-    GS.currentNews = '[어닝시즌] 돌입! 전 종목 변동성 2배!';
-    if (!silent) showNewsToast(GS.currentNews, '#ff9922', null);
-    if (!silent) playSound('event');
-  }
+    GS.earningSeasonTicks = 6;
+    GS.newsLinkKey = null;
+    GS.currentNews = '[어닝시즌] 돌입! 전 종목 변동성 2배!';
+    if (!silent) showNewsToast(GS.currentNews, '#ff9922', null);
+    addMarketHistory('📊 어닝시즌 돌입! 전 종목 변동성 2배!', '#ff9922');
+    if (!silent) playSound('event');
+  }
   var picked = keys[Math.floor(Math.random() * keys.length)];
   var beat = Math.random() < 0.52;
   GS.earningPending = { key: picked, beat: beat, waitTicks: 4 + Math.floor(Math.random() * 3) };
@@ -3545,13 +3583,13 @@ function fireEarning(pending, silent) {
     changeMin = 0.10 * seasonMult; changeMax = 0.28 * seasonMult;
     ch.ref_price = ch.ref_price * (1 + 0.10 + Math.random() * 0.10); 
     ch.latest_event = "[어닝 서프라이즈] " + label;
-    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "[실적발표] " + label, flag: 'good' });
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'good' });
   } else {
     label = EARNINGS_MISS[Math.floor(Math.random() * EARNINGS_MISS.length)];
     changeMin = -0.24 * seasonMult; changeMax = -0.08 * seasonMult;
     ch.ref_price = ch.ref_price * (1 - 0.10 - Math.random() * 0.10);
     ch.latest_event = "[어닝 쇼크] " + label;
-    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "[실적발표] " + label, flag: 'bad' });
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'bad' });
   }
 
   // 💡 실적 발표도 30개가 넘어가면 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
@@ -5415,7 +5453,8 @@ function devResetStep() {
     GS.mg_highscore = 0;
     GS.bgmOn = true; GS.sfxOn = true; GS.notiOn = true;
 
-    GS.mg_hearts = 4; 
+    GS.marketHistory = [];
+    GS.mg_hearts = 4; 
     GS.mg_last_heart_time = Date.now();
     
     if (_actionTimer) clearTimeout(_actionTimer);
@@ -6805,5 +6844,15 @@ document.addEventListener('touchcancel', function(e) {
   </div>
 </div>
 <div id="chart-tooltip" class="chart-tooltip"></div>
+
+<div id="market-history-modal" class="modal-overlay">
+  <div class="modal-content" style="max-height: 70%; display:flex; flex-direction:column; padding: 16px 20px;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('market-history-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
+    <div style="font-size:20px; color:var(--gold); margin-top: 15px; margin-bottom:12px; text-align:center;">시황 기록</div>
+    <div class="scroll-area" id="market-history-list" style="flex:1; padding-bottom:0; font-size:13px; line-height:1.6; color:#ccc;">
+      기록된 시황이 없습니다.
+    </div>
+  </div>
+</div>
 </body>
 </html>
