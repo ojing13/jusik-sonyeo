@@ -1096,8 +1096,8 @@ body, #app {
 /* 💡 알림창(토스트) 위치 및 최상단 노출 완벽 고정! */
 #toast-wrap {
   position: absolute !important;
-  /* 하단 메뉴바 위 + 아이폰 홈바(안전 영역)까지 고려해서 위치를 꽉 잡아줍니다 */
-  bottom: calc(var(--nav-h) + 10px + env(safe-area-inset-bottom, 0px)) !important;
+  /* 하단 메뉴바(var(--nav-h) + 10px) 바로 위에 딱 붙도록 쓸데없는 홈바 여백을 지웠어요! */
+  bottom: calc(var(--nav-h) + 14px) !important; 
   left: 12px !important;
   right: 12px !important;
   /* 모달창(300, 400 등)보다 무조건 높게 설정! */
