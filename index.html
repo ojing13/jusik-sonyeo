@@ -3023,7 +3023,7 @@ function save() {
         latest_event: c.latest_event,
         total_principal: c.total_principal,
         // 👇 그동안 누락되어 새로고침 시 차트와 뉴스를 리셋시키던 주범들 완벽 복구! 👇
-        events: c.events ? c.events.slice(-30) : [],
+        events: c.events ? c.events.slice() : [],
         chart_1m: c.chart_1m || [],
         chart_10m: c.chart_10m || [],
         chart_1h: c.chart_1h || [],
@@ -3533,12 +3533,12 @@ function generateNews(silent) {
   ch.latest_event = ev.label + " " + flagText; // 📝 상세창에 띄울 내용 저장!
   ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: ev.label, flag: ev.flag });
   
-  // 💡 이벤트가 30개를 넘어가면 가장 오래된 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
-  if (ch.events.length > 30) {
-    var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
-    if (delIdx !== -1) ch.events.splice(delIdx, 1);
-    else ch.events.shift();
-  }
+  // 💡 일반 뉴스/실적이 50개를 넘어가면 가장 오래된 것을 지우고, 분할/병합은 카운트에서 제외하여 무한 보존!
+  var normalEventsCount = ch.events.filter(function(e) { return e.type !== 'split' && e.type !== 'merge'; }).length;
+  if (normalEventsCount > 50) {
+    var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
+    if (delIdx !== -1) ch.events.splice(delIdx, 1);
+  }
 
   GS.newsBoost[k] = { flag: ev.flag, ticks: 4 };
   GS.newsLinkKey = k;
@@ -3596,12 +3596,12 @@ function fireEarning(pending, silent) {
     ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'bad' });
   }
 
-  // 💡 실적 발표도 30개가 넘어가면 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
-  if (ch.events.length > 30) {
-    var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
-    if (delIdx !== -1) ch.events.splice(delIdx, 1);
-    else ch.events.shift();
-  }
+  // 💡 일반 뉴스/실적이 50개를 넘어가면 가장 오래된 것을 지우고, 분할/병합은 카운트에서 제외하여 무한 보존!
+  var normalEventsCount = ch.events.filter(function(e) { return e.type !== 'split' && e.type !== 'merge'; }).length;
+  if (normalEventsCount > 50) {
+    var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
+    if (delIdx !== -1) ch.events.splice(delIdx, 1);
+  }
 
   ch.change = changeMin + Math.random() * (changeMax - changeMin);
   ch._earningApplied = true;
@@ -3617,6 +3617,7 @@ function fireEarning(pending, silent) {
   GS.newsLinkKey = null;
   GS.stickyNewsKey = pending.key;
   GS.stickyNewsTicks = 6;
+}
 
 function updateDialogState(forceUpdate) {
   var ch = GS.chars[GS.mainChar];
@@ -5393,25 +5394,37 @@ document.getElementById('reveal-card').addEventListener('click', function() {
   }
 });
 
-function showAdForHeart() {
-  // 💡 횟수 제한 체크
-  if (GS.adHeartUses <= 0) {
-    showToast("오늘 하트 충전 광고 횟수를 모두 소진했습니다.", "#ff4444", null, 3000, false, true);
-    return;
-  }
+var _isAdPlaying = false; // 💡 광클 방지용 철통 자물쇠
 
-  playSound('click');
-  showToast("광고를 불러오는 중입니다...", "#aaaaaa", null, 2000, false, true);
-  
-  // 💡 가짜 대기 시간 (실제 앱에서는 AdMob SDK의 show() 함수로 대체)
-  setTimeout(function() {
-    GS.adHeartUses--; // 💡 횟수 차감
-    GS.mg_hearts++;
-    playSound('event');
-    showToast("하트 충전 완료! (남은 횟수: " + GS.adHeartUses + "회)", "#ff3264", null, 3000, false, true);
-    updateMgHearts();
-    save();
-  }, 2000); // 2초 뒤 보상 지급
+function showAdForHeart() {
+  if (_isAdPlaying) return; // 💡 이미 광고가 진행 중이면 아무리 광클해도 전부 무시!
+
+  // 💡 횟수 제한 체크
+  if (GS.adHeartUses <= 0) {
+    showToast("오늘 하트 충전 광고 횟수를 모두 소진했습니다.", "#ff4444", null, 3000, false, true);
+    return;
+  }
+
+  // 💡 하트가 이미 4개(최대치)라면 광고를 볼 필요가 없도록 차단
+  if (GS.mg_hearts >= 4) {
+    showToast("하트가 이미 가득 차 있습니다!", "#ffcc44", null, 3000, false, true);
+    return;
+  }
+
+  _isAdPlaying = true; // 💡 자물쇠 잠금
+  playSound('click');
+  showToast("광고를 불러오는 중입니다...", "#aaaaaa", null, 2000, false, true);
+  
+  // 💡 가짜 대기 시간 (실제 앱에서는 AdMob SDK의 show() 함수로 대체)
+  setTimeout(function() {
+    _isAdPlaying = false; // 💡 보상 지급 시점에 자물쇠 해제
+    GS.adHeartUses--; // 횟수 차감
+    GS.mg_hearts = Math.min(4, GS.mg_hearts + 1); // 💡 최대 4개를 절대 넘지 못하게 방어!
+    playSound('event');
+    showToast("하트 충전 완료! (남은 횟수: " + GS.adHeartUses + "회)", "#ff3264", null, 3000, false, true);
+    updateMgHearts();
+    save();
+  }, 2000); // 2초 뒤 보상 지급
 }
 
 document.getElementById('mg-ad-recharge-btn').addEventListener('click', showAdForHeart);
