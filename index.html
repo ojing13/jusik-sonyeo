@@ -31,7 +31,7 @@
   --bg3: #18182a;
   --border: #2a2a3a;
   --text: #e8e8f0;
-  --text2: #888899;
+  --text2: #a5a5b8;
   --gold: #ffd700;
   --red: #ff4455;
   --blue: #4477ff;
@@ -150,11 +150,6 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .home-meta { display:flex; justify-content:space-between; align-items:flex-start; }
 .home-ticket { font-size:15px; color:var(--purple); text-align:right; }
 .home-pity { font-size:12px; color:#9966cc; text-align:right; margin-top:1px; }
-#toast-wrap {
-  position:absolute; bottom:calc(var(--nav-h) + 8px); left:12px; right:12px; z-index:90;
-  pointer-events:none;
-  display:flex; flex-direction:column; gap:5px;
-}
 .toast-item {
   display:flex; align-items:center; justify-content:space-between;
   padding:9px 14px; font-size:15px;
@@ -504,8 +499,8 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
   min-width:44px; text-align:center;
 }
 .stock-btn:active { transform:scale(0.95); opacity:0.85; }
-.stock-btn.buy { background:#cc2222; }
-.stock-btn.sell { background:#2244cc; }
+.stock-btn.buy { background:#33aa55; } /* 초록색 매수 */
+.stock-btn.sell { background:#ee3344; } /* 빨간색 매도 */
 .stock-locked {
   margin:6px 12px; border-radius:10px;
   background:#0d0d14; border:1px solid #1e1e28;
@@ -1072,9 +1067,19 @@ body, #app {
   height: calc(var(--nav-h) + 10px) !important;
 }
 
+/* 💡 알림창(토스트) 위치 및 최상단 노출 완벽 고정! */
 #toast-wrap {
-  /* 💡 팝업창도 메뉴바에 맞춰서 다시 아래로 착 붙이기! */
-  bottom: calc(var(--nav-h) + 8px) !important;
+  position: absolute !important;
+  /* 하단 메뉴바 위 + 아이폰 홈바(안전 영역)까지 고려해서 위치를 꽉 잡아줍니다 */
+  bottom: calc(var(--nav-h) + 10px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 12px !important;
+  right: 12px !important;
+  /* 모달창(300, 400 등)보다 무조건 높게 설정! */
+  z-index: 99999 !important;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 #gacha-overlay {
@@ -1234,6 +1239,71 @@ body, #app {
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(-4px); }
 }
+
+/* --- 📈 고급 차트 모달 전용 스타일 --- */
+#chart-modal .modal-content {
+  width: 95%;
+  max-width: 430px;
+  padding: 15px;
+}
+.chart-container {
+  width: 100%;
+  height: 280px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  margin: 15px 0;
+  position: relative;
+  border: 1px solid var(--border);
+}
+#advanced-chart-canvas {
+  width: 100%;
+  height: 100%;
+}
+.chart-event-tag {
+  position: absolute;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 5;
+}
+.chart-tooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--gold);
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.chart-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.chart-info-item {
+  background: var(--bg3);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.chart-info-label {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.chart-info-val {
+  font-size: 14px;
+  font-weight: bold;
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1316,7 +1386,16 @@ body, #app {
   <canvas id="graph-canvas"></canvas>
   <div id="mg-hint-text" style="display:none; position:absolute; top:6px; left:10px; font-size:11px; color:rgba(255,255,255,0.4); pointer-events:none; font-weight:bold; animation: blink-fade 3.5s infinite;"> 터치해서 미니게임</div>
 </div>
-      <div class="dividend-bar" id="dividend-bar">다음 배당까지 20틱 (60초)</div>
+      <div id="dividend-wrap" style="margin-top:14px; width: 85%; max-width: 400px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:5px; padding:0 4px;">
+          <span style="font-size:14px; color:var(--gold); font-weight:bold;">정기 배당금</span>
+          <span id="div-time-text" style="font-size:13px; color:#eeeeee;">--초 남음</span>
+        </div>
+        <div style="height:10px; background:#1a1500; border-radius:10px; border:1px solid #664400; overflow:hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);">
+          <div id="div-progress-fill" style="height:100%; background:linear-gradient(90deg, #aa7700, #ffcc44, #ffe87a); width:0%; transition:width 0.5s linear; box-shadow: 0 0 8px rgba(255,204,68,0.5);"></div>
+        </div>
+        <div id="div-bonus-text" style="font-size:11.5px; color:var(--text2); text-align:right; margin-top:5px; padding:0 4px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1337,20 +1416,20 @@ body, #app {
           </div>
       
      <div class="gacha-right-col">
+        <button class="dict-btn" onclick="playSound('click'); openDictionary('전체')">
+          <span class="dict-icon">📖</span> 캐릭터 도감
+        </button>
+        
         <div class="ticket-box" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
           <div class="ticket-label" style="display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px;">
             <img src="imgs/scout_ticket_icon.png" style="width:24px; height:24px;">보유량
           </div>
           <div class="ticket-count" id="g-ticket-count" style="font-size: 24px; margin-top: 4px; color: white;">0장</div>
         </div>
-        
-        <div class="gacha-info" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
-          <p style="font-size: 11px; line-height: 1.4; word-break: keep-all; margin: 0; color: #888899; text-align: center;">탭 100회당 +1장<br>중복 영입 시 레벨업</p>
-        </div>
 
-        <button class="dict-btn" onclick="playSound('click'); openDictionary('전체')">
-          <span class="dict-icon">📖</span> 캐릭터 도감
-        </button>
+        <div class="gacha-info" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
+          <p style="font-size: 11px; line-height: 1.4; word-break: keep-all; margin: 0; color: #888899; text-align: center;">탭 100회당 +1장<br>미니게임 1000m당 +1장<br>중복 영입 시 레벨업</p>
+        </div>
       </div>
     </div>
     <div style="display: flex; gap: 8px; margin: -18px 15px 10px 15px;">
@@ -1472,7 +1551,7 @@ body, #app {
     
     <div style="font-size:15px; color:#ccc; margin-bottom:20px; text-align:center; line-height:1.6;">
         화면을 터치해 점프하세요 (최대 2단 점프)<br>
-        <span style="color:var(--blue);">파란색 하락선</span>을 밟으면 즉시 게임 종료!<br>
+        <span style="color:var(--red);">빨간색 하락선</span>을 밟으면 즉시 게임 종료!<br>
         1000m당 스카웃 티켓 1장 획득 (판당 최대 5장)
     </div>
 
@@ -1725,7 +1804,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.1.9</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.0</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
@@ -2026,7 +2105,7 @@ function getVipReq(rarity) {
 
 var MISSIONS = [
   // [자산] 복리(로그) 성장에 맞춘 점진적 스케일업 (5M~1000T)
-  { id:'total_500m',    tab:'자산', name:'소액 투자자',      desc:'총 자산 500만원 달성',             reward:5,   target:5000000,        type:'assets' },
+  { id:'total_500m',    tab:'자산', name:'소액 투자자',      desc:'총 자산 500만원 달성',             reward:10,   target:5000000,        type:'assets' },
   { id:'total_1000m',   tab:'자산', name:'성장 투자자',      desc:'총 자산 1,000만원 달성',            reward:10,  target:10000000,       type:'assets' },
   { id:'total_5000m',   tab:'자산', name:'개인 투자자',      desc:'총 자산 5,000만원 달성',            reward:15,  target:50000000,       type:'assets' },
   { id:'total_1eok',    tab:'자산', name:'억 단위 투자자',    desc:'총 자산 1억원 달성',               reward:20,  target:100000000,      type:'assets' },
@@ -2251,9 +2330,10 @@ var SECTOR_DIALOGS = {
 };
 
 var GS = {
-  mg_hearts: 4, 
-  mg_last_heart_time: Date.now(),
-  tradeMode: 1,         // 💡 추가: 저장될 거래 수량
+  mg_hearts: 4, 
+  mg_last_heart_time: Date.now(),
+  virtual_time: Date.now(), // 💡 차트 전용 가상 시계 도입!
+  tradeMode: 1,         // 💡 추가: 저장될 거래 수량
   tradeLabel: '1주',    // 💡 추가: 저장될 거래 수량 텍스트
   money: 2000000, total_assets: 2000000, start_assets: 2000000,
   gacha_count: 0, pity_count: 0, tickets: 10,
@@ -2274,7 +2354,7 @@ var GS = {
   earningPendingToast: null,
   momentumTimer: 0,
   biasTimer: 0, // 💡 바이어스 전용 타이머 추가!
-  dividendTimer: 15, skipGachaReveal: false,
+  dividendTimer: 12, skipGachaReveal: false,
   mg_highscore: 0,
   bgmOn: true, sfxOn: true, notiOn: true,
   // 💡 추가: 일일 광고 시청 횟수 제한 기록용 변수
@@ -2626,11 +2706,14 @@ function initChars() {
     var d = CHARS_DEF[k];
     var mEn = baseMaxEn[d.rarity] || 200;
     GS.chars[k] = {
-      name: d.name, ticker: d.ticker, sector: d.sector, price: d.price,
-      rarity: d.rarity, color: d.color, unlocked: d.unlocked,
-      owned: 0, avg_price: 0, level: 1, energy: mEn, max_energy: mEn,
-      is_vip: false, change: 0, price_history: [], new_recruit_ticks: 0,
-      tick_history: [0], earningCooldown: 0,
+        name: d.name, ticker: d.ticker, sector: d.sector, price: d.price,
+        rarity: d.rarity, color: d.color, unlocked: d.unlocked,
+        owned: 0, avg_price: 0, level: 1, energy: mEn, max_energy: mEn,
+        is_vip: false, change: 0, new_recruit_ticks: 0,
+        tick_history: [0],
+        price_history: [d.price], 
+        events: [], // 💡 차트 표시용 이벤트 배열 추가
+      earningCooldown: 0,
       _earningApplied: false,
       momentum: 0,
       bias: (Math.random() * 0.006) - 0.003,
@@ -2789,7 +2872,7 @@ function fshare(v) {
 }
 
 function save() {
-  if (GS.isTutorial) return; 
+  if (GS.isTutorial) return; 
   
   try {
     GS.mg_highscore = GS.mg_highscore || 0;
@@ -2802,89 +2885,106 @@ function save() {
         unlocked: c.unlocked, price: c.price,
         momentumTimer: c.momentumTimer,
         biasTimer: c.biasTimer,
-        momentum: c.momentum, 
-        bias: c.bias,         
+        momentum: c.momentum, 
+        bias: c.bias,         
         ref_price: c.ref_price,
-        latest_event: c.latest_event, // 💡 [추가] 뉴스 기록도 일기장에 씁니다!
-        total_principal: c.total_principal, // 💡 진짜 투자 원금 저장
-        tick_history: (function() {
-          var hist = Array.isArray(c.tick_history) ? c.tick_history.slice() : [0];
-          if (c.change !== 0) hist[hist.length - 1] = parseFloat((c.change * 100).toFixed(2));
-          return hist;
+        latest_event: c.latest_event,
+        total_principal: c.total_principal,
+        // 👇 그동안 누락되어 새로고침 시 차트와 뉴스를 리셋시키던 주범들 완벽 복구! 👇
+        events: c.events ? c.events.slice(-30) : [],
+        chart_1m: c.chart_1m || [],
+        chart_10m: c.chart_10m || [],
+        chart_1h: c.chart_1h || [],
+        chart_1d: c.chart_1d || [],
+        cur_1m: c.cur_1m,
+        cur_10m: c.cur_10m,
+        cur_1h: c.cur_1h,
+        cur_1d: c.cur_1d,
+        price_history: c.price_history ? c.price_history.slice() : [c.price],
+        tick_history: (function() {
+          var hist = Array.isArray(c.tick_history) ? c.tick_history.slice() : [0];
+          if (c.change !== 0) hist[hist.length - 1] = parseFloat((c.change * 100).toFixed(2));
+          return hist;
         })()
-      };
+      };
     });
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      mg_hearts: GS.mg_hearts, 
-      mg_last_heart_time: GS.mg_last_heart_time,
+      mg_hearts: GS.mg_hearts, 
+      mg_last_heart_time: GS.mg_last_heart_time,
+      total_game_ticks: GS.total_game_ticks, // 👇 누락되어 시간을 0으로 되돌리던 마스터 시계 복구! 👇
       money: GS.money, total_assets: GS.total_assets, start_assets: GS.start_assets,
       gacha_count: GS.gacha_count, pity_count: GS.pity_count, tickets: GS.tickets,
       mainChar: GS.mainChar, tapCount: GS.tapCount, totalTaps: GS.totalTaps,
       mainCharChangedAt: GS.mainCharChangedAt, themeTimer: GS.themeTimer, noThemeTicks: GS.noThemeTicks,
       currentThemeName: GS.currentTheme.name, missions: GS.missions,
       inBull: GS.inBull, bullTicks: GS.bullTicks,
-      inCrash: GS.inCrash, crashTicks: GS.crashTicks, 
-      earningSeasonTicks: GS.earningSeasonTicks,      
-      earningPending: GS.earningPending,              
-      newsBoost: GS.newsBoost,                        
+      inCrash: GS.inCrash, crashTicks: GS.crashTicks, 
+      earningSeasonTicks: GS.earningSeasonTicks,     
+      earningPending: GS.earningPending,             
+      newsBoost: GS.newsBoost,                       
       dividendTimer: GS.dividendTimer,
       earningTimer: GS.earningTimer,
-      momentumTimer: GS.momentumTimer, 
-      biasTimer: GS.biasTimer, 
+      momentumTimer: GS.momentumTimer, 
+      biasTimer: GS.biasTimer, 
       mg_highscore: GS.mg_highscore,
-      tradeMode: GS.tradeMode,      // 💡 추가: 수량 값 저장
-      tradeLabel: GS.tradeLabel,    // 💡 추가: 수량 텍스트 저장
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
-      adTicketUses: GS.adTicketUses, 
-      adHeartUses: GS.adHeartUses,   // 💡 추가: 하트 광고 횟수 저장
-      lastAdDate: GS.lastAdDate,     
-      chars: outChars    }));
+      tradeMode: GS.tradeMode, 
+      tradeLabel: GS.tradeLabel, 
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
+      virtual_time: GS.virtual_time || Date.now(), // 💡 가상 시계 저장
+      adTicketUses: GS.adTicketUses, 
+      adHeartUses: GS.adHeartUses, 
+      lastAdDate: GS.lastAdDate,     
+      chars: outChars    
+    }));
   } catch(e) {}
 }
 
 function load() {
-  try {
-    var s = localStorage.getItem(SAVE_KEY);
-    if (!s) return;
-    var d = JSON.parse(s);
-    GS.money = (d.money !== undefined) ? d.money : GS.money;
-    GS.total_assets = (d.total_assets !== undefined) ? d.total_assets : GS.total_assets;
-    GS.start_assets = (d.start_assets !== undefined) ? d.start_assets : GS.start_assets;
-    GS.gacha_count = d.gacha_count || 0;
-    GS.pity_count = d.pity_count || 0;
-    GS.tickets = (d.tickets !== undefined) ? d.tickets : 10;
+  try {
+    var s = localStorage.getItem(SAVE_KEY);
+    if (!s) return;
+    var d = JSON.parse(s);
+    GS.money = (d.money !== undefined) ? d.money : GS.money;
+    GS.total_assets = (d.total_assets !== undefined) ? d.total_assets : GS.total_assets;
+    GS.start_assets = (d.start_assets !== undefined) ? d.start_assets : GS.start_assets;
+    GS.total_game_ticks = d.total_game_ticks || 0;
+    GS.gacha_count = d.gacha_count || 0;
+    GS.pity_count = d.pity_count || 0;
+    GS.tickets = (d.tickets !== undefined) ? d.tickets : 10;
     GS.mg_hearts = (d.mg_hearts !== undefined) ? d.mg_hearts : 4;
     GS.mg_last_heart_time = d.mg_last_heart_time || Date.now();
-    GS.mainChar = d.mainChar || 'nflx';
-    if (d.tapCount) GS.tapCount = d.tapCount;
-    if (d.totalTaps) GS.totalTaps = d.totalTaps;
-    if (d.mainCharChangedAt) GS.mainCharChangedAt = d.mainCharChangedAt;
-    if (d.themeTimer !== undefined) GS.themeTimer = d.themeTimer;
-    if (d.noThemeTicks !== undefined) GS.noThemeTicks = d.noThemeTicks;
-    if (d.currentThemeName) {
-      var found = THEMES.find(function(t){ return t.name === d.currentThemeName; });
-      if (found) GS.currentTheme = found;
-    }
-    if (d.inBull !== undefined) GS.inBull = d.inBull;
-    if (d.bullTicks !== undefined) GS.bullTicks = d.bullTicks;
-    if (d.inCrash !== undefined) GS.inCrash = d.inCrash;
-    if (d.crashTicks !== undefined) GS.crashTicks = d.crashTicks;
-    if (d.earningSeasonTicks !== undefined) GS.earningSeasonTicks = d.earningSeasonTicks;
-    if (d.earningPending !== undefined) GS.earningPending = d.earningPending;
-    if (d.newsBoost !== undefined) GS.newsBoost = d.newsBoost;
-    
-    if (d.dividendTimer !== undefined) GS.dividendTimer = d.dividendTimer;
-    if (d.earningTimer !== undefined) GS.earningTimer = d.earningTimer;
-    if (d.momentumTimer !== undefined) GS.momentumTimer = d.momentumTimer; 
-    if (d.biasTimer !== undefined) GS.biasTimer = d.biasTimer; 
-    GS.mg_highscore = d.mg_highscore || 0;
+    GS.mainChar = d.mainChar || 'nflx';
+    if (d.tapCount) GS.tapCount = d.tapCount;
+    if (d.totalTaps) GS.totalTaps = d.totalTaps;
+    if (d.mainCharChangedAt) GS.mainCharChangedAt = d.mainCharChangedAt;
+    if (d.themeTimer !== undefined) GS.themeTimer = d.themeTimer;
+    if (d.noThemeTicks !== undefined) GS.noThemeTicks = d.noThemeTicks;
+    if (d.currentThemeName) {
+      var found = THEMES.find(function(t){ return t.name === d.currentThemeName; });
+      if (found) GS.currentTheme = found;
+    }
+    if (d.inBull !== undefined) GS.inBull = d.inBull;
+    if (d.bullTicks !== undefined) GS.bullTicks = d.bullTicks;
+    if (d.inCrash !== undefined) GS.inCrash = d.inCrash;
+    if (d.crashTicks !== undefined) GS.crashTicks = d.crashTicks;
+    if (d.earningSeasonTicks !== undefined) GS.earningSeasonTicks = d.earningSeasonTicks;
+    if (d.earningPending !== undefined) GS.earningPending = d.earningPending;
+    if (d.newsBoost !== undefined) GS.newsBoost = d.newsBoost;
+    
+    if (d.dividendTimer !== undefined) GS.dividendTimer = d.dividendTimer;
+    if (d.earningTimer !== undefined) GS.earningTimer = d.earningTimer;
+    if (d.momentumTimer !== undefined) GS.momentumTimer = d.momentumTimer; 
+    if (d.biasTimer !== undefined) GS.biasTimer = d.biasTimer; 
+    GS.mg_highscore = d.mg_highscore || 0;
     GS.leftoverMs = d.leftoverMs || 0;
-    if (d.bgmOn !== undefined) GS.bgmOn = d.bgmOn;
+    if (d.bgmOn !== undefined) GS.bgmOn = d.bgmOn;
     if (d.sfxOn !== undefined) GS.sfxOn = d.sfxOn;
     if (d.notiOn !== undefined) GS.notiOn = d.notiOn;
-    if (d.lastSaveTime) GS.lastSaveTime = d.lastSaveTime;
+    if (d.lastSaveTime) GS.lastSaveTime = d.lastSaveTime;
+    if (d.virtual_time) GS.virtual_time = d.virtual_time; else GS.virtual_time = Date.now(); // 💡 가상 시계 로드
 
-    // 💡 추가: 날짜가 바뀌었으면 모든 광고 시청 횟수 리셋, 아니면 불러오기
+    // 💡 추가: 날짜가 바뀌었으면 모든 광고 시청 횟수 리셋, 아니면 불러오기
+
     var todayStr = new Date().toDateString();
     if (d.lastAdDate === todayStr) {
       GS.adTicketUses = (d.adTicketUses !== undefined) ? d.adTicketUses : 5;
@@ -2895,45 +2995,64 @@ function load() {
     }
     GS.lastAdDate = todayStr;
 
-    // 💡 추가: 수량 데이터가 있으면 불러오기
     if (d.tradeMode !== undefined) {
       GS.tradeMode = d.tradeMode;
       GS.tradeLabel = d.tradeLabel || '1주';
-      tradeMode = GS.tradeMode; // 글로벌 변수도 같이 업데이트
+      tradeMode = GS.tradeMode; 
       
       var qtyBtn = document.getElementById('qty-btn');
       if (qtyBtn) qtyBtn.textContent = '수량: ' + GS.tradeLabel + ' ▼';
     }
 
-    var baseMaxEn = { SSR: 400, SR: 300, R: 250, N: 200 };
-    if (d.chars) {
-      Object.keys(d.chars).forEach(function(k) {
-        if (GS.chars[k]) {
-          Object.assign(GS.chars[k], d.chars[k]);
-          GS.chars[k].max_energy = (baseMaxEn[GS.chars[k].rarity] || 200) + (GS.chars[k].level - 1) * 10;
-          if (GS.chars[k].energy > GS.chars[k].max_energy) GS.chars[k].energy = GS.chars[k].max_energy;
-          if (d.chars[k].momentum !== undefined) GS.chars[k].momentum = d.chars[k].momentum;
-          else GS.chars[k].momentum = 0;
-          
-          if (d.chars[k].bias !== undefined) GS.chars[k].bias = d.chars[k].bias;
-          else GS.chars[k].bias = (Math.random() * 0.006) - 0.003;
-          if (d.chars[k].momentumTimer !== undefined) GS.chars[k].momentumTimer = d.chars[k].momentumTimer;
-          if (d.chars[k].biasTimer !== undefined) GS.chars[k].biasTimer = d.chars[k].biasTimer;
-          if (d.chars[k].ref_price !== undefined) GS.chars[k].ref_price = d.chars[k].ref_price;
+    var baseMaxEn = { SSR: 400, SR: 300, R: 250, N: 200 };
+    if (d.chars) {
+      Object.keys(d.chars).forEach(function(k) {
+        if (GS.chars[k]) {
+          Object.assign(GS.chars[k], d.chars[k]);
+          GS.chars[k].max_energy = (baseMaxEn[GS.chars[k].rarity] || 200) + (GS.chars[k].level - 1) * 10;
+          if (GS.chars[k].energy > GS.chars[k].max_energy) GS.chars[k].energy = GS.chars[k].max_energy;
+          if (d.chars[k].momentum !== undefined) GS.chars[k].momentum = d.chars[k].momentum;
+          else GS.chars[k].momentum = 0;
+          
+          if (d.chars[k].bias !== undefined) GS.chars[k].bias = d.chars[k].bias;
+          else GS.chars[k].bias = (Math.random() * 0.006) - 0.003;
+          if (d.chars[k].momentumTimer !== undefined) GS.chars[k].momentumTimer = d.chars[k].momentumTimer;
+          if (d.chars[k].biasTimer !== undefined) GS.chars[k].biasTimer = d.chars[k].biasTimer;
           if (d.chars[k].ref_price !== undefined) GS.chars[k].ref_price = d.chars[k].ref_price;
-          // 💡 [추가] 일기장에서 뉴스 기록을 다시 읽어옵니다!
           if (d.chars[k].latest_event !== undefined) GS.chars[k].latest_event = d.chars[k].latest_event;
-          if (d.chars[k].total_principal !== undefined) GS.chars[k].total_principal = d.chars[k].total_principal; // 💡 투자 원금 불러오기
-          if (d.chars[k].tick_history && Array.isArray(d.chars[k].tick_history) && d.chars[k].tick_history.length > 0) {
-             GS.chars[k].tick_history = d.chars[k].tick_history.slice();
-          } else {
-             GS.chars[k].tick_history = [0];
-          }
-        }
-      });
-    }
-    if (d.missions) Object.assign(GS.missions, d.missions);
-  } catch(e) { console.error("Load Error:", e); }
+          
+          if (d.chars[k].events && Array.isArray(d.chars[k].events)) {
+              GS.chars[k].events = d.chars[k].events.slice();
+          } else {
+              GS.chars[k].events = [];
+          }
+          GS.chars[k].chart_1m = d.chars[k].chart_1m || [];
+          GS.chars[k].chart_10m = d.chars[k].chart_10m || [];
+          GS.chars[k].chart_1h = d.chars[k].chart_1h || [];
+          GS.chars[k].chart_1d = d.chars[k].chart_1d || [];
+          if (d.chars[k].cur_1m) GS.chars[k].cur_1m = d.chars[k].cur_1m;
+          if (d.chars[k].cur_10m) GS.chars[k].cur_10m = d.chars[k].cur_10m;
+          if (d.chars[k].cur_1h) GS.chars[k].cur_1h = d.chars[k].cur_1h;
+          if (d.chars[k].cur_1d) GS.chars[k].cur_1d = d.chars[k].cur_1d;
+
+          if (d.chars[k].total_principal !== undefined) GS.chars[k].total_principal = d.chars[k].total_principal;
+          
+          if (d.chars[k].price_history && Array.isArray(d.chars[k].price_history) && d.chars[k].price_history.length > 0) {
+             GS.chars[k].price_history = d.chars[k].price_history.slice();
+          } else {
+             GS.chars[k].price_history = [GS.chars[k].price];
+          }
+
+          if (d.chars[k].tick_history && Array.isArray(d.chars[k].tick_history) && d.chars[k].tick_history.length > 0) {
+             GS.chars[k].tick_history = d.chars[k].tick_history.slice();
+          } else {
+             GS.chars[k].tick_history = [0];
+          }
+        }
+      });
+    }
+    if (d.missions) Object.assign(GS.missions, d.missions);
+  } catch(e) { console.error("Load Error:", e); }
 }
 
 function pickNextTheme() {
@@ -2950,252 +3069,272 @@ function pickNextTheme() {
 
 function applyPriceChange(k) {
   var ch = GS.chars[k];
-  var effectiveChange = ch.change; // 💡 단타의 출렁임(1~2%)을 완벽하게 100% 살려둡니다!
+  var effectiveChange = ch.change; 
 
-  if (typeof ch.ref_price === 'undefined') {
-    ch.ref_price = CHARS_DEF[k] ? CHARS_DEF[k].price : ch.price;
-  }
-
+  if (typeof ch.ref_price === 'undefined') ch.ref_price = ch.price;
   if (!GS.inCrash && !GS.inBull && Math.abs(ch.change) < 0.08) {
     effectiveChange += ch.momentum;
     effectiveChange += ch.bias;
   }
-
   effectiveChange += 0.00015;
-
-  // 💡 [비밀 무기: 장기 중력 시스템] 
-  // 단타 칠 때는 0.01% 단위라 티가 안 나지만, 하루(17,280틱)가 쌓이면 폭주를 완벽히 막아냅니다.
   var diffRatio = (ch.price - ch.ref_price) / ch.ref_price; 
-  var gravity = diffRatio * 0.00015; // 상장가에서 멀어질수록 미세한 중력이 발생
+  var gravity = diffRatio * 0.00015; 
   effectiveChange -= gravity;
-
-  // 💡 상하한가 30%로 확장! (어닝 폭등/폭락이 정상적으로 반영됩니다)
   effectiveChange = Math.max(-0.30, Math.min(0.30, effectiveChange));
 
-  // 🟢 변동성 끌림(증발) 완벽 해결 로직
-  var np;
-  if (effectiveChange >= 0) {
-    // 오를 때는 기존처럼 수익률을 곱해줍니다. (예: +10%면 1.1 곱하기)
-    np = ch.price * (1 + effectiveChange);
-  } else {
-    // 내릴 때는 하락률을 빼는 대신 '나누어' 줍니다. (예: -10%면 1.1로 나누기)
-    np = ch.price / (1 + Math.abs(effectiveChange));
-  }
+  var np = (effectiveChange >= 0) ? ch.price * (1 + effectiveChange) : ch.price / (1 + Math.abs(effectiveChange));
   var totalCost = ch.total_principal || (ch.avg_price * ch.owned);
 
-  if (np >= 1000000) { // [액면분할]
+  // 💡 액면분할 (100만원 이상)
+  if (np >= 1000000) { 
     np /= 10; ch.owned *= 10; ch.ref_price /= 10;
+    // 과거 캔들 객체 데이터를 안전하게 1/10로 스케일링 (NaN 방지)
+    ['chart_1m', 'chart_10m', 'chart_1h', 'chart_1d'].forEach(function(arr) {
+      if (ch[arr]) ch[arr] = ch[arr].map(function(p) { 
+        return typeof p === 'number' ? p / 10 : {o: p.o/10, h: p.h/10, l: p.l/10, c: p.c/10}; 
+      });
+    });
+    if (ch.price_history) ch.price_history = ch.price_history.map(function(v) { return v / 10; });
+    ['cur_1m', 'cur_10m', 'cur_1h', 'cur_1d'].forEach(function(cur) {
+      if (ch[cur]) { ch[cur].o /= 10; ch[cur].h /= 10; ch[cur].l /= 10; }
+    });
     if (ch.owned > 0) ch.avg_price = totalCost / ch.owned;
-    if (ch.unlocked) setAction('[' + ch.name + '] 액면분할!', 2);
-  } 
-  else if (np < 1000 && np > 0) { // [액면병합]
-    var originalOwned = ch.owned;
-    var remainder = ch.owned % 10; 
-    np *= 10; 
-    ch.owned = Math.floor(ch.owned / 10); 
-    ch.ref_price *= 10; 
-    
-    if (remainder > 0) {
-      var refund = Math.floor(remainder * (np / 10));
-      GS.money += refund;
-      if (originalOwned > 0) {
-        totalCost = totalCost * ((ch.owned * 10) / originalOwned);
-      }
+    if (ch.unlocked) {
+      setAction('[' + ch.name + '] 액면분할!', 2);
+      ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'split', label: '액면분할' });
     }
-    
+  } 
+  // 💡 액면병합 (1000원 미만)
+  else if (np < 1000 && np > 0) { 
+    var originalOwned = ch.owned, remainder = ch.owned % 10; 
+    np *= 10; ch.owned = Math.floor(ch.owned / 10); ch.ref_price *= 10; 
+    ['chart_1m', 'chart_10m', 'chart_1h', 'chart_1d'].forEach(function(arr) {
+      if (ch[arr]) ch[arr] = ch[arr].map(function(p) { 
+        return typeof p === 'number' ? p * 10 : {o: p.o*10, h: p.h*10, l: p.l*10, c: p.c*10}; 
+      });
+    });
+    if (ch.price_history) ch.price_history = ch.price_history.map(function(v) { return v * 10; });
+    ['cur_1m', 'cur_10m', 'cur_1h', 'cur_1d'].forEach(function(cur) {
+      if (ch[cur]) { ch[cur].o *= 10; ch[cur].h *= 10; ch[cur].l *= 10; }
+    });
+    if (remainder > 0) {
+      GS.money += Math.floor(remainder * (np / 10));
+      if (originalOwned > 0) totalCost = totalCost * ((ch.owned * 10) / originalOwned);
+    }
     ch.total_principal = totalCost;
-
-    if (ch.owned > 0) {
-      ch.avg_price = totalCost / ch.owned;
-      if (ch.unlocked && originalOwned > 0) setAction('[' + ch.name + '] 액면병합!', 2);
-    } else {
-      ch.avg_price = 0;
-      ch.total_principal = 0;
-      if (ch.unlocked && originalOwned > 0) {
-        showToast('[' + ch.name + '] 전량 강제 청산당했습니다!', '#ff4444', null, 8000);
-      }
+    if (ch.owned > 0) ch.avg_price = totalCost / ch.owned;
+    else { ch.avg_price = 0; ch.total_principal = 0; if (ch.unlocked && originalOwned > 0) showToast('['+ch.name+'] 전량 강제 청산!', '#ff4444', null, 8000); }
+    if (ch.unlocked) {
+      if (originalOwned > 0) setAction('[' + ch.name + '] 액면병합!', 2);
+      ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'merge', label: '액면병합' });
     }
   }
 
   ch.price = Math.max(100, np); 
+  
+  if (!ch.price_history) ch.price_history = [ch.price];
+  ch.price_history.push(ch.price);
+  if (ch.price_history.length > 40) ch.price_history.shift();
 
   ch.tick_history.push(parseFloat((effectiveChange * 100).toFixed(2)));
-  if (ch.tick_history.length > 18) ch.tick_history.shift();
+  if (ch.tick_history.length > 40) ch.tick_history.shift();
 
   var reqAmt = getVipReq(ch.rarity);
-  if (ch.is_vip && ch.price * ch.owned < reqAmt) {
-    ch.is_vip = false;
-    setAction('[' + ch.name + '] 경영권 상실…', 3);
-  } else if (!ch.is_vip && ch.owned > 0 && ch.price * ch.owned >= reqAmt) {
-    ch.is_vip = true;
-    setAction('[' + ch.name + '] 경영권 확보!', 5);
-    playSound('event');
-  }
+  if (ch.is_vip && ch.price * ch.owned < reqAmt) { ch.is_vip = false; setAction('[' + ch.name + '] 경영권 상실…', 3); }
+  else if (!ch.is_vip && ch.owned > 0 && ch.price * ch.owned >= reqAmt) { ch.is_vip = true; setAction('[' + ch.name + '] 경영권 확보!', 5); playSound('event'); }
 
-  if (GS.earningPendingToast && GS.earningPendingToast.key === k) {
-    var toast = GS.earningPendingToast;
-    GS.earningPendingToast = null;
-    var actualPct = effectiveChange * 100;
-    var dir = toast.beat ? '▲' : '▼';
-    var pctStr = (actualPct >= 0 ? '(+' : '(') + actualPct.toFixed(1) + '%)';
-    GS.currentNews = dir + ' [어닝] ' + toast.charName + ' - ' + toast.label + ' ' + pctStr;
-    showNewsToast(GS.currentNews, toast.beat ? '#ff6644' : '#5588ff', null);
-  }
+  // 💡 [실제 주가 추적] 5초마다 주가를 감시하여 최고/최저가를 실시간 기록
+  ['1m', '10m', '1h', '1d'].forEach(function(p) {
+    var cn = 'cur_' + p;
+    if (!ch[cn]) ch[cn] = { o: ch.price, h: ch.price, l: ch.price };
+    if (ch.price > ch[cn].h) ch[cn].h = ch.price;
+    if (ch.price < ch[cn].l) ch[cn].l = ch.price;
+  });
+
+  var nowTime = GS.virtual_time || Date.now();
+  var prevTime = nowTime - 5000; // 5초 전(이전 틱) 시간
+
+  // 💡 [핵심] '절대 시계'가 캔들 경계선(18분, 36분 등)을 넘었는지 감시합니다.
+  var checkIntervals = [
+    { key: 'chart_1m',  cur: 'cur_1m',  ms: 18 * 5000 },   // 1시간 탭 (1.5분 단위)
+    { key: 'chart_1d',  cur: 'cur_1d',  ms: 216 * 5000 },  // 12시간 탭 (18분 단위)
+    { key: 'chart_10m', cur: 'cur_10m', ms: 432 * 5000 },  // 1일 탭 (36분 단위)
+    { key: 'chart_1h',  cur: 'cur_1h',  ms: 3024 * 5000 }  // 1주 탭 (4.2시간 단위)
+  ];
+
+  checkIntervals.forEach(function(conf) {
+    if (!ch[conf.key]) ch[conf.key] = [];
+    if (!ch[conf.cur]) ch[conf.cur] = { o: ch.price, h: ch.price, l: ch.price };
+
+    // 💡 이전 틱과 현재 틱이 서로 다른 '시간 바구니'에 속한다면, 바구니가 바뀐 것입니다!
+    var prevBucket = Math.floor(prevTime / conf.ms);
+    var nowBucket = Math.floor(nowTime / conf.ms);
+
+    if (nowBucket > prevBucket) {
+      // 1. 지금까지 모은 데이터를 과거 기록으로 넘김 (캔들 확정)
+      ch[conf.key].push({ o: ch[conf.cur].o, h: ch[conf.cur].h, l: ch[conf.cur].l, c: ch.price });
+      if (ch[conf.key].length > 40) ch[conf.key].shift();
+
+      // 2. 새 바구니 시작 (시가를 현재가로 초기화)
+      ch[conf.cur] = { o: ch.price, h: ch.price, l: ch.price };
+    }
+  });
 }
-
 function tick(silent) {
-  if (mg.active) return;
-  if (GS.isTutorial) return;
-  GS.actionPriority = 0;
-  if (GS.stickyNewsTicks > 0) GS.stickyNewsTicks--;
+  if (mg.active) return;
+  if (GS.isTutorial) return;
+  GS.total_game_ticks = (GS.total_game_ticks || 0) + 1; 
+  GS.virtual_time = (GS.virtual_time || Date.now()) + 5000; // 💡 틱마다 가상 시계가 딱 5초씩만 흐름!
+  GS.actionPriority = 0;
+  if (GS.stickyNewsTicks > 0) GS.stickyNewsTicks--;
 
-  GS.dividendTimer--;
-  if (GS.dividendTimer <= 0) { payDividends(silent); GS.dividendTimer = 12; }
+  GS.dividendTimer--;
+  if (GS.dividendTimer <= 0) { payDividends(silent); GS.dividendTimer = 12; }
 
-  GS.earningTimer--;
-  if (GS.earningTimer <= 0) { GS.earningTimer = 15 + Math.floor(Math.random() * 16); scheduleEarning(silent); }
+  GS.earningTimer--;
+  if (GS.earningTimer <= 0) { GS.earningTimer = 15 + Math.floor(Math.random() * 16); scheduleEarning(silent); }
 
-  if (GS.earningPending) {
-    GS.earningPending.waitTicks--;
-    if (GS.earningPending.waitTicks <= 0) { fireEarning(GS.earningPending, silent); GS.earningPending = null; }
-  }
+  if (GS.earningPending) {
+    GS.earningPending.waitTicks--;
+    if (GS.earningPending.waitTicks <= 0) { fireEarning(GS.earningPending, silent); GS.earningPending = null; }
+  }
 
-  Object.keys(GS.chars).forEach(function(k) {
-    var ch = GS.chars[k];
-    if (ch.earningCooldown > 0) ch.earningCooldown--;
-    if (ch.energy < ch.max_energy) {
-      var regenPct = 0.015
-      var regenAmount = ch.max_energy * regenPct;
-      ch.energy = Math.min(ch.max_energy, ch.energy + regenAmount);
-      if (ch.energy > ch.max_energy - 1) ch.energy = ch.max_energy; else ch.energy = Math.round(ch.energy);
-    }
-  });
+  Object.keys(GS.chars).forEach(function(k) {
+    var ch = GS.chars[k];
+    if (ch.earningCooldown > 0) ch.earningCooldown--;
+    if (ch.energy < ch.max_energy) {
+      var regenPct = 0.015;
+      var regenAmount = ch.max_energy * regenPct;
+      ch.energy = Math.min(ch.max_energy, ch.energy + regenAmount);
+      if (ch.energy > ch.max_energy - 1) ch.energy = ch.max_energy; else ch.energy = Math.round(ch.energy);
+    }
+  });
 
-  if (GS.inCrash) {
-    GS.newsLinkKey = null; GS.currentNews = '⚡ 시장 대폭락 진행 중';
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
-      ch._earningApplied = false; applyPriceChange(k);
-    });
-    GS.crashTicks--;
-    if (GS.crashTicks <= 0) { GS.inCrash = false; GS.newsLinkKey = null; GS.currentNews = '시장이 안정을 되찾고 있습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-    updateTotalAssets(); updateMissions(); updateDialogState();
-    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-    return;
-  }
+  if (GS.inCrash) {
+    GS.newsLinkKey = null; GS.currentNews = '⚡ 시장 대폭락 진행 중';
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+      if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
+      ch._earningApplied = false; applyPriceChange(k);
+    });
+    GS.crashTicks--;
+    if (GS.crashTicks <= 0) { GS.inCrash = false; GS.newsLinkKey = null; GS.currentNews = '시장이 안정을 되찾고 있습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+    updateTotalAssets(); updateMissions(); updateDialogState();
+    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+    return;
+  }
 
-  if (GS.inBull) {
-    GS.newsLinkKey = null; GS.currentNews = '[상승장] 글로벌 대세 상승장 랠리 중';
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
-      ch._earningApplied = false; applyPriceChange(k);
-    });
-    GS.bullTicks--;
-    if (GS.bullTicks <= 0) { GS.inBull = false; GS.newsLinkKey = null; GS.currentNews = '대세 상승장이 끝나고 시장이 진정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-    updateTotalAssets(); updateMissions(); updateDialogState();
-    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-    return;
-  }
+  if (GS.inBull) {
+    GS.newsLinkKey = null; GS.currentNews = '[상승장] 글로벌 대세 상승장 랠리 중';
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+      if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
+      ch._earningApplied = false; applyPriceChange(k);
+    });
+    GS.bullTicks--;
+    if (GS.bullTicks <= 0) { GS.inBull = false; GS.newsLinkKey = null; GS.currentNews = '대세 상승장이 끝나고 시장이 진정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+    updateTotalAssets(); updateMissions(); updateDialogState();
+    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+    return;
+  }
 
-  if (GS.currentTheme.target !== '없음') {
-    if (Math.random() < 0.1) generateNews(silent);
-  } else {
-    GS.noThemeTicks++;
-    if (GS.noThemeTicks >= 40 && Math.random() < 0.015) {
-      if (Math.random() < 0.5) {
-        GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
-        if (!silent) showNewsToast(GS.currentNews, '#ff3333', null);
-        Object.keys(GS.chars).forEach(function(k) {
-          var ch = GS.chars[k];
-          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
-          ch._earningApplied = false; applyPriceChange(k);
-        });
-      } else {
-        GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
-        if (!silent) showNewsToast(GS.currentNews, '#ff55aa', null);
-        Object.keys(GS.chars).forEach(function(k) {
-          var ch = GS.chars[k];
-          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
-          ch._earningApplied = false; applyPriceChange(k);
-        });
-      }
-      if (!silent) playSound('event');
-      updateTotalAssets(); updateMissions(); updateDialogState();
-      if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-      return;
-    }
-    var shouldTrigger = (GS.noThemeTicks >= 80) || (GS.noThemeTicks >= 35 && Math.random() < 0.05);
-    if (shouldTrigger) {
-      GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
-      var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
-      var color = GS.currentTheme.type === 'bad' ? '#5588ff' : '#ffdd44';
-      GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
-      if (!silent) showNewsToast(GS.currentNews, color, null);
-      if (!silent) playSound('event');
-    } else {
-      if (Math.random() < 0.06) generateNews(silent);
-    }
-  }
+  if (GS.currentTheme.target !== '없음') {
+    if (Math.random() < 0.1) generateNews(silent);
+  } else {
+    GS.noThemeTicks++;
+    if (GS.noThemeTicks >= 40 && Math.random() < 0.015) {
+      if (Math.random() < 0.5) {
+        GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
+        if (!silent) showNewsToast(GS.currentNews, '#ff3333', null);
+        Object.keys(GS.chars).forEach(function(k) {
+          var ch = GS.chars[k];
+          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
+          ch._earningApplied = false; applyPriceChange(k);
+      });
+      } else {
+        GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
+        if (!silent) showNewsToast(GS.currentNews, '#ff55aa', null);
+        Object.keys(GS.chars).forEach(function(k) {
+          var ch = GS.chars[k];
+          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
+          ch._earningApplied = false; applyPriceChange(k);
+        });
+      }
+      if (!silent) playSound('event');
+      updateTotalAssets(); updateMissions(); updateDialogState();
+      if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+      return;
+    }
+    var shouldTrigger = (GS.noThemeTicks >= 80) || (GS.noThemeTicks >= 35 && Math.random() < 0.05);
+    if (shouldTrigger) {
+      GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
+      var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
+      var color = GS.currentTheme.type === 'bad' ? '#ff4455' : '#44cc66';
+      GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
+      if (!silent) showNewsToast(GS.currentNews, color, null);
+      if (!silent) playSound('event');
+    } else {
+      if (Math.random() < 0.06) generateNews(silent);
+    }
+  }
 
-  Object.keys(GS.chars).forEach(function(k) {
-    var ch = GS.chars[k];
-    ch.momentumTimer--;
-    if (ch.momentumTimer <= 0) { ch.momentumTimer = 6 + Math.floor(Math.random() * 7); ch.momentum = (Math.random() * 0.004) - 0.002; }
-    ch.biasTimer--;
-    if (ch.biasTimer <= 0) { ch.biasTimer = 6 + Math.floor(Math.random() * 7); ch.bias += (Math.random() * 0.0006) - 0.0003; ch.bias = Math.max(-0.001, Math.min(0.001, ch.bias)); }
+  Object.keys(GS.chars).forEach(function(k) {
+    var ch = GS.chars[k];
+    ch.momentumTimer--;
+    if (ch.momentumTimer <= 0) { ch.momentumTimer = 6 + Math.floor(Math.random() * 7); ch.momentum = (Math.random() * 0.004) - 0.002; }
+    ch.biasTimer--;
+    if (ch.biasTimer <= 0) { ch.biasTimer = 6 + Math.floor(Math.random() * 7); ch.bias += (Math.random() * 0.0006) - 0.0003; ch.bias = Math.max(-0.001, Math.min(0.001, ch.bias)); }
 
-    if (ch.new_recruit_ticks > 0) {
-      ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return;
-    }
+    if (ch.new_recruit_ticks > 0) {
+      ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return;
+    }
 
-    if (!ch._earningApplied) {
-      var isTheme = ch.sector === GS.currentTheme.target;
-      var seasonVol = GS.earningSeasonTicks > 0 ? 1.8 : 1.0;
-      var baseMin = -0.010 * seasonVol;
-      var baseMax = 0.011 * seasonVol;
+    if (!ch._earningApplied) {
+      var isTheme = ch.sector === GS.currentTheme.target;
+      var seasonVol = GS.earningSeasonTicks > 0 ? 1.8 : 1.0;
+      var baseMin = -0.010 * seasonVol;
+      var baseMax = 0.011 * seasonVol;
 
-      if (isTheme) {
-        if (GS.currentTheme.type === 'bad') {
-          baseMin = -0.050 * seasonVol;
-          baseMax = 0.015 * seasonVol;
-        } else {
-          baseMin = -0.015 * seasonVol;
-          baseMax = 0.050 * seasonVol;
-        }
-      }
+      if (isTheme) {
+        if (GS.currentTheme.type === 'bad') {
+          baseMin = -0.050 * seasonVol;
+          baseMax = 0.015 * seasonVol;
+        } else {
+          baseMin = -0.015 * seasonVol;
+          baseMax = 0.050 * seasonVol;
+        }
+      }
 
-      if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
-        GS.newsBoost[k].ticks--;
-        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.050; } else { baseMin = -0.050; baseMax = 0.015; }
-        if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
-      }
-      ch.change = baseMin + Math.random() * (baseMax - baseMin);
-      if (Math.random() < 0.15) ch.change += (Math.random() * 0.016) - 0.008;
-    }
-    ch._earningApplied = false; applyPriceChange(k);
-  });
+      if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
+        GS.newsBoost[k].ticks--;
+        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.050; } else { baseMin = -0.050; baseMax = 0.015; }
+        if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
+      }
+      ch.change = baseMin + Math.random() * (baseMax - baseMin);
+      if (Math.random() < 0.15) ch.change += (Math.random() * 0.016) - 0.008;
+    }
+    ch._earningApplied = false; applyPriceChange(k);
+  });
 
-  if (GS.currentTheme.target !== '없음') {
-    GS.themeTimer--;
-    if (GS.themeTimer <= 0) { GS.currentTheme = THEMES[0]; GS.noThemeTicks = 0; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.currentNews = '테마 종료. 시장이 평화로운 장세로 돌아왔습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-  }
-  if (GS.earningSeasonTicks > 0) {
-    GS.earningSeasonTicks--;
-    if (GS.earningSeasonTicks <= 0) { GS.newsLinkKey = null; GS.currentNews = '어닝시즌 종료. 변동성이 안정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-  }
+  if (GS.currentTheme.target !== '없음') {
+    GS.themeTimer--;
+    if (GS.themeTimer <= 0) { GS.currentTheme = THEMES[0]; GS.noThemeTicks = 0; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.currentNews = '테마 종료. 시장이 평화로운 장세로 돌아왔습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+  }
+  if (GS.earningSeasonTicks > 0) {
+    GS.earningSeasonTicks--;
+    if (GS.earningSeasonTicks <= 0) { GS.newsLinkKey = null; GS.currentNews = '어닝시즌 종료. 변동성이 안정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+  }
 
-  updateTotalAssets(); updateMissions(); updateDialogState();
-  if (!silent) { 
-    if (!mg.active) save(); // 💡 핵심: 미니게임 플레이 중(mg.active)에는 무거운 세이브를 생략합니다!
-    var mgScreen = document.getElementById('screen-minigame'); 
-    if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); 
-  }
+  updateTotalAssets(); updateMissions(); updateDialogState();
+  if (!silent) { 
+    if (!mg.active) save(); 
+    var mgScreen = document.getElementById('screen-minigame'); 
+    if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); 
+  }
 }
 
 function payDividends(silent) {
@@ -3252,6 +3391,14 @@ function generateNews(silent) {
     ch.ref_price = ch.ref_price * (1 - 0.03 - Math.random() * 0.05);
   }
   ch.latest_event = ev.label + " " + flagText; // 📝 상세창에 띄울 내용 저장!
+  ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: ev.label, flag: ev.flag });
+  
+  // 💡 이벤트가 30개를 넘어가면 가장 오래된 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
+  if (ch.events.length > 30) {
+    var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
+    if (delIdx !== -1) ch.events.splice(delIdx, 1);
+    else ch.events.shift();
+  }
 
   GS.newsBoost[k] = { flag: ev.flag, ticks: 4 };
   GS.newsLinkKey = k;
@@ -3259,7 +3406,7 @@ function generateNews(silent) {
   GS.stickyNewsTicks = 6;
   GS.currentNews = '[속보] ' + ch.name + ' - ' + ev.label + ' ' + flagText;
 
-  if (!silent) showNewsToast(GS.currentNews, ev.flag === 'good' ? '#ffdd44' : '#ff6666', k);
+  if (!silent) showNewsToast(GS.currentNews, ev.flag === 'good' ? '#44cc66' : '#ff4455', k);
 }
 
 var EARNINGS_BEAT = ['깜짝 실적! EPS 예상치 대폭 상회', '매출 역대 최고치 경신!'];
@@ -3296,12 +3443,21 @@ function fireEarning(pending, silent) {
     label = EARNINGS_BEAT[Math.floor(Math.random() * EARNINGS_BEAT.length)];
     changeMin = 0.10 * seasonMult; changeMax = 0.28 * seasonMult;
     ch.ref_price = ch.ref_price * (1 + 0.10 + Math.random() * 0.10); 
-    ch.latest_event = "[어닝 서프라이즈] " + label; // 📝 실적 기록!
+    ch.latest_event = "[어닝 서프라이즈] " + label;
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: "[실적발표] " + label, flag: 'good' });
   } else {
     label = EARNINGS_MISS[Math.floor(Math.random() * EARNINGS_MISS.length)];
     changeMin = -0.24 * seasonMult; changeMax = -0.08 * seasonMult;
     ch.ref_price = ch.ref_price * (1 - 0.10 - Math.random() * 0.10);
-    ch.latest_event = "[어닝 쇼크] " + label; // 📝 실적 기록!
+    ch.latest_event = "[어닝 쇼크] " + label;
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: "[실적발표] " + label, flag: 'bad' });
+  }
+
+  // 💡 실적 발표도 30개가 넘어가면 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
+  if (ch.events.length > 30) {
+    var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
+    if (delIdx !== -1) ch.events.splice(delIdx, 1);
+    else ch.events.shift();
   }
 
   ch.change = changeMin + Math.random() * (changeMax - changeMin);
@@ -3461,6 +3617,7 @@ function showTapPopup(earned, x, y) {
 }
 
 function goToMarket(k) {
+  closeChartModal();
   playSound('click');
   var ch = GS.chars[k];
   if (!ch) return;
@@ -3816,9 +3973,45 @@ function trade(key, isBuy) {
   if (!mgScreen || !mgScreen.classList.contains('active')) renderAll();
 }
 
+// 💡 열려있는 차트 모달의 데이터와 그래프를 5초마다 갱신해주는 함수
+function updateChartModalIfOpen() {
+  var modal = document.getElementById('chart-modal');
+  if (modal && modal.classList.contains('active') && currentChartKey) {
+    var ch = GS.chars[currentChartKey];
+    if (!ch) return;
+
+    // 가격, 등락률 텍스트 갱신
+    document.getElementById('cm-price').textContent = fcomma(ch.price) + '원';
+    var lastTick = ch.tick_history[ch.tick_history.length-1] || 0;
+    var cmChange = document.getElementById('cm-change');
+    cmChange.textContent = (lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%';
+    cmChange.style.color = lastTick >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // 뉴스 및 이벤트 리스트 갱신
+    var list = document.getElementById('cm-event-list');
+    list.innerHTML = '';
+    if (ch.events.length === 0) {
+      list.innerHTML = '최근 기록된 이벤트가 없습니다.';
+    } else {
+      ch.events.slice(-5).reverse().forEach(function(ev) {
+        var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--green)' : 'var(--red)';
+        var timeStr = '';
+        if (ev.absTick !== undefined) {
+          var diffSec = (GS.total_game_ticks - ev.absTick) * 5;
+          if (diffSec < 60) timeStr = ' (방금 전)';
+          else if (diffSec < 3600) timeStr = ' (' + Math.floor(diffSec/60) + '분 전)';
+          else timeStr = ' (' + Math.floor(diffSec/3600) + '시간 전)';
+        }
+        list.innerHTML += `<div style="margin-bottom:4px;">• <span style="color:${color}">[${ev.type === 'news' ? '뉴스' : '공시'}]</span> ${ev.label} <span style="color:#888; font-size:11px;">${timeStr}</span></div>`;
+      });
+    }
+
+    // 캔버스 그래프 갱신
+    requestAnimationFrame(function() { drawAdvancedChart(currentChartKey); });
+  }
+}
+
 function renderAll() {
-  // 💡 틱(5초)마다 안 보이는 화면까지 싹 다 다시 그리며 발생하던 렉 완벽 제거!
-  // 현재 켜져 있는(active) 화면 딱 1개만 그리도록 최적화합니다. (리스크 0%)
   if (document.getElementById('screen-home').classList.contains('active')) renderHome();
   else if (document.getElementById('screen-gacha').classList.contains('active')) renderGacha();
   else if (document.getElementById('screen-market').classList.contains('active')) renderMarket();
@@ -3827,6 +4020,9 @@ function renderAll() {
 
   var badge = document.getElementById('mission-badge');
   if (badge) badge.style.display = GS.missionBadge ? 'flex' : 'none';
+
+  // 💡 메인 렌더링 루프가 돌 때 차트 모달도 같이 실시간으로 갱신!
+  updateChartModalIfOpen();
 }
 
 function renderHome() {
@@ -3903,76 +4099,124 @@ frameEl.style.border = '1px solid rgba(255, 255, 255, 0.1)';
     }
   });
   var validSectors = 0;
-  if (totalInvested > 0) {
-    Object.keys(sectorValues).forEach(function(sec) {
-      if (sectorValues[sec] >= totalInvested * 0.1) validSectors++;
-    });
+      if (totalInvested > 0) {
+        Object.keys(sectorValues).forEach(function(sec) {
+          if (sectorValues[sec] >= totalInvested * 0.1) validSectors++;
+        });
+      }
+      
+      // 💡 직관적인 배당금 프로그레스 바 업데이트
+      var divWrap = document.getElementById('dividend-wrap');
+      if (divWrap) {
+        var divSec = Math.max(0, GS.dividendTimer * 5);
+        var divMinStr = Math.floor(divSec / 60);
+        var divSecStr = divSec % 60;
+        var timeStr = (divMinStr > 0 ? divMinStr + '분 ' : '') + divSecStr + '초 남음';
+        
+        document.getElementById('div-time-text').textContent = timeStr;
+        
+        // 배당 주기는 최대 12틱(60초) 기준이므로 게이지를 이에 맞게 채웁니다.
+        var maxTicks = 12; 
+        var pct = Math.max(0, Math.min(100, ((maxTicks - GS.dividendTimer) / maxTicks) * 100));
+        document.getElementById('div-progress-fill').style.width = pct + '%';
+        
+        var bonusStr = '';
+        var bonusColor = 'var(--text2)';
+        
+        // 유저에게 '무엇을 해야 보너스를 받는지' 미니 목표를 제시합니다.
+        if (validSectors >= 5) {
+          bonusStr = '분산 보너스 최대치 적용 중! (+50%)';
+          bonusColor = '#ffcc44';
+        } else if (validSectors >= 3) {
+          bonusStr = '분산 보너스 적용 중! (+20%)';
+          bonusColor = '#ffcc44';
+        } else {
+          bonusStr = '';
+        }
+        
+        var bonusEl = document.getElementById('div-bonus-text');
+        bonusEl.textContent = bonusStr;
+        bonusEl.style.color = bonusColor;
+      }
+    }
+
+function drawChangeGraph(canvas, priceHistory, tickHistory, currentPrice, compact) {
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  
+  var prices = priceHistory;
+  // 💡 강제로 2개로 복제하던 로직을 지우고, 아예 없을 때만 1개로 초기화합니다.
+  if (!prices || prices.length === 0) prices = [currentPrice];
+  var hist = tickHistory;
+  if (!hist || hist.length < 1) hist = [0];
+
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.offsetWidth, h = canvas.offsetHeight;
+  if (w === 0 || h === 0) return;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  var pad = compact ? 3 : 8;
+  var minP = Math.min.apply(null, prices);
+  var maxP = Math.max.apply(null, prices);
+  
+  if (maxP === minP) {
+    maxP = currentPrice * 1.01;
+    minP = currentPrice * 0.99;
   }
-  var bonusTxt = validSectors >= 5 ? ' (+50%)' : validSectors >= 3 ? ' (+20%)' : '';
-  document.getElementById('dividend-bar').textContent = '다음 배당까지 ' + GS.dividendTimer + '틱 (' + (GS.dividendTimer * 5) + '초) | 유효섹터: ' + validSectors + '개' + bonusTxt;
-}
+  var range = maxP - minP;
 
-function drawChangeGraph(canvas, tickHistory, currentPrice, compact) {
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var hist = tickHistory;
-  if (!hist || hist.length < 2) hist = [0, 0];
+  var lastTick = hist[hist.length - 1];
+  // 💡 미니 차트 선 색상: 상승=초록, 하락=빨강
+  var col = lastTick >= 0 ? '#44cc66' : '#ff4455';
 
-  var prices = new Array(hist.length);
-  prices[prices.length - 1] = currentPrice;
-  for (var i = hist.length - 2; i >= 0; i--) {
-    var changeRate = hist[i + 1] / 100;
-    prices[i] = prices[i + 1] / (1 + changeRate);
-  }
+  // 💡 가로 점선을 과거 시작점이 아닌 '현재 주가(currentPrice)'를 기준으로 긋습니다!
+  var currentY = h - pad - ((currentPrice - minP) / range) * (h - pad * 2);
+  ctx.strokeStyle = '#555566'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+  ctx.beginPath(); ctx.moveTo(pad, currentY); ctx.lineTo(w - pad, currentY); ctx.stroke();
+  ctx.setLineDash([]);
 
-  var dpr = window.devicePixelRatio || 1;
-  var w = canvas.offsetWidth, h = canvas.offsetHeight;
-  if (w === 0 || h === 0) return;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, w, h);
+  // 💡 미니 캔들 차트 그리기
+  // 최대 캔들 개수(40개)를 기준으로 고정된 간격을 계산하여 띄엄띄엄해지는 현상을 막습니다.
+  var maxCandles = 40;
+  var candleW = Math.max(1.5, ((w - pad * 2) / maxCandles) * 0.7);
+  var usableW = (w - pad * 2) - candleW;
+  var spacing = usableW / (maxCandles - 1);
 
-  var pad = compact ? 3 : 8;
-  var minP = Math.min.apply(null, prices);
-  var maxP = Math.max.apply(null, prices);
-  
-  if (maxP === minP) {
-    maxP = currentPrice * 1.01;
-    minP = currentPrice * 0.99;
-  }
-  var range = maxP - minP;
+  // 가장 최근 데이터가 오른쪽 끝에 오도록 기준점을 잡습니다.
+  var rightEdge = pad + (candleW / 2) + usableW;
 
-  var lastTick = hist[hist.length - 1];
-  var col = lastTick >= 0 ? '#ff4455' : '#4477ff';
+  prices.forEach(function(p, i) {
+    // 현재 캔들이 오른쪽 끝(최신)에서부터 몇 번째 떨어져 있는지 계산합니다.
+    var offsetFromRight = (prices.length - 1) - i;
+    var x = rightEdge - (offsetFromRight * spacing);
+    
+    var openP = (i === 0) ? p : prices[i - 1];
+    var closeP = p;
+    
+    var y_open = h - pad - ((openP - minP) / range) * (h - pad * 2);
+    var y_close = h - pad - ((closeP - minP) / range) * (h - pad * 2);
+    
+    // 미니 차트 색상은 캔들 개별 방향에 따름
+    var isUp = closeP >= openP;
+    ctx.fillStyle = isUp ? '#44cc66' : '#ff4455';
+    
+    var bodyTop = Math.min(y_open, y_close);
+    var bodyH = Math.max(Math.abs(y_open - y_close), 1.5);
+    
+    ctx.fillRect(x - candleW / 2, bodyTop, candleW, bodyH);
+  });
 
-  var startY = h - pad - ((prices[0] - minP) / range) * (h - pad * 2);
-  ctx.strokeStyle = '#444455'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
-  ctx.beginPath(); ctx.moveTo(pad, startY); ctx.lineTo(w - pad, startY); ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.beginPath();
-  prices.forEach(function(p, i) {
-    var x = pad + (i / (prices.length - 1)) * (w - pad * 2);
-    var y = h - pad - ((p - minP) / range) * (h - pad * 2);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  });
-  
-  ctx.strokeStyle = col; ctx.lineWidth = compact ? 1.5 : 2; ctx.stroke();
-
-  var lx = pad + (w - pad * 2);
-  var ly = h - pad - ((prices[prices.length - 1] - minP) / range) * (h - pad * 2);
-  ctx.fillStyle = col;
-  ctx.beginPath(); ctx.arc(lx, ly, compact ? 2 : 3, 0, Math.PI * 2); ctx.fill();
-
-  if (!compact) {
-    ctx.textAlign = 'right'; ctx.font = 'bold 11px sans-serif';
-    ctx.fillText((lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%', w - pad, pad + 12);
-  }
+  if (!compact) {
+    ctx.textAlign = 'right'; ctx.font = 'bold 11px sans-serif';
+    ctx.fillText((lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%', w - pad, pad + 12);
+  }
 }
 
 function drawGraph() {
-  var ch = GS.chars[GS.mainChar];
-  drawChangeGraph(document.getElementById('graph-canvas'), ch.tick_history, ch.price, false);
+  var ch = GS.chars[GS.mainChar];
+  drawChangeGraph(document.getElementById('graph-canvas'), ch.price_history, ch.tick_history, ch.price, false);
 }
 
 function renderGacha() {
@@ -4027,11 +4271,9 @@ function renderMarketList() {
 
     var lastTick = ch.tick_history[ch.tick_history.length - 1] || 0;
     var chg = lastTick >= 0;
-    var div = document.createElement('div');
-    
-    // 💡 방금 누른 종목인지 확인
     var isHighlighting = (GS.highlightTarget === k && Date.now() < GS.highlightExpire);
     
+    var div = document.createElement('div');
     div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
     div.id = 'stock-card-' + k;
 
@@ -4041,39 +4283,65 @@ function renderMarketList() {
       var tax = Math.floor(val * 0.01);
       var netValue = val - tax;
       var profitAmt = netValue - (ch.avg_price * ch.owned);
-      // 💡 홈 화면과 100% 동일한 수익률 표기 규정 적용
       var prRaw = (ch.avg_price > 0) ? (profitAmt / (ch.avg_price * ch.owned) * 100) : 0;
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
       
-      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? '#ff5555' : '#5588ff') + '">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
+      // 💡 거래소 보유 주식 수익률 색상: 상승=초록, 하락=빨강
+      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
     }
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
+    var themeIcon = GS.currentTheme.type === 'bad' ? ' ❄️' : ' 🔥';
 
-// 테마 타입에 따라 보여줄 이모티콘 결정
-var themeIcon = GS.currentTheme.type === 'bad' ? ' ❄️' : ' 🔥';
+    div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></div>'
+    + '<div class="stock-card-inner" style="padding:11px 11px 11px 16px;">'
 
-div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></div>'
-+ '<div class="stock-card-inner"><div class="stock-row1"><div class="stock-left">'
-+ '<div class="stock-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:30px; height:30px; object-fit:contain;">' : '') + ch.name + rarityHtml + (isThemeSector ? themeIcon : '') + '</div>'
-    + '<div style="width:85%;height:28px;margin:4px 0 2px;border-radius:4px;overflow:hidden;background:rgba(0,0,0,0.2)"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
-    + '<div class="stock-price-row"><span class="stock-price">' + fcomma(ch.price) + '원</span><span class="stock-change" style="color:' + (chg?'#ff5555':'#5588ff') + '">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span></div>' + holdHtml + '</div>'
-    + '<div class="stock-btns"><button class="stock-btn buy" data-key="' + k + '" data-buy="1">매수</button><button class="stock-btn sell" data-key="' + k + '" data-buy="0">매도</button></div></div></div>';
+    // 1행: 종목명
+    + '<div style="display:flex; align-items:center; gap:5px; font-size:19px; font-weight:bold; margin-bottom:6px;">'
+    +   (ch.is_vip ? '<img src="imgs/crown.png" style="width:18px;height:18px;object-fit:contain;">' : '')
+    +   ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
+    + '</div>'
+
+    // 2행: 차트 + 버튼
+    + '<div style="display:flex; justify-content:space-between; align-items:stretch; gap:8px; margin-bottom:7px;">'
+    +   '<div style="height:40px; width:210px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
+    +   '<div style="display:flex; gap:5px; flex-shrink:0; align-items:center;">'
+    +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:40px; width:66px; font-size:15px; padding:0; border-radius:8px;">매수</button>'
+    +     '<button class="stock-btn sell" data-key="' + k + '" data-buy="0" style="height:40px; width:66px; font-size:15px; padding:0; border-radius:8px;">매도</button>'
+    +   '</div>'
+    + '</div>'
+
+    // 3행: 현재가 + 등락률 나란히 + 보유현황
+    + '<div style="display:flex; align-items:baseline; gap:8px;">'
+    +   '<span style="font-size:16px; color:#eeeeee; font-weight:bold;">' + fcomma(ch.price) + '원</span>'
+    +   '<span style="font-size:14px; font-weight:bold; color:' + (chg ? '#44ee77' : '#ff4455') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
+    +   '<span style="margin-left:auto;">' + holdHtml.replace('<div class="stock-hold"', '<span').replace('</div>', '</span>') + '</span>'
+    + '</div>'
+
+    + '</div>';
 
     list.appendChild(div);
   });
 
   list.onclick = function(e) {
     var btn = e.target.closest('.stock-btn');
-    if (!btn) return; trade(btn.dataset.key, btn.dataset.buy === '1');
+    if (btn) {
+      trade(btn.dataset.key, btn.dataset.buy === '1');
+      return;
+    }
+    var card = e.target.closest('.stock-card');
+    if (card) {
+      var key = card.id.replace('stock-card-', '');
+      showChartModal(key);
+    }
   };
   requestAnimationFrame(function() {
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (!ch.unlocked || ch.sector !== marketTab) return;
-      drawChangeGraph(document.getElementById('mc-' + k), ch.tick_history, ch.price, true);
-    });
-  });
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (!ch.unlocked || ch.sector !== marketTab) return;
+      drawChangeGraph(document.getElementById('mc-' + k), ch.price_history, ch.tick_history, ch.price, true);
+    });
+  });
 }
 
 function renderMarket() {
@@ -4081,18 +4349,22 @@ function renderMarket() {
   var showBar = 'block';
 
   if (GS.inCrash) {
-    themeText = '⚡ 시장 대폭락 (' + GS.crashTicks + '틱 남음)'; themeBg = '#2a0000'; themeColor = '#ff4444';
+    // 💡 시장 대폭락 색상: 빨강 유지
+    themeText = '⚡ 시장 대폭락 (' + GS.crashTicks + '틱 남음)'; themeBg = '#2a0000'; themeColor = 'var(--red)';
   } else if (GS.inBull) {
-    themeText = '📈 대세 상승장 (' + GS.bullTicks + '틱 남음)'; themeBg = '#330011'; themeColor = '#ff55aa';
+    // 💡 대세 상승장 색상: 초록색으로 변경
+    themeText = '📈 대세 상승장 (' + GS.bullTicks + '틱 남음)'; themeBg = '#002211'; themeColor = 'var(--green)';
   } else if (GS.earningSeasonTicks > 0) {
     themeText = '[어닝시즌] 진행중 (' + GS.earningSeasonTicks + '틱 남음)'; themeBg = '#1a0f00'; themeColor = '#ff9922';
   } else if (GS.currentTheme.target !== '없음') {
     if (GS.currentTheme.type === 'bad') {
+      // 💡 악재 테마 색상: 빨강으로 변경
       themeText = '❄️ ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
-      themeBg = '#0a1526'; themeColor = '#5588ff';
+      themeBg = '#2a0000'; themeColor = 'var(--red)';
     } else {
+      // 💡 호재 테마 색상: 초록으로 변경
       themeText = '🔥 ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
-      themeBg = '#1a0808'; themeColor = '#ffdd44';
+      themeBg = '#002211'; themeColor = 'var(--green)';
     }
   } else {
     themeText = '평화로운 장세'; themeBg = '#0e0e1a'; themeColor = '#cccccc';
@@ -4126,104 +4398,100 @@ function renderPortfolioTabs() {
 }
 
 function renderPortfolioList() {
-  var list = document.getElementById('port-list');
-  list.innerHTML = '';
-  var keys = Object.keys(GS.chars).filter(function(k) {
-    if (portTab === '보유') return GS.chars[k].owned > 0;
-    return GS.chars[k].sector === portTab;
-  });
+  var list = document.getElementById('port-list');
+  list.innerHTML = '';
+  var keys = Object.keys(GS.chars).filter(function(k) {
+    if (portTab === '보유') return GS.chars[k].owned > 0;
+    return GS.chars[k].sector === portTab;
+  });
 
-  if (portTab === '보유' && keys.length === 0) {
-    list.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:40px; font-size:14px;">현재 보유중인 주식이 없습니다.<br>거래소에서 주식을 매수해보세요!</div>';
-    return;
-  }
+  if (portTab === '보유' && keys.length === 0) {
+    list.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:40px; font-size:14px;">현재 보유중인 주식이 없습니다.<br>거래소에서 주식을 매수해보세요!</div>';
+    return;
+  }
 
-  var totalInvested = 0;
-  Object.values(GS.chars).forEach(function(c) { 
+  var totalInvested = 0;
+  Object.values(GS.chars).forEach(function(c) { 
     if(c.owned > 0) {
       if (typeof c.total_principal === 'undefined') c.total_principal = c.avg_price * c.owned;
       totalInvested += c.price * c.owned; 
     }
   });
 
-  keys.forEach(function(k) {
-    var ch = GS.chars[k];
-    var sc = SECTOR_COLORS[ch.sector] || '#555566';
-    var rc = RARITY_COLORS[ch.rarity] || '#aaa';
+  keys.forEach(function(k) {
+    var ch = GS.chars[k];
+    var sc = SECTOR_COLORS[ch.sector] || '#555566';
+    var rc = RARITY_COLORS[ch.rarity] || '#aaa';
 
-    if (!ch.unlocked) {
-      var div = document.createElement('div'); div.className = 'port-locked';
-      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="font-weight:bold;color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
-      list.appendChild(div); return;
-    }
-    
-    var holdHtml = '<div class="port-hold" style="color:#555566">미보유 | ' + fcomma(ch.price) + '원</div>';
-    var vipHtml = '';
-    
-    if (ch.owned > 0) {
-      var val = ch.price * ch.owned;
-      var tax = Math.floor(val * 0.01);
-      var netValue = val - tax;
-      // 변경 후
+    if (!ch.unlocked) {
+      var div = document.createElement('div'); div.className = 'port-locked';
+      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="font-weight:bold;color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
+      list.appendChild(div); return;
+    }
+    
+    var holdHtml = '<div class="port-hold" style="color:#555566">미보유 | ' + fcomma(ch.price) + '원</div>';
+    var vipHtml = '';
+    
+    if (ch.owned > 0) {
+      var val = ch.price * ch.owned;
+      var tax = Math.floor(val * 0.01);
+      var netValue = val - tax;
       var principal = (typeof ch.total_principal !== 'undefined' && ch.total_principal > 0) 
       ? ch.total_principal 
       : ch.avg_price * ch.owned;
-      var profitAmt = netValue - principal;
-      // 💡 포트폴리오도 홈 화면 규정과 동일하게!
+      var profitAmt = netValue - principal;
       var prRaw = (principal > 0) ? (profitAmt / principal * 100) : 0;
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
-      var weightPct = totalInvested > 0 ? (val / totalInvested * 100).toFixed(1) : 0;
-      
-      holdHtml = '<div class="port-hold" style="color:' + (profitAmt >= 0 ? '#ff5555' : '#5588ff') + '">' +
+      var weightPct = totalInvested > 0 ? (val / totalInvested * 100).toFixed(1) : 0;
+      
+      // 💡 포트폴리오 수익률 색상: 상승=초록, 하락=빨강
+      holdHtml = '<div class="port-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + '">' +
         fshare(ch.owned) + '주 <span style="color:var(--text2); font-weight:normal;">(비중 ' + weightPct + '%)</span><br>' +
         '<span style="color:var(--text2); font-size:13px;">투자원금: ' + fcomma(Math.floor(principal)) + '원</span><br>' +
         '실제손익: ' + (profitAmt > 0 ? '+' : '') + fcomma(Math.floor(profitAmt)) + '원 (' + (profitAmt > 0 ? '+' : '') + prStr + '%)</div>';
-      
-      var reqAmt = getVipReq(ch.rarity);
-      var vr = Math.min(1, val / reqAmt);
-      vipHtml = '<div class="vip-bar-wrap"><div class="vip-bar-fill" style="width:' + (vr*100) + '%"></div></div>';
-    }
+      
+      var reqAmt = getVipReq(ch.rarity);
+      var vr = Math.min(1, val / reqAmt);
+      vipHtml = '<div class="vip-bar-wrap"><div class="vip-bar-fill" style="width:' + (vr*100) + '%"></div></div>';
+    }
 
-    var div = document.createElement('div');
-    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
-    div.dataset.key = k;
+    var div = document.createElement('div');
+    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
+    div.dataset.key = k;
 
-    var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
+    var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
 
     div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:30px; height:30px; object-fit:contain;">' : '') + ch.name + rarityHtml + '</div>'
     + (ch.owned > 0 ? '<div class="port-val">' + fcomma(ch.price * ch.owned) + '원</div>' : '') + '</div>'
     + '<div class="port-sub" style="display:flex; align-items:center; gap:6px; margin-top:4px;">' + ch.sector + '</div>' + holdHtml + vipHtml
     + '<div style="display:flex; align-items:center; gap:8px;">'
-    // 대표 설정 버튼 + 매매 버튼 연달아 배치
     + '<button data-mainkey="' + k + '" style="font-size:11px;padding:3px 10px;border-radius:12px;margin-top:6px;cursor:pointer;background:' + (GS.mainChar===k?'#ffcc44':'#111') + ';color:' + (GS.mainChar===k?'#000':'#aaa') + '">' + (GS.mainChar===k?'★ 대표중':'대표 설정') + '</button>'
     + '<button data-tradekey="' + k + '" style="font-size:11px;padding:3px 10px;border-radius:12px;margin-top:6px;margin-left:8px;cursor:pointer;background:#2a2a35;color:white;border:none;font-family:\'Jua\',sans-serif;">매매 ➔</button>'
-    +   '<span id="cd-' + k + '" style="font-size:10px; color:#ff4444; margin-left:6px; margin-top:8px; font-weight:normal; display:none;"></span>'
+    + '<span id="cd-' + k + '" style="font-size:10px; color:var(--red); margin-left:6px; margin-top:8px; font-weight:normal; display:none;"></span>'
     + '</div>';
 
-    list.appendChild(div);
-  });
+    list.appendChild(div);
+  });
 
-  list.onclick = function(e) {
-    var btn = e.target.closest('[data-mainkey]');
-    if (btn) {
-      playSound('click');
-      setMainChar(btn.dataset.mainkey);
-      return;
-    }
-  
+  list.onclick = function(e) {
+    var btn = e.target.closest('[data-mainkey]');
+    if (btn) {
+      playSound('click');
+      setMainChar(btn.dataset.mainkey);
+      return;
+    }
     var tradeBtn = e.target.closest('[data-tradekey]');
     if (tradeBtn) {
       playSound('click');
-      goToMarket(tradeBtn.dataset.tradekey); // 거래소로 이동
-      return; // ⚠️ 여기서 return을 해야 아래의 상세 창(모달)이 열리지 않습니다.
+      goToMarket(tradeBtn.dataset.tradekey); 
+      return; 
     }
-    
-    var card = e.target.closest('.port-card');
-    if (card) {
-      playSound('click');
-      showStockDetail(card.dataset.key);
-    }
-  };
+    var card = e.target.closest('.port-card');
+    if (card) {
+      playSound('click');
+      showStockDetail(card.dataset.key);
+    }
+  };
 }
 
 function showStockDetail(k) {
@@ -4333,7 +4601,7 @@ function renderPortfolio() {
   var prStr = Math.abs(profitPct) < 10000 ? profitPct.toFixed(1) : fcomma(profitPct);
   var sign = totalProfit > 0 ? '+' : '';
   var pctStr = totalInvested > 0 ? ' (' + sign + prStr + '%)' : ''; 
-  var profitColor = totalProfit >= 0 ? '#ff5555' : '#5588ff';
+  var profitColor = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
 
   var totalValueStr = fcomma(totalValue) + '원';
   var valFontSize = '26px';
@@ -4412,7 +4680,7 @@ function renderMission() {
     var progText = m.type === 'assets' ? fmoney(prog) + '/' + fmoney(m.target) : prog + '/' + m.target;
 
     div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + (canClaim?'#ffd700':'#fff') + '">' + m.name + '</div><div style="font-size:12px;color:var(--text2);margin-top:3px">' + m.desc + '</div><div style="font-size:11px;color:#cc88ff;margin-top:3px;font-weight:bold;"> 티켓 ' + m.reward + '장</div></div>'
-    + '<div style="margin-left:12px">' + (state.done ? '<span style="color:var(--green); font-size:13px; font-weight:bold;">완료</span>' : canClaim ? '<button onclick="playSound(\'click\'); claimMission(\'' + m.id + '\')" style="padding:8px 14px;background:#886600;color:#000;font-weight:900;border-radius:8px;border:none;cursor:pointer;">수령</button>' : '<span style="font-size:12px;color:#445">' + progText + '</span>') + '</div></div>';
+    + '<div style="margin-left:12px">' + (state.done ? '<span style="color:var(--green); font-size:13px; font-weight:bold;">완료</span>' : canClaim ? '<button onclick="playSound(\'click\'); claimMission(\'' + m.id + '\')" style="padding:8px 14px;background:#886600;color:#000;font-weight:900;border-radius:8px;border:none;cursor:pointer;">수령</button>' : '<span style="font-size:12px;color:var(--text2)">' + progText + '</span>') + '</div></div>';
 
     list.appendChild(div);
   });
@@ -4720,29 +4988,29 @@ function drawMg() {
   
   // 💡 렉 제거의 핵심: 빨간 선과 파란 선을 각각 '한 붓 그리기'로 묶어서 연산량 90% 감소!
   
-  // 1. 빨간색(UP) 상승선 한 번에 묶어서 그리기
+  // 1. 초록색(UP) 상승선 한 번에 묶어서 그리기
   mg.ctx.beginPath();
   for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'UP') {
       // 💡 마법 2: 좌표 뒤에 | 0 을 붙여서 소수점을 날려버립니다.
-mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
-mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
+      mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
+      mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
-  mg.ctx.strokeStyle = 'rgba(255, 51, 68, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
-  mg.ctx.strokeStyle = '#ff3344'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
+  mg.ctx.strokeStyle = 'rgba(68, 204, 102, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
+  mg.ctx.strokeStyle = '#44cc66'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
 
-  // 2. 파란색(DOWN) 하락선 한 번에 묶어서 그리기
+  // 2. 빨간색(DOWN) 하락선 한 번에 묶어서 그리기
   mg.ctx.beginPath();
   for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'DOWN') {
       // 💡 마법 2: 좌표 뒤에 | 0 을 붙여서 소수점을 날려버립니다.
-mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
-mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
+      mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
+      mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
-  mg.ctx.strokeStyle = 'rgba(51, 204, 255, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
-  mg.ctx.strokeStyle = '#33ccff'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
+  mg.ctx.strokeStyle = 'rgba(255, 68, 85, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
+  mg.ctx.strokeStyle = '#ff4455'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
   
   // 플레이어 그리기 로직
   if (!mgSprite || !mgSprite.width) {
@@ -5027,7 +5295,7 @@ function devResetStep() {
     GS.dialogState = 'normal';
     GS.dialogText = '다음 에피소드가 궁금하지 않으세요? 밤새도록 멈출 수 없을걸요.';
     GS.lastComboTime = 0;
-    GS.dividendTimer = 15;
+    GS.dividendTimer = 12;
     GS.earningTimer = 15;
     GS.mg_highscore = 0;
     GS.bgmOn = true; GS.sfxOn = true; GS.notiOn = true;
@@ -5153,6 +5421,34 @@ function applyCheat() {
     // 4. 설정창 자동으로 닫기
     document.getElementById('settings-modal').classList.remove('active');
 
+  } else if (code === '타임슬립') { 
+    // 💡 개발자 테스트용: 24시간(오프라인 최대 한도) 강제 진행
+    playSound('click');
+    showToast("⏳ 24시간 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#ffcc44", null, 3000, false, true);
+
+    // 안내 토스트가 화면에 뜰 시간을 주기 위해 0.1초 뒤에 무거운 연산 시작
+    setTimeout(function() {
+      var moneyBefore = GS.money;
+      var skipTicks = 17280; // 24시간을 틱(5초) 단위로 환산한 수치 (최대 한도)
+
+      // 17,280번의 차트 변동, 배당금 지급, 뉴스 발생을 순식간에 시뮬레이션!
+      for (var i = 0; i < skipTicks; i++) {
+        tick(true); // 조용히(silent) 연산만 실행
+      }
+
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+
+      updateTotalAssets();
+      save();
+      renderAll();
+
+      playSound('dividend');
+      showToast("✨ 24시간 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#66ff88", null, 5000, false, true);
+
+      // 설정창 자동으로 닫기
+      document.getElementById('settings-modal').classList.remove('active');
+    }, 100);
+
   } else {
     // 다른 글자를 쳤을 때
     showToast("알 수 없는 코드입니다.", "#ff4444");
@@ -5233,41 +5529,55 @@ function initSwipeArrows() {
 }
 
 function initializeGame() {
-  // preloadCharacterImages();
-  initChars(); initMissions(); load();
+  initChars(); initMissions(); load();
+  // 💡 테스트용: 이 변수가 있으면 lastSaveTime을 강제로 덮어씀
+  var testOffset = localStorage.getItem('sg_test_offset');
+  if (testOffset) {
+    GS.lastSaveTime = Date.now() - parseInt(testOffset);
+    localStorage.removeItem('sg_test_offset'); // 한 번 쓰고 자동 삭제
+  }
 
-  // 💡 [오프라인 동기화] 앱을 완전히 껐다가 켰을 때
+  // 💡 [오프라인 동기화] 앱을 완전히 껐다가 켰을 때
   if (GS.lastSaveTime) {
     var now = Date.now();
-    // 마지막 저장 후 흐른 시간 + 저장되어 있던 자투리 시간 합산
     var offlineMs = (now - GS.lastSaveTime) + (GS.leftoverMs || 0);
-    var elapsedTicks = Math.floor(offlineMs / 5000); 
+    var totalElapsedTicks = Math.floor(offlineMs / 5000); 
 
-    // 💡 24시간(17,280틱) 상한선 설정으로 프리징 방지
-    var MAX_OFFLINE_TICKS = 17280;
-    elapsedTicks = Math.min(elapsedTicks, MAX_OFFLINE_TICKS);
-    
-    // 이번에 쓰고 남은 자투리 시간은 다시 저장
+    var MAX_OFFLINE_TICKS = 17280; // 최대 24시간 연산
+    var simulatedTicks = Math.min(totalElapsedTicks, MAX_OFFLINE_TICKS);
+    var skippedTicks = totalElapsedTicks - simulatedTicks; // 24시간을 초과하여 '버려진 시간'
+
     GS.leftoverMs = offlineMs % 5000;
 
-    if (elapsedTicks > 0) {
+    // 💡 1. 버려진 시간(skippedTicks) 처리: 기존 과거 차트 데이터를 날려버리는 무의미한 플랫라인(빈 캔들) 생성을 방지합니다.
+    // 대신 마스터 시계와 틱 횟수만 점프시켜, 오프라인 기간만큼 빈 구간 없이 최신 캔들과 자연스럽게 이어붙입니다!
+    if (skippedTicks > 0) {
+      GS.total_game_ticks += skippedTicks;
+      GS.virtual_time = (GS.virtual_time || Date.now()) + (skippedTicks * 5000);
+    }
+
+    // 💡 2. 최근 24시간(simulatedTicks) 처리: 실제 주가 및 배당금 연산
+    if (simulatedTicks > 0) {
       var moneyBefore = GS.money;
-      for (var i = 0; i < elapsedTicks; i++) {
-        tick(true); // 밀린 틱만큼 연산
+      for (var j = 0; j < simulatedTicks; j++) {
+        tick(true); 
       }
       window.offlineEarnedAmount = Math.max(0, GS.money - moneyBefore);
     }
+    
+    // 연산 종료 후 가상 시계를 현실 시간에 완벽 동기화
+    GS.virtual_time = now; 
   }
 
   if (!GS.missions['first_trade'] || GS.missions['first_trade'].progress === 0) { marketTab = 'IT'; portTab = '보유'; }
-  
-  // 💡 여기에 탭 스와이프 화살표 생성 함수를 추가합니다!
-  initSwipeArrows();
-  
-  updateMissions(); updateTotalAssets(); updateDialogState(true); renderAll();
-  if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
+  
+  // 💡 여기에 탭 스와이프 화살표 생성 함수를 추가합니다!
+  initSwipeArrows();
+  
+  updateMissions(); updateTotalAssets(); updateDialogState(true); renderAll();
+  if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
 
-  setInterval(tick, 5000);
+  setInterval(tick, 5000);
 }
 // --- 📖 도감(컬렉션) 시스템 ---
 var currentDictTab = '전체';
@@ -5352,6 +5662,470 @@ function closeStockDetail() {
   modal.classList.remove('active');
   setTimeout(function() { modal.style.zIndex = '300'; }, 300);
 }
+
+var currentChartTab = 'tick';
+var currentChartKey = null;
+
+// 💡 유저가 직관적으로 알 수 있도록 조회 기간과 봉 1개의 단위를 텍스트로 명시해줍니다.
+function updateChartInfoText() {
+  var infoText = '';
+  if (currentChartTab === 'tick') infoText = '조회 기간: 최근 3분 (캔들 1개 = 5초)';
+  else if (currentChartTab === '1m') infoText = '조회 기간: 최근 1시간 (캔들 1개 = 1분 30초)';
+  else if (currentChartTab === '1d') infoText = '조회 기간: 최근 12시간 (캔들 1개 = 18분)';
+  else if (currentChartTab === '10m') infoText = '조회 기간: 최근 1일 (캔들 1개 = 36분)';
+  else if (currentChartTab === '1h') infoText = '조회 기간: 최근 1주 (캔들 1개 = 4시간 12분)';
+  
+  var infoEl = document.getElementById('cm-chart-info');
+  if (infoEl) infoEl.textContent = infoText;
+}
+
+function setChartTab(tab) {
+  playSound('click');
+  currentChartTab = tab;
+  
+  var tabs = document.querySelectorAll('#cm-time-tabs .sector-tab');
+  tabs.forEach(function(t) {
+    t.classList.remove('active');
+    t.style.background = 'transparent';
+    t.style.color = 'var(--text2)';
+    t.style.borderColor = 'var(--border)';
+  });
+  
+  // 12시간(1d) 탭이 2번 인덱스로 들어갑니다.
+  var activeIdx = tab === 'tick' ? 0 : tab === '1m' ? 1 : tab === '1d' ? 2 : tab === '10m' ? 3 : 4;
+  tabs[activeIdx].classList.add('active');
+  tabs[activeIdx].style.background = 'var(--gold)';
+  tabs[activeIdx].style.color = '#000';
+  tabs[activeIdx].style.borderColor = 'transparent';
+
+  updateChartInfoText();
+
+  if (currentChartKey) {
+    requestAnimationFrame(function() { drawAdvancedChart(currentChartKey); });
+  }
+}
+
+function getChartTimeLabel(tab, ticksAgo) {
+  var now = GS.virtual_time || Date.now();
+  
+  // 1. 각 탭별 캔들 하나가 차지하는 '틱(5초)' 개수를 정확히 정의합니다.
+  var ticksPerCandle = 1;
+  if (tab === '1m') ticksPerCandle = 18;      // 1시간 탭 (캔들당 1.5분)
+  else if (tab === '1d') ticksPerCandle = 216;   // 12시간 탭 (캔들당 18분)
+  else if (tab === '10m') ticksPerCandle = 432;  // 1일 탭 (캔들당 36분)
+  else if (tab === '1h') ticksPerCandle = 3024; // 1주 탭 (캔들당 약 4.2시간)
+  
+  var intervalMs = ticksPerCandle * 5000;
+  
+  // 2. [핵심] 현재 시간을 해당 인터벌 단위로 '스냅(고정)' 처리합니다.
+  // 이렇게 하면 현재 시간이 16:05분이라도 18분 단위 캔들이라면 16:00 혹은 15:42 등 정규 시작점에 고정됩니다.
+  var snappedTime = Math.floor(now / intervalMs) * intervalMs;
+  
+  // 3. 고정된 시점으로부터 과거로 거슬러 올라간 시간을 계산합니다.
+  var d = new Date(snappedTime - (ticksAgo * 5000));
+  
+  var h = d.getHours();
+  var m = d.getMinutes();
+  var s = d.getSeconds();
+  var day = d.getDate();
+  var month = d.getMonth() + 1;
+
+  var hh = (h < 10 ? '0' : '') + h;
+  var mm = (m < 10 ? '0' : '') + m;
+  var ss = (s < 10 ? '0' : '') + s;
+
+  if (tab === '1h') { 
+    return month + '/' + day; 
+  } else if (tab === '10m' || tab === '1d' || tab === '1m') { 
+    return hh + ':' + mm; 
+  } else { 
+    return hh + ':' + mm + ':' + ss;
+  }
+}
+
+function showChartModal(k) {
+  var ch = GS.chars[k];
+  if (!ch) return;
+  playSound('click');
+  currentChartKey = k; 
+  
+  document.getElementById('cm-name').textContent = ch.name;
+  document.getElementById('cm-price').textContent = fcomma(ch.price) + '원';
+  var lastTick = ch.tick_history[ch.tick_history.length-1] || 0;
+  var cmChange = document.getElementById('cm-change');
+  cmChange.textContent = (lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%';
+  cmChange.style.color = lastTick >= 0 ? 'var(--green)' : 'var(--red)';
+  
+  var list = document.getElementById('cm-event-list');
+  list.innerHTML = '';
+  if (ch.events.length === 0) {
+    list.innerHTML = '최근 기록된 이벤트가 없습니다.';
+  } else {
+    ch.events.slice(-5).reverse().forEach(function(ev) {
+      var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--green)' : 'var(--red)';
+      var timeStr = '';
+      if (ev.absTick !== undefined) {
+        var diffSec = (GS.total_game_ticks - ev.absTick) * 5;
+        if (diffSec < 60) timeStr = ' (방금 전)';
+        else if (diffSec < 3600) timeStr = ' (' + Math.floor(diffSec/60) + '분 전)';
+        else timeStr = ' (' + Math.floor(diffSec/3600) + '시간 전)';
+      }
+      list.innerHTML += `<div style="margin-bottom:4px;">• <span style="color:${color}">[${ev.type === 'news' ? '뉴스' : '공시'}]</span> ${ev.label} <span style="color:#888; font-size:11px;">${timeStr}</span></div>`;
+    });
+  }
+
+  document.getElementById('chart-modal').classList.add('active');
+  updateChartInfoText(); // 💡 모달을 열 때도 올바른 텍스트로 갱신
+  
+  // 💡 모달을 껐다 켰을 때, 이전 탭 상태와 UI 시각 효과를 강제로 일치시킵니다.
+  var activeIdx = currentChartTab === 'tick' ? 0 : currentChartTab === '1m' ? 1 : currentChartTab === '1d' ? 2 : currentChartTab === '10m' ? 3 : 4;
+  var tabs = document.querySelectorAll('#cm-time-tabs .sector-tab');
+  tabs.forEach(function(t, i) {
+    if (i === activeIdx) { t.classList.add('active'); t.style.background = 'var(--gold)'; t.style.color = '#000'; t.style.borderColor = 'transparent'; }
+    else { t.classList.remove('active'); t.style.background = 'transparent'; t.style.color = 'var(--text2)'; t.style.borderColor = 'var(--border)'; }
+  });
+
+  requestAnimationFrame(function() { drawAdvancedChart(k); });
+}
+
+function closeChartModal() {
+  document.getElementById('chart-modal').classList.remove('active');
+}
+
+function drawAdvancedChart(k) {
+  var canvas = document.getElementById('advanced-chart-canvas');
+  var ctx = canvas.getContext('2d');
+  var ch = GS.chars[k];
+  if (!ch) return;
+
+  // ─── 1. 데이터 수집 ───────────────────────────────────────
+  var candles = []; // { o, h, l, c }
+
+  if (currentChartTab === 'tick') {
+    var prices = ch.price_history || [ch.price];
+    for (var i = 0; i < prices.length; i++) {
+      var o = i === 0 ? prices[i] : prices[i - 1];
+      var c = prices[i];
+      candles.push({ o: o, h: Math.max(o, c), l: Math.min(o, c), c: c });
+    }
+  } else {
+    var srcMap = { '1m': ch.chart_1m, '10m': ch.chart_10m, '1h': ch.chart_1h, '1d': ch.chart_1d };
+    var curMap = { '1m': ch.cur_1m, '10m': ch.cur_10m, '1h': ch.cur_1h, '1d': ch.cur_1d };
+    // 과거 데이터 40개 + 실시간 1개 = 총 41개 포인트(40간격)로 정확히 시간축 일치
+    var maxMap = { '1m': 40, '10m': 40, '1h': 40, '1d': 40 };
+    var src = (srcMap[currentChartTab] || []).slice(-maxMap[currentChartTab]);
+    src.forEach(function(p) {
+      if (typeof p === 'number') candles.push({ o: p, h: p, l: p, c: p });
+      else candles.push({ o: p.o, h: p.h, l: p.l, c: p.c });
+    });
+    var cur = curMap[currentChartTab];
+    if (cur) candles.push({ o: cur.o, h: cur.h, l: cur.l, c: ch.price });
+    else if (candles.length > 0) candles.push({ o: ch.price, h: ch.price, l: ch.price, c: ch.price });
+  }
+
+  if (candles.length === 0) {
+    candles = [{ o: ch.price, h: ch.price, l: ch.price, c: ch.price }];
+  }
+
+  // ─── 2. 캔버스 세팅 ───────────────────────────────────────
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W = canvas.offsetWidth, H = canvas.offsetHeight;
+  if (W === 0 || H === 0) return;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  var padL = 50, padR = 50, padT = 16, padB = 28;
+  var cW = W - padL - padR;
+  var cH = H - padT - padB;
+
+  // ─── 3. Y축 스케일 (데이터 범위 ±8% 여백) ─────────────────
+  var dMin = Infinity, dMax = -Infinity;
+  candles.forEach(function(c) {
+    if (c.h > dMax) dMax = c.h;
+    if (c.l < dMin) dMin = c.l;
+  });
+  var rawRange = dMax - dMin || dMax * 0.02;
+  var margin   = rawRange * 0.12;
+  var minP     = dMin - margin;
+  var maxP     = dMax + margin;
+  if (minP < 0) minP = 0;
+  var range    = maxP - minP || 1;
+
+  // Y축 눈금 스텝 계산 (4~5개 눈금)
+  var idealStep = range / 4;
+  var mag  = Math.pow(10, Math.floor(Math.log10(idealStep || 1)));
+  var mults = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 10];
+  var step  = mag;
+  for (var mi = 0; mi < mults.length; mi++) {
+    if (mults[mi] * mag >= idealStep) { step = mults[mi] * mag; break; }
+  }
+  var gridMin = Math.floor(minP / step) * step;
+  var gridMax = Math.ceil(maxP  / step) * step;
+  var gridLines = [];
+  for (var g = gridMin; g <= gridMax + step * 0.1; g += step) {
+    if (g >= minP && g <= maxP) gridLines.push(g);
+  }
+
+  function toY(price) {
+    return padT + cH - ((price - minP) / range) * cH;
+  }
+
+  // ─── 4. 배경 ──────────────────────────────────────────────
+  ctx.fillStyle = 'rgba(8, 8, 18, 0.0)';
+  ctx.fillRect(0, 0, W, H);
+
+  // 차트 영역 배경
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(padL, padT, cW, cH, 6) : ctx.rect(padL, padT, cW, cH);
+  ctx.fill();
+
+  // ─── 5. 격자선 & Y축 라벨 ────────────────────────────────
+  ctx.font = 'bold 10px "Jua", sans-serif';
+  ctx.textAlign = 'right';
+
+  gridLines.forEach(function(val) {
+    var y = toY(val);
+    // 격자선
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(W - padR, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    var label = '';
+    // 💡 1억 이상일 때는 '억', 100만 이상일 때는 '만'으로 축약하고, 그 밑으로는 통일감 있게 콤마(,) 표기 유지!
+    if (val >= 1e8 && step >= 1e7) label = parseFloat((val/1e8).toFixed(2)) + '억';
+    else if (val >= 1e6 && step >= 1e5) label = parseFloat((val/1e4).toFixed(0)) + '만';
+    else label = Math.round(val).toLocaleString();
+    
+    ctx.fillStyle = 'rgba(180,180,210,0.75)';
+    ctx.fillText(label, padL - 5, y + 3.5);
+  });
+
+  // ─── 6. X축 라벨 (해당 캔들과 완벽 동기화) ────────────────────────
+  ctx.textAlign  = 'center';
+  ctx.fillStyle  = 'rgba(150,150,185,0.7)';
+  ctx.font       = '10px "Jua", sans-serif';
+
+  var n = candles.length;
+  var displayCount = Math.max(n, 1); 
+  var spacing = cW / displayCount; 
+  var bodyW = Math.max(1.5, Math.min(spacing * 0.65, 30)); 
+
+  var ticksPerCandle = 1;
+  if (currentChartTab === '1m') ticksPerCandle = 18;     // 1시간 (18 * 40 = 720틱 = 3600초)
+  else if (currentChartTab === '1d') ticksPerCandle = 216;   // 12시간 (216 * 40 = 8640틱 = 43200초)
+  else if (currentChartTab === '10m') ticksPerCandle = 432;  // 1일 (432 * 40 = 17280틱 = 86400초)
+  else if (currentChartTab === '1h') ticksPerCandle = 3024; // 1주일 (3024 * 40 = 120960틱 = 604800초)
+
+  // 최대 5개의 라벨을 표시하되, 캔들이 적으면 캔들 개수에 맞춤
+  var labelCount = Math.min(4, displayCount - 1); 
+  if (displayCount === 1) labelCount = 0;
+
+  var lastLabelText = ""; // 💡 [추가] 이전 라벨 내용을 기억하여 중복 출력을 막습니다.
+
+  for (var li = 0; li <= labelCount; li++) {
+    var cIdx = 0;
+    if (labelCount > 0) {
+      cIdx = Math.floor(li * (displayCount - 1) / labelCount);
+    }
+    
+    var x = padL + (cIdx + 0.5) * spacing;
+    var offsetFromRight = (displayCount - 1) - cIdx;
+    var ticksAgo = offsetFromRight * ticksPerCandle;
+    
+    var label = getChartTimeLabel(currentChartTab, ticksAgo);
+    
+    // 💡 [수정] 이전 라벨과 내용이 다를 때만 텍스트와 격자선을 그립니다.
+    if (label !== lastLabelText) {
+      ctx.fillText(label, x, H - padB + 14);
+
+      // X 격자선 (라벨이 표시되는 지점에만 선을 긋습니다)
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([3, 5]);
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, padT + cH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      lastLabelText = label; // 💡 현재 라벨 내용을 저장
+    }
+  }
+
+  // ─── 7. 현재가 수평선 ────────────────────────────────────
+  var curY = toY(ch.price);
+  var lastCandle = candles[candles.length - 1];
+  var lineColor = (lastCandle && lastCandle.c >= lastCandle.o) ? '#44cc66' : '#ff4455';
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(padL, curY);
+  ctx.lineTo(W - padR, curY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // 현재가 라벨 (오른쪽)
+  ctx.fillStyle = lineColor;
+  ctx.font      = 'bold 9px "Jua", sans-serif';
+  ctx.textAlign = 'left';
+  var priceLabel = ch.price >= 1e6 ? (ch.price/1e6).toFixed(2)+'M' : fcomma(ch.price);
+  var labelBgW = 6 + ctx.measureText(priceLabel).width;
+  ctx.fillStyle = lineColor + 'cc';
+  ctx.fillRect(W - padR + 1, curY - 8, labelBgW, 14);
+  ctx.fillStyle = '#000';
+  ctx.fillText(priceLabel, W - padR + 4, curY + 3.5);
+
+  // ─── 8. 캔들 그리기 ───────────────────────────────────────
+  candles.forEach(function(c, i) {
+    var offsetFromRight = n - 1 - i;
+    // 💡 캔들 위치: 유동적 spacing 적용 (항상 오른쪽 끝부터 차곡차곡)
+    var x = (padL + cW) - (offsetFromRight + 0.5) * spacing;
+    var isUp = c.c >= c.o;
+
+    var yH = toY(c.h), yL = toY(c.l);
+    var yO = toY(c.o), yC = toY(c.c);
+    var bodyTop = Math.min(yO, yC);
+    var bodyH   = Math.max(Math.abs(yO - yC), 1.5);
+
+    // 심지
+    ctx.strokeStyle = isUp ? '#44cc66cc' : '#ff4455cc';
+    ctx.lineWidth   = Math.max(0.8, bodyW * 0.15);
+    ctx.beginPath();
+    ctx.moveTo(x, yH);
+    ctx.lineTo(x, bodyTop);
+    ctx.moveTo(x, bodyTop + bodyH);
+    ctx.lineTo(x, yL);
+    ctx.stroke();
+
+    // 몸통
+    ctx.fillStyle = isUp ? '#44cc66' : '#ff4455';
+    if (bodyH <= 2) {
+      // 도지 캔들 (십자선)
+      ctx.fillStyle = isUp ? '#88eeaa' : '#ff8888';
+      ctx.fillRect(x - bodyW / 2, bodyTop - 0.5, bodyW, 2);
+    } else {
+      ctx.fillRect(x - bodyW / 2, bodyTop, bodyW, bodyH);
+    }
+  });
+
+  // ─── 9. 이벤트 마커 (줌아웃 시 마커 겹침 방지 적용) ─────────────
+  var eventWrap = document.getElementById('chart-event-wrap');
+  eventWrap.innerHTML = '';
+
+  if (ch.events && ch.events.length > 0) {
+    var groupedEvents = {}; // 같은 캔들에 겹치는 이벤트 그룹화
+
+    ch.events.forEach(function(ev) {
+      if (ev.absTick === undefined) return;
+
+      // 💡 1주일(1h) 탭처럼 너무 압축된 차트에서만 일반 뉴스를 숨기고, 
+      // 요청하신 12시간(1d)과 1일(10m) 탭을 포함한 나머지 탭에서는 마커를 표시합니다.
+      if (currentChartTab === '1h' && ev.type === 'news') {
+        return; 
+      }
+      
+      // 💡 마커 위치 계산 완벽 수정: 
+      // 현재 틱과 이벤트 틱의 단순 차이(뺄셈)를 이용하면 현재 캔들 진행도에 따라 오차가 생깁니다.
+      // 캔들이 묶이는 정확한 절대 '주기' 구간을 비교해야 마커가 흔들리지 않고 캔들에 딱 달라붙습니다!
+      var candlesAgo = 0;
+      if (currentChartTab === 'tick') {
+        candlesAgo = GS.total_game_ticks - ev.absTick;
+      } else {
+        candlesAgo = Math.floor(GS.total_game_ticks / ticksPerCandle) - Math.floor(ev.absTick / ticksPerCandle);
+      }
+
+      if (candlesAgo < 0) return;
+
+      var evIdx = (n - 1) - candlesAgo; // 오른쪽 끝(현재)에서 과거 방향으로 위치 계산
+
+      if (evIdx >= 0 && evIdx < n) {
+        if (!groupedEvents[evIdx]) groupedEvents[evIdx] = [];
+        groupedEvents[evIdx].push(ev);
+      }
+    });
+
+    Object.keys(groupedEvents).forEach(function(idxStr) {
+      var evIdx = parseInt(idxStr);
+      var evList = groupedEvents[evIdx];
+      
+      // 💡 마커 위치: 캔들과 완벽하게 동일한 X 좌표 계산식 사용!
+      var offsetFromRight = (n - 1) - evIdx;
+      var x = (padL + cW) - (offsetFromRight + 0.5) * spacing;
+
+      var isAllGood = true;
+        var isAllBad = true;
+        var labelHtml = '';
+
+        // 이벤트를 하나씩 순회하며 호재/악재 화살표를 세로로 쌓습니다.
+        evList.forEach(function(ev) {
+          var isCorp = ev.type === 'split' || ev.type === 'merge';
+          var isGood = ev.flag === 'good' || ev.type === 'split';
+          
+          if (!isGood) isAllGood = false;
+          if (isGood) isAllBad = false;
+
+          var iconColor = isCorp ? '#ffd700' : (isGood ? '#44cc66' : '#ff4455');
+          var iconText = isCorp ? (ev.type === 'split' ? '분할' : '병합') : (isGood ? '▲' : '▼');
+          
+          labelHtml += '<div style="color:' + iconColor + '; line-height: 1.2;">' + iconText + '</div>';
+        });
+
+        var markerColor = '#aaaaaa'; // 💡 호재/악재가 섞여 있으면 중립 색상(회색)
+        if (isAllGood) markerColor = '#44cc66';
+        else if (isAllBad) markerColor = '#ff4455';
+        
+        // 코프(분할/병합) 이벤트가 포함되어 있고 방향이 한쪽일 땐 노란색 우선
+        if ((isAllGood || isAllBad) && evList.some(function(e) { return e.type === 'split' || e.type === 'merge'; })) {
+          markerColor = '#ffd700'; 
+        }
+
+        // 수직선
+        ctx.strokeStyle = markerColor + '55';
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + cH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 💡 태그 (아래로 길어지더라도 상단 탭을 가리지 않도록 위치 고정)
+        var tagY = padT - 18;
+
+        var tag       = document.createElement('div');
+        tag.className = 'chart-event-tag';
+        tag.innerHTML = labelHtml; // 💡 텍스트 대신 HTML 삽입
+        tag.style.cssText = [
+          'left:' + x + 'px',
+          'top:' + tagY + 'px',
+          'background:' + markerColor + '22',
+          'border:1px solid ' + markerColor + '88',
+          'border-radius:4px',
+          'padding:2px 4px',
+          'font-size:10px',
+          'font-weight:bold',
+          'transform:translateX(-50%)',
+          'text-align:center', // 💡 세로 정렬 시 예쁘게 가운데 정렬
+          'white-space:nowrap'
+        ].join(';');
+        eventWrap.appendChild(tag);
+    });
+  }
+
+  // ─── 10. 최고/최저 업데이트 ──────────────────────────────
+  document.getElementById('cm-high').textContent = fcomma(Math.round(dMax)) + '원';
+  document.getElementById('cm-low').textContent  = fcomma(Math.round(dMin)) + '원';
+}
+
 // --- 가챠 화면 SSR 슬라이드쇼 ---
 var ssrShowcaseList = [
   { name: 'SSR 아리스', img: 'imgs/ssr_aeprin.png' },
@@ -5469,27 +6243,37 @@ document.addEventListener('visibilitychange', function() {
     }
 
     // 5초 단위로 틱 계산 후 남은 ms는 다시 주머니에 저장
-    var elapsedTicks = Math.floor(offlineMs / 5000);
-    GS.leftoverMs = offlineMs % 5000; 
+    var totalElapsedTicks = Math.floor(offlineMs / 5000);
+    GS.leftoverMs = offlineMs % 5000; 
 
-    // 💡 [추가] 24시간(17,280틱) 상한선 설정
-    var MAX_OFFLINE_TICKS = 17280;
-    elapsedTicks = Math.min(elapsedTicks, MAX_OFFLINE_TICKS);
+    // 💡 24시간(17,280틱) 상한선 설정 및 초과된 시간 처리
+    var MAX_OFFLINE_TICKS = 17280;
+    var simulatedTicks = Math.min(totalElapsedTicks, MAX_OFFLINE_TICKS);
+    var skippedTicks = totalElapsedTicks - simulatedTicks;
 
-    if (elapsedTicks > 0) {
-      var moneyBefore = GS.money;
-      for (var i = 0; i < elapsedTicks; i++) {
-        tick(true); 
-      }
+    // 💡 버려진 시간(24시간 초과분)에 대해 플랫라인 생성 없이 시간축만 점프하여 차트를 자연스럽게 이어붙임
+    if (skippedTicks > 0) {
+      GS.total_game_ticks += skippedTicks;
+      GS.virtual_time = (GS.virtual_time || Date.now()) + (skippedTicks * 5000);
+    }
 
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
-      if (earnedAmount > 0 && GS.notiOn) {
-        setTimeout(function() {
-          setAction('백그라운드에서 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
-          playSound('dividend');
-        }, 600);
-      }
-    }
+    if (simulatedTicks > 0) {
+      var moneyBefore = GS.money;
+      for (var i = 0; i < simulatedTicks; i++) {
+        tick(true); 
+      }
+
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+      if (earnedAmount > 0 && GS.notiOn) {
+        setTimeout(function() {
+          setAction('백그라운드에서 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
+          playSound('dividend');
+        }, 600);
+      }
+    }
+
+    // 💡 [핵심] 백그라운드에서 복귀했을 때도 시계를 강제 동기화!
+    GS.virtual_time = now;
 
     updateTotalAssets();
     renderAll(); 
@@ -5808,5 +6592,50 @@ document.addEventListener('touchcancel', function(e) {
 // -----------------------------------
 
 </script>
+<div id="chart-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-close" onclick="closeChartModal()">✖</div>
+    <div style="text-align:center;">
+      <div id="cm-name" style="font-size:22px; font-weight:bold;">종목명</div>
+      <div id="cm-price-row" style="margin-top:4px;">
+        <span id="cm-price" style="font-size:18px; color:var(--gold);">0원</span>
+        <span id="cm-change" style="font-size:14px; margin-left:6px;">+0.00%</span>
+      </div>
+    </div>
+
+    <div class="sector-tabs" id="cm-time-tabs" style="display:flex; justify-content:space-between; margin-top:12px; box-shadow:none; padding:4px 0; background:transparent; width:100%; gap:4px;">
+      <div class="sector-tab active" onclick="setChartTab('tick')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center; background:var(--gold); color:#000; border-color:transparent;">실시간</div>
+      <div class="sector-tab" onclick="setChartTab('1m')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center;">1시간</div>
+      <div class="sector-tab" onclick="setChartTab('1d')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center;">12시간</div>
+      <div class="sector-tab" onclick="setChartTab('10m')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center;">1일</div>
+      <div class="sector-tab" onclick="setChartTab('1h')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center;">1주</div>
+    </div>
+    <div id="cm-chart-info" style="text-align:right; font-size:11px; color:var(--text2); margin-top:2px; margin-bottom:-14px;">조회 기간: 최근 3분 (캔들 1개 = 5초)</div>
+
+    <div class="chart-container" style="height: 250px;">
+      <canvas id="advanced-chart-canvas"></canvas>
+      <div id="chart-event-wrap"></div>
+    </div>
+
+    <div class="chart-info-grid">
+      <div class="chart-info-item">
+        <div class="chart-info-label">최고가 (기간 내)</div>
+        <div id="cm-high" class="chart-info-val" style="color:var(--green);">0원</div>
+      </div>
+      <div class="chart-info-item">
+        <div class="chart-info-label">최저가 (기간 내)</div>
+        <div id="cm-low" class="chart-info-val" style="color:var(--red);">0원</div>
+      </div>
+    </div>
+
+    <div style="margin-top:15px; background:var(--bg3); padding:12px; border-radius:10px; border:1px solid var(--border);">
+      <div style="font-size:13px; color:var(--accent); font-weight:bold; margin-bottom:6px;">최근 기업 뉴스 및 이벤트</div>
+      <div id="cm-event-list" style="font-size:12px; color:#ccc; line-height:1.6; max-height:80px; overflow-y:auto;">
+        기록된 이벤트가 없습니다.
+      </div>
+    </div>
+  </div>
+</div>
+<div id="chart-tooltip" class="chart-tooltip"></div>
 </body>
 </html>
