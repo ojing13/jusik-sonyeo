@@ -4359,7 +4359,8 @@ function renderMarketList() {
     div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
     div.id = 'stock-card-' + k;
 
-    var holdHtml = '<div class="stock-hold" style="color:#666677;">미보유</div>';
+    // 💡 보유현황 HTML 생성 (수량, 수익률 2줄)
+    var holdHtml = '<div class="stock-hold" style="color:#666677; font-size:14px; text-align:right; margin-top:4px;">미보유</div>';
     if (ch.owned > 0) {
       var val = ch.price * ch.owned;
       var tax = Math.floor(val * 0.01);
@@ -4368,36 +4369,46 @@ function renderMarketList() {
       var prRaw = (ch.avg_price > 0) ? (profitAmt / (ch.avg_price * ch.owned) * 100) : 0;
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
       
-      // 💡 거래소 보유 주식 수익률 색상: 상승=빨강, 하락=파랑
-      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--red)' : 'var(--blue)') + ';">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
+      var profitColor = profitAmt >= 0 ? 'var(--red)' : 'var(--blue)';
+      var sign = profitAmt > 0 ? '+' : '';
+      
+      // 💡 2줄로 깔끔하게, 폰트 크기 원래대로 복구!
+      holdHtml = '<div class="stock-hold" style="font-size:15px; text-align:right; margin-top:4px; line-height:1.4;">' +
+                 '<div style="color:#eeeeee; letter-spacing:-0.5px;">' + fshare(ch.owned) + '주</div>' +
+                 '<div style="color:' + profitColor + '; letter-spacing:-0.5px; font-weight:bold;">' + sign + prStr + '%</div>' +
+                 '</div>';
     }
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
     var themeIcon = GS.currentTheme.type === 'bad' ? ' ❄️' : ' 🔥';
 
     div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></div>'
-    + '<div class="stock-card-inner" style="padding:11px 11px 11px 16px;">'
+    + '<div class="stock-card-inner" style="padding:12px 12px 12px 16px;">'
 
-    // 1행: 종목명
-    + '<div style="display:flex; align-items:center; gap:5px; font-size:17px; margin-bottom:6px;">'
-    +   (ch.is_vip ? '<img src="imgs/crown.png" style="width:16px;height:16px;object-fit:contain;">' : '')
-    +   ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
-    + '</div>'
-
-    // 2행: 차트 + 버튼
-    + '<div style="display:flex; justify-content:space-between; align-items:stretch; gap:8px; margin-bottom:7px;">'
-    +   '<div style="height:36px; width:210px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
-    +   '<div style="display:flex; gap:5px; flex-shrink:0; align-items:center;">'
+    // 💡 1행: 종목명(좌) + 매수/매도 버튼(우) -> 글씨 크기랑 버튼 크기 다시 시원하게 키움!
+    + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
+    +   '<div style="display:flex; align-items:center; gap:5px; font-size:18px;">'
+    +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:16px;height:16px;object-fit:contain;">' : '')
+    +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
+    +   '</div>'
+    +   '<div style="display:flex; gap:6px;">'
     +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매수</button>'
     +     '<button class="stock-btn sell" data-key="' + k + '" data-buy="0" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매도</button>'
     +   '</div>'
     + '</div>'
 
-    // 3행: 현재가 + 등락률 나란히 + 보유현황 (모두 14px로 통일)
-    + '<div style="display:flex; align-items:baseline; gap:8px;">'
-    +   '<span style="font-size:14px; color:#eeeeee;">' + fcomma(ch.price) + '원</span>'
-    +   '<span style="font-size:14px; color:' + (chg ? '#ff4455' : '#4477ff') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
-    +   '<span style="margin-left:auto; font-size:14px;">' + holdHtml.replace('<div class="stock-hold"', '<span').replace('</div>', '</span>') + '</span>'
+    // 💡 2행: 차트+현재가(좌) / 보유현황 2줄(우)
+    + '<div style="display:flex; justify-content:space-between; align-items:flex-end;">'
+    +   '<div style="display:flex; flex-direction:column; gap:6px;">'
+    +     '<div style="height:38px; width:200px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
+    +     '<div style="display:flex; align-items:baseline; gap:8px; margin-left:2px;">'
+    +       '<span style="font-size:15px; color:#eeeeee;">' + fcomma(ch.price) + '원</span>'
+    +       '<span style="font-size:14px; color:' + (chg ? '#ff4455' : '#4477ff') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div style="display:flex; flex-direction:column; justify-content:flex-end;">'
+    +     holdHtml
+    +   '</div>'
     + '</div>'
 
     + '</div>';
