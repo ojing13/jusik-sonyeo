@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.1</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.2</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -3208,16 +3208,16 @@ function applyPriceChange(k) {
 
   if (typeof ch.ref_price === 'undefined') ch.ref_price = ch.price;
   if (!GS.inCrash && !GS.inBull && Math.abs(ch.change) < 0.08) {
-    effectiveChange += ch.momentum;
-    effectiveChange += ch.bias;
-  }
-  effectiveChange += 0.00015;
-  var diffRatio = (ch.price - ch.ref_price) / ch.ref_price; 
-  var gravity = diffRatio * 0.00015; 
-  effectiveChange -= gravity;
-  effectiveChange = Math.max(-0.30, Math.min(0.30, effectiveChange));
+    effectiveChange += ch.momentum;
+    effectiveChange += ch.bias;
+  }
+  // 로그 수익률을 사용하여 상승과 하락의 괴리율을 완벽히 대칭으로 계산합니다.
+  var logDiff = Math.log(ch.price / ch.ref_price);
+  var gravity = logDiff * 0.00015;
+  effectiveChange -= gravity;
+  effectiveChange = Math.max(-0.30, Math.min(0.30, effectiveChange));
 
-  var np = (effectiveChange >= 0) ? ch.price * (1 + effectiveChange) : ch.price / (1 + Math.abs(effectiveChange));
+  var np = (effectiveChange >= 0) ? ch.price * (1 + effectiveChange) : ch.price / (1 + Math.abs(effectiveChange));
   var totalCost = ch.total_principal || (ch.avg_price * ch.owned);
 
   // 💡 액면분할 (100만원 이상)
@@ -3379,7 +3379,7 @@ function tick(silent) {
     if (Math.random() < 0.1) generateNews(silent);
   } else {
         GS.noThemeTicks++;
-        if (GS.noThemeTicks >= 60 && Math.random() < 0.005) {
+        if (GS.noThemeTicks >= 45 && Math.random() < 0.01) {
         if (Math.random() < 0.5) {
       GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
       if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
@@ -3406,7 +3406,7 @@ function tick(silent) {
       if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
       return;
     }
-    var shouldTrigger = (GS.noThemeTicks >= 60 && Math.random() < 0.025);
+    var shouldTrigger = (GS.noThemeTicks >= 45 && Math.random() < 0.05);
   if (shouldTrigger) {
     GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
     var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
@@ -3433,17 +3433,17 @@ function tick(silent) {
 
     if (!ch._earningApplied) {
       var isTheme = ch.sector === GS.currentTheme.target;
-      var seasonVol = GS.earningSeasonTicks > 0 ? 1.8 : 1.0;
+      var seasonVol = GS.earningSeasonTicks > 0 ? 2.0 : 1.0;
       var baseMin = -0.010 * seasonVol;
-      var baseMax = 0.011 * seasonVol;
+      var baseMax = 0.010 * seasonVol;
 
       if (isTheme) {
         if (GS.currentTheme.type === 'bad') {
-          baseMin = -0.050 * seasonVol;
+          baseMin = -0.06 * seasonVol;
           baseMax = 0.015 * seasonVol;
         } else {
           baseMin = -0.015 * seasonVol;
-          baseMax = 0.050 * seasonVol;
+          baseMax = 0.06 * seasonVol;
         }
       }
 
@@ -3522,13 +3522,15 @@ function generateNews(silent) {
   var ev = pool[Math.floor(Math.random() * pool.length)];
   var flagText = ev.flag === 'good' ? '(호재)' : '(악재)';
   // 💡 뉴스 뜨면 보이지 않는 내재가치가 변함 + 이슈 기록!
-  if (typeof ch.ref_price === 'undefined') ch.ref_price = ch.price;
-  if (ev.flag === 'good') {
-    ch.ref_price = ch.ref_price * (1 + 0.03 + Math.random() * 0.05); 
-  } else {
-    ch.ref_price = ch.ref_price * (1 - 0.03 - Math.random() * 0.05);
-  }
-  ch.latest_event = ev.label + " " + flagText; // 📝 상세창에 띄울 내용 저장!
+  if (typeof ch.ref_price === 'undefined') ch.ref_price = ch.price;
+  var changeRate = 0.03 + Math.random() * 0.05;
+  if (ev.flag === 'good') {
+    ch.ref_price = ch.ref_price * (1 + changeRate); 
+  } else {
+    // 하락 시에도 곱하기 대신 나누기를 사용하여 기하평균 함정을 방지합니다.
+    ch.ref_price = ch.ref_price / (1 + changeRate);
+  }
+  ch.latest_event = ev.label + " " + flagText; // 📝 상세창에 띄울 내용 저장!
   ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: ev.label, flag: ev.flag });
   
   // 💡 이벤트가 30개를 넘어가면 가장 오래된 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
@@ -3581,13 +3583,15 @@ function fireEarning(pending, silent) {
   if (pending.beat) {
     label = EARNINGS_BEAT[Math.floor(Math.random() * EARNINGS_BEAT.length)];
     changeMin = 0.10 * seasonMult; changeMax = 0.28 * seasonMult;
-    ch.ref_price = ch.ref_price * (1 + 0.10 + Math.random() * 0.10); 
+    var earnRate = 0.10 + Math.random() * 0.10;
+    ch.ref_price = ch.ref_price * (1 + earnRate); 
     ch.latest_event = "[어닝 서프라이즈] " + label;
     ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'good' });
   } else {
     label = EARNINGS_MISS[Math.floor(Math.random() * EARNINGS_MISS.length)];
     changeMin = -0.24 * seasonMult; changeMax = -0.08 * seasonMult;
-    ch.ref_price = ch.ref_price * (1 - 0.10 - Math.random() * 0.10);
+    var earnRate = 0.10 + Math.random() * 0.10;
+    ch.ref_price = ch.ref_price / (1 + earnRate);
     ch.latest_event = "[어닝 쇼크] " + label;
     ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'bad' });
   }
@@ -6216,9 +6220,10 @@ function drawAdvancedChart(k) {
     var groupedEvents = {}; // 같은 캔들에 겹치는 이벤트 그룹화
 
     ch.events.forEach(function(ev) {
-      if (ev.absTick === undefined) return;
+      if (ev.absTick === undefined) return;
 
-      // 💡 1주일(1h) 탭에서도 모든 이벤트 마커(뉴스 포함)를 정상적으로 표시합니다.
+      // 💡 1주(1h) 탭에서는 병합, 분할(공시) 마커만 표시하도록 필터링
+      if (currentChartTab === '1h' && ev.type !== 'split' && ev.type !== 'merge') return;
       
       // 💡 마커 위치 계산 완벽 수정:
       // 현재 틱과 이벤트 틱의 단순 차이(뺄셈)를 이용하면 현재 캔들 진행도에 따라 오차가 생깁니다.
