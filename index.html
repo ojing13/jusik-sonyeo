@@ -2392,7 +2392,7 @@ var GS = {
   // 💡 추가: 하트 광고 시청 횟수 제한용 변수
   adHeartUses: 5,
   lastAdDate: new Date().toDateString(),
-  showEventMarkers: true // 💡 차트 뉴스 마커 표시 여부
+  showEventMarkers: true // 💡 차트 이벤트 마커 표시 여부
 };
 
 // --- 무결점 튜토리얼 시스템 (철통 보안 버전) ---
@@ -5905,7 +5905,7 @@ function closeChartModal() {
   document.getElementById('chart-modal').classList.remove('active');
 }
 
-// 💡 뉴스 마커를 끄고 켜는 기능
+// 💡 이벤트 마커를 끄고 켜는 기능
 function toggleEventMarkers() {
     playSound('click');
     GS.showEventMarkers = !GS.showEventMarkers;
@@ -5925,11 +5925,11 @@ function updateMarkerBtnUI() {
     if (!btn) return;
     
     if (GS.showEventMarkers) {
-        btn.innerHTML = '뉴스 마커 <span style="color:var(--gold)">ON</span>';
+        btn.innerHTML = '이벤트 마커 <span style="color:var(--gold)">ON</span>';
         btn.style.borderColor = 'var(--gold)';
         btn.style.background = 'rgba(255, 204, 68, 0.1)';
     } else {
-        btn.innerHTML = '뉴스 마커 <span style="color:var(--text2)">OFF</span>';
+        btn.innerHTML = '이벤트 마커 <span style="color:var(--text2)">OFF</span>';
         btn.style.borderColor = 'var(--border)';
         btn.style.background = 'rgba(255, 255, 255, 0.05)';
     }
@@ -6160,7 +6160,7 @@ function drawAdvancedChart(k) {
     }
   });
 
-  // ─── 9. 뉴스 마커 (줌아웃 시 마커 겹침 방지 적용) ─────────────
+  // ─── 9. 이벤트 마커 (줌아웃 시 마커 겹침 방지 적용) ─────────────
   var eventWrap = document.getElementById('chart-event-wrap');
   eventWrap.innerHTML = '';
 
@@ -6171,15 +6171,11 @@ function drawAdvancedChart(k) {
     var groupedEvents = {}; // 같은 캔들에 겹치는 이벤트 그룹화
 
     ch.events.forEach(function(ev) {
-      if (ev.absTick === undefined) return;
+      if (ev.absTick === undefined) return;
 
-      // 💡 1주일(1h) 탭처럼 너무 압축된 차트에서만 일반 뉴스를 숨기고, 
-      // 요청하신 12시간(1d)과 1일(10m) 탭을 포함한 나머지 탭에서는 마커를 표시합니다.
-      if (currentChartTab === '1h' && ev.type === 'news') {
-        return; 
-      }
-      
-      // 💡 마커 위치 계산 완벽 수정: 
+      // 💡 1주일(1h) 탭에서도 모든 이벤트 마커(뉴스 포함)를 정상적으로 표시합니다.
+      
+      // 💡 마커 위치 계산 완벽 수정:
       // 현재 틱과 이벤트 틱의 단순 차이(뺄셈)를 이용하면 현재 캔들 진행도에 따라 오차가 생깁니다.
       // 캔들이 묶이는 정확한 절대 '주기' 구간을 비교해야 마커가 흔들리지 않고 캔들에 딱 달라붙습니다!
       var candlesAgo = 0;
@@ -6757,7 +6753,7 @@ document.addEventListener('touchcancel', function(e) {
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; margin-bottom:0px;">
         <div id="cm-toggle-markers" onclick="toggleEventMarkers()" style="font-size:11px; color:var(--text2); cursor:pointer; padding:2px 8px; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05); user-select:none;">
-            뉴스 마커 ON
+            이벤트 마커 ON
         </div>
         <div id="cm-chart-info" style="text-align:right; font-size:11px; color:var(--text2);">조회 기간: 최근 3분 (캔들 1개 = 5초)</div>
     </div>
