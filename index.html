@@ -1154,7 +1154,7 @@ body, #app {
   text-align: center; 
   background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.9) 100%); /* 반투명 단색 -> 그라데이션 변경 */
   border-radius: 0 0 6px 6px; z-index: 3;
-} .dict-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; color: #fff;} .dict-level { font-size: 10px; color: var(--accent); } .dict-card.locked .dict-name { color: #888; } .dict-locked-text { font-size: 10px; color: #666; margin-top: 2px; } /* 💡 뱃지 및 왕관 가독성 향상 */ .dict-card .neon-badge { position: absolute; top: 4px; left: 4px; z-index: 4; background: rgba(0, 0, 0, 0.85) !important; padding: 2px 4px !important; font-size: 9px !important; border-radius: 4px !important; } .dict-vip-crown { position: absolute; top: 0px; right: 0px; width: 22px; height: 22px; z-index: 5; }
+} .dict-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; color: #fff;} .dict-level { font-size: 10px; color: var(--accent); } .dict-card.locked .dict-name { color: #888; } .dict-locked-text { font-size: 10px; color: #666; margin-top: 2px; } /* 💡 뱃지 및 왕관 가독성 향상 */ .dict-card .neon-badge { position: absolute; top: 4px; left: 4px; z-index: 4; background: rgba(0, 0, 0, 0.85) !important; padding: 2px 4px !important; font-size: 9px !important; border-radius: 4px !important; } .dict-vip-crown { position: absolute; top: 0px; right: 0px; width: 24px; height: 24px; object-fit: contain; z-index: 5; }
 /* 💡 발열 구조대: 폰의 GPU를 혹사시키는 유리창(블러) 효과 전면 금지! */
 .home-header, .market-header, .port-header, .gacha-header,
 .sector-tabs, .stock-card, .port-card, .stock-locked, .port-locked,
@@ -4450,10 +4450,10 @@ function renderMarketList() {
     + '<div class="stock-card-inner" style="padding:12px 12px 12px 16px;">'
 
     // 💡 1행: 종목명(좌) + 매수/매도 버튼(우) -> 글씨 크기랑 버튼 크기 다시 시원하게 키움!
-    + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
-    +   '<div style="display:flex; align-items:center; gap:5px; font-size:18px;">'
-    +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:16px;height:16px;object-fit:contain;">' : '')
-    +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
+    + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
+    +   '<div style="display:flex; align-items:center; gap:5px; font-size:18px;">'
+    +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '')
+    +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
     +   '</div>'
     +   '<div style="display:flex; gap:6px;">'
     +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매수</button>'
@@ -4613,12 +4613,12 @@ function renderPortfolioList() {
     }
 
     var div = document.createElement('div');
-    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
-    div.dataset.key = k;
+    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
+    div.dataset.key = k;
 
-    var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
+    var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
 
-    div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:30px; height:30px; object-fit:contain;">' : '') + ch.name + rarityHtml + '</div>'
+    div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml + '</div>'
     + (ch.owned > 0 ? '<div class="port-val">' + fcomma(ch.price * ch.owned) + '원</div>' : '') + '</div>'
     + '<div class="port-sub" style="display:flex; align-items:center; gap:6px; margin-top:4px;">' + ch.sector + '</div>' + holdHtml + vipHtml
     + '<div style="display:flex; align-items:center; gap:8px;">'
@@ -4701,7 +4701,7 @@ function showStockDetail(k) {
 
   document.getElementById('sd-vip-prog').textContent = fcomma(myVal) + ' / ' + fcomma(reqAmt) + '원 (' + vipPct + '%)';
   document.getElementById('sd-vip-bar').style.width = vipPct + '%';
-  document.getElementById('sd-vip-status').innerHTML = ch.is_vip ? '<img src="imgs/crown.png" style="width:30px; height:20px; vertical-align:middle; margin-right:4px;"> 경영권 확보됨' : '경영권 미확보';
+  document.getElementById('sd-vip-status').innerHTML = ch.is_vip ? '<img src="imgs/crown.png" style="width:24px; height:24px; object-fit:contain; vertical-align:middle; margin-right:4px; margin-top:-2px;"> 경영권 확보됨' : '경영권 미확보';
   document.getElementById('sd-vip-status').style.color = ch.is_vip ? 'var(--gold)' : 'var(--text2)';
 
   modal.classList.add('active');
