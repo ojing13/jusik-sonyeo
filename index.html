@@ -152,45 +152,52 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .home-pity { font-size:12px; color:#9966cc; text-align:right; margin-top:1px; }
 .toast-item {
   display:flex; align-items:center; justify-content:space-between;
-  padding:10px 14px 15px 14px; /* 아래쪽 여백을 조금 늘려서 핸들 공간 확보 */
+  padding:12px 14px 18px 14px;
   font-size:15px;
-  background:rgba(18,18,30,0.96); border:1px solid #3a3a4a; border-radius:10px;
-  pointer-events:all;
+  background:rgba(18,18,30,0.98); border:1px solid #444; border-radius:12px;
+  pointer-events:all !important; /* 터치 이벤트 강제 허용 */
   word-break:keep-all; line-height:1.4;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  animation: toastIn 0.2s ease forwards;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
   
-  /* 💡 스와이프 기능을 위한 추가 속성 */
+  /* 💡 초기 상태 설정 (애니메이션 대신 transition 사용 준비) */
+  opacity: 0;
+  transform: translateY(10px);
+  
   position: relative;
-  touch-action: none; /* 스와이프 시 뒷배경이 같이 스크롤되는 것 방지 */
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+  touch-action: none; 
+  user-select: none;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  will-change: transform, opacity;
+  cursor: grab;
 }
 
-/* 드래그 중에는 애니메이션을 꺼서 손가락에 딜레이 없이 쫀득하게 달라붙게 함 */
+/* 등장 애니메이션 클래스 */
+.toast-item.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .toast-item.dragging {
-  transition: none; 
+  transition: none !important;
+  z-index: 100000;
+  cursor: grabbing;
 }
 
-/* 💡 직관적인 터치 유도: 숨쉬듯 반짝이는 하단 손잡이(Handle) */
 .toast-swipe-handle {
   position: absolute;
-  bottom: 5px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
-  width: 32px;
+  width: 36px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 2px;
   pointer-events: none;
-  animation: handlePulse 2s infinite; /* 스르륵 반짝이는 애니메이션 */
+  animation: handlePulse 2s infinite;
 }
 @keyframes handlePulse {
-  0%, 100% { opacity: 0.5; width: 32px; }
-  50% { opacity: 1; width: 44px; background: rgba(255, 255, 255, 0.5); }
-}
-@keyframes toastIn {
-  from { opacity:0; transform:translateY(8px); }
-  to   { opacity:1; transform:translateY(0); }
+  0%, 100% { opacity: 0.4; width: 36px; }
+  50% { opacity: 0.9; width: 48px; background: rgba(255, 255, 255, 0.6); }
 }
 .toast-item.hiding {
   animation: toastOut 0.3s ease forwards;
@@ -2749,126 +2756,137 @@ function initChars() {
 var _toastMax = 3;
 
 // 💡 파라미터 맨 끝에 isNews 와 강제 표시 권한인 forceShow 를 추가합니다.
+/* 붙여넣을 코드 */
 function showToast(msg, color, linkKey, duration, isNews, forceShow) {
-  if (GS.isTutorial) return; 
-  
-  var mgScreen = document.getElementById('screen-minigame');
-  // 💡 강제 표시(forceShow)가 아닐 때만 미니게임 화면에서 알림을 막습니다.
-  if (!forceShow && mgScreen && mgScreen.classList.contains('active')) return;
-
-  var wrap = document.getElementById('toast-wrap');
-  if (!wrap) return;
-
-  // 💡 핵심 수정: 3개가 꽉 찼을 때 지울 대상을 똑똑하게 고릅니다.
-  while (wrap.children.length >= _toastMax) {
-    var targetToRemove = null;
+    if (GS.isTutorial) return; 
     
-    // 1순위: 화면에 있는 알림 중 '뉴스가 아닌 것(일반 유저 행동)'을 찾아냅니다.
-    for (var i = 0; i < wrap.children.length; i++) {
-      if (wrap.children[i].dataset.isNews !== 'true') {
-        targetToRemove = wrap.children[i];
-        break; // 가장 먼저 뜬(오래된) 일반 알림을 찾으면 멈춤
-      }
-    }
-    
-    // 2순위: 만약 3개가 전부 뉴스라면 어쩔 수 없이 가장 오래된 뉴스를 지웁니다.
-    if (!targetToRemove) {
-      targetToRemove = wrap.firstChild;
+    var mgScreen = document.getElementById('screen-minigame');
+    if (!forceShow && mgScreen && mgScreen.classList.contains('active')) return;
+
+    var wrap = document.getElementById('toast-wrap');
+    if (!wrap) return;
+
+    // 💡 꽉 찼을 때 지우기 로직
+    while (wrap.children.length >= _toastMax) {
+        var targetToRemove = null;
+        for (var i = 0; i < wrap.children.length; i++) {
+            if (wrap.children[i].dataset.isNews !== 'true') {
+                targetToRemove = wrap.children[i];
+                break;
+            }
+        }
+        if (!targetToRemove) targetToRemove = wrap.firstChild;
+        if (targetToRemove) wrap.removeChild(targetToRemove);
     }
 
-    if (targetToRemove) wrap.removeChild(targetToRemove);
-  }
+    var item = document.createElement('div');
+    item.className = 'toast-item';
+    if (isNews) item.dataset.isNews = 'true';
 
-  var item = document.createElement('div');
-  item.className = 'toast-item';
-  
-  // 💡 뉴스라면 보호막 꼬리표를 달아줍니다.
-  if (isNews) item.dataset.isNews = 'true';
+    // 💡 핸들 및 텍스트 추가
+    var handle = document.createElement('div');
+    handle.className = 'toast-swipe-handle';
+    item.appendChild(handle);
 
-      // 💡 알림창에 스와이프 핸들(손잡이) 추가
-      var handle = document.createElement('div');
-      handle.className = 'toast-swipe-handle';
-      item.appendChild(handle);
+    var tx = document.createElement('span');
+    tx.className = 'toast-item-text';
+    tx.textContent = msg;
+    tx.style.color = color || '#66ff88';
+    item.appendChild(tx);
 
-      var tx = document.createElement('span');
-      tx.className = 'toast-item-text';
-      tx.textContent = msg;
-      tx.style.color = color || '#66ff88';
-      item.appendChild(tx);
-
-      if (linkKey && GS.chars && GS.chars[linkKey]) {
+    if (linkKey && GS.chars && GS.chars[linkKey]) {
         var lk = document.createElement('span');
         lk.className = 'toast-item-link';
         lk.textContent = GS.chars[linkKey].name + ' ➔';
-        lk.onclick = (function(k){ return function(){ goToMarket(k); }; })(linkKey);
+        lk.onclick = function() { goToMarket(linkKey); };
         item.appendChild(lk);
-      }
+    }
 
-      wrap.appendChild(item);
+    wrap.appendChild(item);
 
-      var ms = duration || 4000;
-      
-      // 💡 타이머를 함수로 분리해서 터치 조작 시 재사용 가능하게 만듦
-      function startHideTimer(time) {
-        item._hideTimer = setTimeout(function() {
-          item.classList.add('hiding');
-          setTimeout(function() {
-            if (item.parentNode) item.parentNode.removeChild(item);
-          }, 320);
+    // 💡 CSS 애니메이션 충돌 방지를 위해 클래스 부여 방식으로 등장
+    requestAnimationFrame(function() {
+        item.classList.add('show');
+    });
+
+    var ms = duration || 4000;
+    var hideTimeout;
+
+    function startHideTimer(time) {
+        hideTimeout = setTimeout(function() {
+            item.classList.remove('show');
+            item.classList.add('hiding');
+            setTimeout(function() {
+                if (item.parentNode) item.parentNode.removeChild(item);
+            }, 320);
         }, time);
-      }
-      startHideTimer(ms);
+    }
+    startHideTimer(ms);
 
-      // 🚀 제스처(스와이프) 드래그 및 삭제 로직 추가
-      var startX = 0, startY = 0;
-      var currentX = 0, currentY = 0;
-      var isDragging = false;
+    // 🚀 쫀득한 자유 스와이프 로직
+    var startX, startY, lastX, lastY, velX = 0, velY = 0, isDragging = false;
 
-      item.addEventListener('touchstart', function(e) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
+    item.addEventListener('pointerdown', function(e) {
         isDragging = true;
+        startX = lastX = e.clientX;
+        startY = lastY = e.clientY;
+        item.setPointerCapture(e.pointerId);
         item.classList.add('dragging');
-        clearTimeout(item._hideTimer); // 💡 손으로 잡고 있는 동안은 사라지지 않게 타이머 일시정지!
-      }, {passive: true});
+        clearTimeout(hideTimeout);
+    });
 
-      item.addEventListener('touchmove', function(e) {
+    item.addEventListener('pointermove', function(e) {
         if (!isDragging) return;
-        currentX = e.touches[0].clientX - startX;
-        currentY = e.touches[0].clientY - startY;
         
-        // 💡 위로 올리는 건 고무줄처럼 뻑뻑하게 저항감을 주고, 아래나 양옆은 부드럽게 따라오게
-        var moveY = currentY < 0 ? currentY * 0.2 : currentY; 
+        var currX = e.clientX;
+        var currY = e.clientY;
         
-        item.style.transform = 'translate(' + currentX + 'px, ' + moveY + 'px)';
-        
-        // 멀어질수록 서서히 투명해지는 예쁜 디테일
-        item.style.opacity = 1 - (Math.max(Math.abs(currentX), Math.max(0, currentY)) / 150);
-      }, {passive: true});
+        // 속도 계산
+        velX = currX - lastX;
+        velY = currY - lastY;
+        lastX = currX;
+        lastY = currY;
 
-      item.addEventListener('touchend', function(e) {
+        var deltaX = currX - startX;
+        var deltaY = currY - startY;
+        
+        // 💡 자유 이동 + 살짝 회전
+        var rotate = deltaX * 0.08;
+        item.style.transform = 'translate3d(' + deltaX + 'px, ' + deltaY + 'px, 0) rotate(' + rotate + 'deg)';
+        
+        // 거리만큼 투명도 조절
+        var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        item.style.opacity = Math.max(0.3, 1 - (distance / 450));
+    });
+
+    item.addEventListener('pointerup', function(e) {
         if (!isDragging) return;
         isDragging = false;
         item.classList.remove('dragging');
-        
-        // 💡 좌우로 60px 이상, 혹은 아래로 40px 이상 스와이프 했을 때 "삭제" 판정!
-        if (Math.abs(currentX) > 60 || currentY > 40) {
-          item.style.transition = 'transform 0.3s ease, opacity 0.2s ease';
-          // 유저가 밀어낸 방향으로 휙! 하고 가속도 붙어 날아가며 사라짐
-          item.style.transform = 'translate(' + (currentX > 0 ? 100 : (currentX < 0 ? -100 : 0)) + 'vw, ' + (currentY > 40 ? 100 : 0) + 'px)';
-          item.style.opacity = '0';
-          setTimeout(function() {
-            if (item.parentNode) item.parentNode.removeChild(item);
-          }, 300);
-        } else {
-          // 💡 조금만 밀다가 놓으면 다시 원래 자리로 고무줄처럼 팅~ 튕겨 돌아옴
-          item.style.transform = '';
-          item.style.opacity = '';
-          startHideTimer(2000); // 놓은 후 2초 뒤에 자연스럽게 사라짐
-        }
-      }, {passive: true});
-    }
 
+        var deltaX = e.clientX - startX;
+        var deltaY = e.clientY - startY;
+        var speed = Math.sqrt(velX * velX + velY * velY);
+
+        // 🚀 던지기 판정 (이동거리가 길거나 속도가 빠를 때)
+        if (Math.abs(deltaX) > 110 || Math.abs(deltaY) > 80 || speed > 10) {
+            item.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
+            // 던진 방향으로 가속도 붙여 날림
+            var outX = deltaX + (velX * 15);
+            var outY = deltaY + (velY * 15);
+            item.style.transform = 'translate3d(' + outX + 'px, ' + outY + 'px, 0) rotate(' + (outX * 0.1) + 'deg)';
+            item.style.opacity = '0';
+            setTimeout(function() {
+                if (item.parentNode) item.parentNode.removeChild(item);
+            }, 350);
+        } else {
+            // 제자리로 쫀득하게 복귀
+            item.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
+            item.style.opacity = '1';
+            startHideTimer(2000); // 복귀 후 2초 뒤 삭제
+        }
+    });
+}
 function showNewsToast(msg, color, linkKey) {
   if (!GS.notiOn) return;
   // 💡 맨 끝에 true를 추가해서 "이건 뉴스니까 보호해라!" 라고 알려줍니다.
