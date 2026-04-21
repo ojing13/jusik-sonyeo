@@ -2391,7 +2391,8 @@ var GS = {
   adTicketUses: 5,
   // 💡 추가: 하트 광고 시청 횟수 제한용 변수
   adHeartUses: 5,
-  lastAdDate: new Date().toDateString()
+  lastAdDate: new Date().toDateString(),
+  showEventMarkers: true // 💡 차트 뉴스 마커 표시 여부
 };
 
 // --- 무결점 튜토리얼 시스템 (철통 보안 버전) ---
@@ -5885,8 +5886,9 @@ function showChartModal(k) {
     });
   }
 
-  document.getElementById('chart-modal').classList.add('active');
-  updateChartInfoText(); // 💡 모달을 열 때도 올바른 텍스트로 갱신
+  document.getElementById('chart-modal').classList.add('active');
+  updateChartInfoText(); 
+  updateMarkerBtnUI(); // 💡 버튼 ON/OFF 상태 갱신
   
   // 💡 모달을 껐다 켰을 때, 이전 탭 상태와 UI 시각 효과를 강제로 일치시킵니다.
   var activeIdx = currentChartTab === 'tick' ? 0 : currentChartTab === '1m' ? 1 : currentChartTab === '1d' ? 2 : currentChartTab === '10m' ? 3 : 4;
@@ -5900,7 +5902,37 @@ function showChartModal(k) {
 }
 
 function closeChartModal() {
-  document.getElementById('chart-modal').classList.remove('active');
+  document.getElementById('chart-modal').classList.remove('active');
+}
+
+// 💡 뉴스 마커를 끄고 켜는 기능
+function toggleEventMarkers() {
+    playSound('click');
+    GS.showEventMarkers = !GS.showEventMarkers;
+    save(); // 설정 저장
+    
+    updateMarkerBtnUI();
+    
+    // 차트 즉시 다시 그리기
+    if (currentChartKey) {
+        requestAnimationFrame(function() { drawAdvancedChart(currentChartKey); });
+    }
+}
+
+// 💡 버튼의 글자와 색상을 상태에 맞춰 바꾸는 기능
+function updateMarkerBtnUI() {
+    var btn = document.getElementById('cm-toggle-markers');
+    if (!btn) return;
+    
+    if (GS.showEventMarkers) {
+        btn.innerHTML = '뉴스 마커 <span style="color:var(--gold)">ON</span>';
+        btn.style.borderColor = 'var(--gold)';
+        btn.style.background = 'rgba(255, 204, 68, 0.1)';
+    } else {
+        btn.innerHTML = '뉴스 마커 <span style="color:var(--text2)">OFF</span>';
+        btn.style.borderColor = 'var(--border)';
+        btn.style.background = 'rgba(255, 255, 255, 0.05)';
+    }
 }
 
 function drawAdvancedChart(k) {
@@ -6128,11 +6160,14 @@ function drawAdvancedChart(k) {
     }
   });
 
-  // ─── 9. 이벤트 마커 (줌아웃 시 마커 겹침 방지 적용) ─────────────
-  var eventWrap = document.getElementById('chart-event-wrap');
-  eventWrap.innerHTML = '';
+  // ─── 9. 뉴스 마커 (줌아웃 시 마커 겹침 방지 적용) ─────────────
+  var eventWrap = document.getElementById('chart-event-wrap');
+  eventWrap.innerHTML = '';
 
-  if (ch.events && ch.events.length > 0) {
+  // 💡 마커 끄기 설정이면 여기서 중단!
+  if (!GS.showEventMarkers) return;
+
+  if (ch.events && ch.events.length > 0) {
     var groupedEvents = {}; // 같은 캔들에 겹치는 이벤트 그룹화
 
     ch.events.forEach(function(ev) {
@@ -6720,9 +6755,14 @@ document.addEventListener('touchcancel', function(e) {
       <div class="sector-tab" onclick="setChartTab('10m')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center;">1일</div>
       <div class="sector-tab" onclick="setChartTab('1h')" style="flex:1; text-align:center; display:flex; justify-content:center; align-items:center;">1주</div>
     </div>
-    <div id="cm-chart-info" style="text-align:right; font-size:11px; color:var(--text2); margin-top:2px; margin-bottom:-14px;">조회 기간: 최근 3분 (캔들 1개 = 5초)</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; margin-bottom:0px;">
+        <div id="cm-toggle-markers" onclick="toggleEventMarkers()" style="font-size:11px; color:var(--text2); cursor:pointer; padding:2px 8px; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05); user-select:none;">
+            뉴스 마커 ON
+        </div>
+        <div id="cm-chart-info" style="text-align:right; font-size:11px; color:var(--text2);">조회 기간: 최근 3분 (캔들 1개 = 5초)</div>
+    </div>
 
-    <div class="chart-container" style="height: 250px;">
+    <div class="chart-container" style="height: 250px; margin-top: 10px;">
       <canvas id="advanced-chart-canvas"></canvas>
       <div id="chart-event-wrap"></div>
     </div>
