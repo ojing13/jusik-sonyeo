@@ -640,7 +640,7 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 }
 
 #title-logo {
-  font-size: 60px; font-weight:bold; color:var(--gold);
+  font-size: 60px; color:var(--gold);
   text-shadow: 0 4px 15px rgba(255,215,0,0.8);
   margin-bottom: 20px; text-align:center;
 }
@@ -1339,7 +1339,7 @@ body, #app {
     <div class="home-money" id="h-money" style="margin:0; line-height:1;">0 원</div>
     <div class="home-ticket" id="h-ticket" style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
       <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px; object-fit:contain;">
-      <span class="ticket-label" style="font-size:14px; color:var(--purple); font-weight:bold;">티켓 10장</span>
+      <span class="ticket-label" style="font-size:14px; color:var(--purple);">티켓 10장</span>
     </div>
   </div>
 
@@ -1378,11 +1378,11 @@ body, #app {
       <div class="char-dialog" id="char-dialog">터치해서 수익 창출!</div>
       <div class="home-graph" onclick="playSound('click'); switchScreen('minigame')" style="cursor:pointer; position:relative;" title="터치하여 미니게임 입장">
   <canvas id="graph-canvas"></canvas>
-  <div id="mg-hint-text" style="display:none; position:absolute; top:6px; left:10px; font-size:11px; color:rgba(255,255,255,0.4); pointer-events:none; font-weight:bold; animation: blink-fade 3.5s infinite;"> 터치해서 미니게임</div>
+  <div id="mg-hint-text" style="display:none; position:absolute; top:6px; left:10px; font-size:11px; color:rgba(255,255,255,0.4); pointer-events:none; animation: blink-fade 3.5s infinite;"> 터치해서 미니게임</div>
 </div>
       <div id="dividend-wrap" style="margin-top:14px; width: 85%; max-width: 400px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:5px; padding:0 4px;">
-          <span style="font-size:14px; color:var(--gold); font-weight:bold;">정기 배당금</span>
+          <span style="font-size:14px; color:var(--gold);">정기 배당금</span>
           <span id="div-time-text" style="font-size:13px; color:#eeeeee;">--초 남음</span>
         </div>
         <div style="height:10px; background:#1a1500; border-radius:10px; border:1px solid #664400; overflow:hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);">
@@ -1529,12 +1529,12 @@ body, #app {
 <div id="screen-minigame" class="screen">
   <div style="flex:1; position:relative; background:#0a0a14;" id="mg-container">
     
-    <div id="mg-score-display" style="position:absolute; top:20px; right:20px; font-size:22px; font-weight:bold; color:rgba(255,255,255,0.6); z-index:20; pointer-events:none; text-shadow:1px 1px 3px rgba(0,0,0,0.8);">거리: 0m</div>
+    <div id="mg-score-display" style="position:absolute; top:20px; right:20px; font-size:22px; color:rgba(255,255,255,0.6); z-index:20; pointer-events:none; text-shadow:1px 1px 3px rgba(0,0,0,0.8);">거리: 0m</div>
     
     <canvas id="mg-canvas" style="width:100%; height:100%; display:block; touch-action:none; transform:translateZ(0); will-change:transform;"></canvas>
     
     <div id="mg-ui" class="mg-overlay">
-    <div style="font-size:32px; font-weight:bold; color:var(--gold); margin-bottom:15px;">하락 피하기</div>
+    <div style="font-size:32px; color:var(--gold); margin-bottom:15px;">하락 피하기</div>
     
     <div class="mg-heart-container">
         <div class="mg-heart-row" id="mg-heart-row"></div>
@@ -1549,14 +1549,14 @@ body, #app {
         1000m당 스카웃 티켓 1장 획득 (판당 최대 5장)
     </div>
 
-    <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:16px; font-size:20px; color:white; font-weight:bold; font-family:'Jua', sans-serif;">게임 시작</button>
+    <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:16px; font-size:20px; color:white; font-family:'Jua', sans-serif;">게임 시작</button>
     <button id="mg-ad-recharge-btn" class="gacha-btn" style="width:220px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none; align-items:center; justify-content:center; gap:8px;">
         <img src="imgs/ad_icon.png" style="width:22px; height:22px; object-fit:contain; margin-bottom:-5px;"> 광고 보고 하트 +1
     </button>
 </div>
 
 <div id="mg-over-ui" class="mg-overlay" style="display:none;">
-    <div style="font-size:36px; font-weight:bold; color:var(--red); margin-bottom:10px;">게임 종료</div>
+    <div style="font-size:36px; color:var(--red); margin-bottom:10px;">게임 종료</div>
     
     <div class="mg-heart-row" id="mg-over-heart-row" style="margin-bottom:15px;"></div>
 
@@ -1617,7 +1617,7 @@ body, #app {
 <div id="guide-modal" class="modal-overlay">
   <div class="modal-content">
     <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')">✖</div>
-    <div style="font-size:22px; font-weight:bold; color:var(--gold); margin-bottom:15px; text-align:center;">주식소녀 플레이 가이드</div>
+    <div style="font-size:22px; color:var(--gold); margin-bottom:15px; text-align:center;">주식소녀 플레이 가이드</div>
 
     <div style="font-size:15px; line-height:1.7; color:#ccc;">
       
@@ -1726,7 +1726,7 @@ body, #app {
         <span style="font-size:18px;" id="sd-avg"></span>
       </div>
       <div style="display:flex; flex-direction:column; gap:6px;">
-        <span style="color:#ffcc44; font-size:14px; font-weight:bold;">최근 주요 이슈</span>
+        <span style="color:#ffcc44; font-size:14px;">최근 주요 이슈</span>
         <span style="font-size:13px; color:#cccccc; line-height:1.4; word-break:keep-all;" id="sd-latest-issue">특이사항 없음</span>
       </div>
     </div>
@@ -1760,7 +1760,7 @@ body, #app {
   <div class="modal-content" style="width: 95%; height: 90%; max-height: 800px; padding: 20px 10px; display: flex; flex-direction: column;">
     <div class="modal-close" onclick="playSound('click'); document.getElementById('dictionary-modal').classList.remove('active')">✖</div>
     
-    <div style="font-size:24px; font-weight:bold; color:var(--gold); text-align:center; margin-bottom: 5px;">캐릭터 도감</div>
+    <div style="font-size:24px; color:var(--gold); text-align:center; margin-bottom: 5px;">캐릭터 도감</div>
     <div id="dict-progress" style="text-align:center; color:var(--text2); font-size:14px; margin-bottom: 15px;">수집률: 0%</div>
     
     <div class="sector-tabs" id="dict-tabs" style="margin-bottom: 10px; justify-content: center; box-shadow: none;"></div>
@@ -1774,7 +1774,7 @@ body, #app {
 <div id="settings-modal" class="modal-overlay">
   <div class="modal-content" style="max-width:320px; padding: 24px 20px;">
     <div class="modal-close" onclick="playSound('click'); document.getElementById('settings-modal').classList.remove('active')">✖</div>
-    <div style="font-size:22px; font-weight:bold; color:var(--gold); margin-bottom:20px; text-align:center;">환경 설정</div>
+    <div style="font-size:22px; color:var(--gold); margin-bottom:20px; text-align:center;">환경 설정</div>
     
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
       <span style="font-size:16px; color:#ddddee; display:flex; align-items:center; gap:6px;">
@@ -1801,7 +1801,7 @@ body, #app {
       <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.1</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
-        <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; font-weight:bold; cursor:pointer;">적용</button>
+        <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
       </div>
     </div>
 
@@ -4259,7 +4259,7 @@ function renderMarketList() {
     if (!ch.unlocked) {
       var div = document.createElement('div'); div.className = 'stock-locked';
       div.id = 'stock-card-' + k;
-      div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="font-weight:bold;color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
+      div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
       list.appendChild(div); return;
     }
 
@@ -4271,7 +4271,7 @@ function renderMarketList() {
     div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
     div.id = 'stock-card-' + k;
 
-    var holdHtml = '<div class="stock-hold" style="color:#666677; font-size:16px;">미보유</div>';
+    var holdHtml = '<div class="stock-hold" style="color:#666677;">미보유</div>';
     if (ch.owned > 0) {
       var val = ch.price * ch.owned;
       var tax = Math.floor(val * 0.01);
@@ -4281,7 +4281,7 @@ function renderMarketList() {
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
       
       // 💡 거래소 보유 주식 수익률 색상: 상승=초록, 하락=빨강
-      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + '; font-size:16px;">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
+      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
     }
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
@@ -4305,10 +4305,10 @@ function renderMarketList() {
     +   '</div>'
     + '</div>'
 
-    // 3행: 현재가 + 등락률 나란히 + 보유현황
+    // 3행: 현재가 + 등락률 나란히 + 보유현황 (모두 14px로 통일)
     + '<div style="display:flex; align-items:baseline; gap:8px;">'
-    +   '<span style="font-size:14px; color:#eeeeee; font-weight:bold;">' + fcomma(ch.price) + '원</span>'
-    +   '<span style="font-size:14px; font-weight:bold; color:' + (chg ? '#44ee77' : '#ff4455') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
+    +   '<span style="font-size:14px; color:#eeeeee;">' + fcomma(ch.price) + '원</span>'
+    +   '<span style="font-size:14px; color:' + (chg ? '#44ee77' : '#ff4455') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
     +   '<span style="margin-left:auto; font-size:14px;">' + holdHtml.replace('<div class="stock-hold"', '<span').replace('</div>', '</span>') + '</span>'
     + '</div>'
 
@@ -4419,7 +4419,7 @@ function renderPortfolioList() {
 
     if (!ch.unlocked) {
       var div = document.createElement('div'); div.className = 'port-locked';
-      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="font-weight:bold;color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
+      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
       list.appendChild(div); return;
     }
     
@@ -4608,7 +4608,7 @@ function renderPortfolio() {
   else if (profitStr.length > 18) profFontSize = '12px';
 
   pp.innerHTML = 
-    '<div style="font-size:' + valFontSize + '; font-weight:bold; color:#ffe87a; line-height:1.2; white-space:nowrap; letter-spacing:-0.5px;">' + totalValueStr + '</div>' +
+    '<div style="font-size:' + valFontSize + '; color:#ffe87a; line-height:1.2; white-space:nowrap; letter-spacing:-0.5px;">' + totalValueStr + '</div>' +
     '<div style="font-size:' + profFontSize + '; color:' + profitColor + '; margin-top:2px; white-space:nowrap; letter-spacing:-0.5px;">' + profitStr + '</div>';
 
   // 2. 섹터 비중 계산 파트
@@ -4634,7 +4634,7 @@ function renderPortfolio() {
 
     swArr.forEach(function(item) {
       var sc = SECTOR_COLORS[item.sec] || '#aaaaaa';
-      swHtml += '<div style="font-size:11px; padding:3px 6px; border-radius:4px; background:#1a1a2a; border:1px solid ' + sc + '55; color:' + sc + ';">' + item.sec + ' <span style="color:#fff; font-weight:bold;">' + item.pct.toFixed(1) + '%</span></div>';
+      swHtml += '<div style="font-size:11px; padding:3px 6px; border-radius:4px; background:#1a1a2a; border:1px solid ' + sc + '55; color:' + sc + ';">' + item.sec + ' <span style="color:#fff;">' + item.pct.toFixed(1) + '%</span></div>';
     });
   } else {
     swHtml = '<div style="font-size:12px; color:#555;">보유 자산 없음</div>';
@@ -4673,8 +4673,8 @@ function renderMission() {
     div.style.cssText = 'margin:6px 12px;border-radius:12px;padding:14px;background:' + (state.done ? '#0a1a0a' : canClaim ? '#1a1500' : 'var(--bg2)') + ';border:1px solid ' + (state.done ? '#1a3a1a' : canClaim ? '#886600' : 'var(--border)') + ';';
     var progText = m.type === 'assets' ? fmoney(prog) + '/' + fmoney(m.target) : prog + '/' + m.target;
 
-    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + (canClaim?'#ffd700':'#fff') + '">' + m.name + '</div><div style="font-size:12px;color:var(--text2);margin-top:3px">' + m.desc + '</div><div style="font-size:11px;color:#cc88ff;margin-top:3px;font-weight:bold;"> 티켓 ' + m.reward + '장</div></div>'
-    + '<div style="margin-left:12px">' + (state.done ? '<span style="color:var(--green); font-size:13px; font-weight:bold;">완료</span>' : canClaim ? '<button onclick="playSound(\'click\'); claimMission(\'' + m.id + '\')" style="padding:8px 14px;background:#886600;color:#000;font-weight:900;border-radius:8px;border:none;cursor:pointer;">수령</button>' : '<span style="font-size:12px;color:var(--text2)">' + progText + '</span>') + '</div></div>';
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + (canClaim?'#ffd700':'#fff') + '">' + m.name + '</div><div style="font-size:12px;color:var(--text2);margin-top:3px">' + m.desc + '</div><div style="font-size:11px;color:#cc88ff;margin-top:3px;"> 티켓 ' + m.reward + '장</div></div>'
+    + '<div style="margin-left:12px">' + (state.done ? '<span style="color:var(--green); font-size:13px;">완료</span>' : canClaim ? '<button onclick="playSound(\'click\'); claimMission(\'' + m.id + '\')" style="padding:8px 14px;background:#886600;color:#000;font-weight:900;border-radius:8px;border:none;cursor:pointer;">수령</button>' : '<span style="font-size:12px;color:var(--text2)">' + progText + '</span>') + '</div></div>';
 
     list.appendChild(div);
   });
@@ -4825,9 +4825,9 @@ function endMg() {
   var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm<br>';
   if (earnedTickets > 0) {
     var capText = isCapped ? ' <span style="font-size:12px; color:#aaa; margin-left:4px;">(최대치)</span>' : '';
-    finalHtml += '<span style="color:var(--purple); font-weight:bold; font-size:16px; margin-top:6px; display:flex; justify-content:center; align-items:center; gap:4px;"> <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px;"> ' + earnedTickets + '장 획득!' + capText + '</span>';
+    finalHtml += '<span style="color:var(--purple); font-size:16px; margin-top:6px; display:flex; justify-content:center; align-items:center; gap:4px;"> <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px;"> ' + earnedTickets + '장 획득!' + capText + '</span>';
   }
-  finalHtml += (isNewBest ? '<span style="color:var(--gold); font-weight:bold; margin-top:8px; display:block;"> 최고 기록 경신! </span>' : '<span style="color:#aaa; font-size:14px; margin-top:8px; display:block;">최고 기록: ' + Math.floor(GS.mg_highscore) + 'm</span>');
+  finalHtml += (isNewBest ? '<span style="color:var(--gold); margin-top:8px; display:block;"> 최고 기록 경신! </span>' : '<span style="color:#aaa; font-size:14px; margin-top:8px; display:block;">최고 기록: ' + Math.floor(GS.mg_highscore) + 'm</span>');
   
   document.getElementById('mg-final-score').innerHTML = finalHtml;
   document.getElementById('mg-over-ui').style.display = 'flex';
@@ -6106,7 +6106,6 @@ function drawAdvancedChart(k) {
           'border-radius:4px',
           'padding:2px 4px',
           'font-size:10px',
-          'font-weight:bold',
           'transform:translateX(-50%)',
           'text-align:center', // 💡 세로 정렬 시 예쁘게 가운데 정렬
           'white-space:nowrap'
@@ -6590,7 +6589,7 @@ document.addEventListener('touchcancel', function(e) {
   <div class="modal-content">
     <div class="modal-close" onclick="closeChartModal()">✖</div>
     <div style="text-align:center;">
-      <div id="cm-name" style="font-size:22px; font-weight:bold;">종목명</div>
+      <div id="cm-name" style="font-size:22px;">종목명</div>
       <div id="cm-price-row" style="margin-top:4px;">
         <span id="cm-price" style="font-size:18px; color:var(--gold);">0원</span>
         <span id="cm-change" style="font-size:14px; margin-left:6px;">+0.00%</span>
@@ -6623,7 +6622,7 @@ document.addEventListener('touchcancel', function(e) {
     </div>
 
     <div style="margin-top:15px; background:var(--bg3); padding:12px; border-radius:10px; border:1px solid var(--border);">
-      <div style="font-size:13px; color:var(--accent); font-weight:bold; margin-bottom:6px;">최근 기업 뉴스 및 이벤트</div>
+      <div style="font-size:13px; color:var(--accent); margin-bottom:6px;">최근 기업 뉴스 및 이벤트</div>
       <div id="cm-event-list" style="font-size:12px; color:#ccc; line-height:1.6; max-height:80px; overflow-y:auto;">
         기록된 이벤트가 없습니다.
       </div>
