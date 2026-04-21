@@ -498,8 +498,8 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
   min-width:44px; text-align:center;
 }
 .stock-btn:active { transform:scale(0.95); opacity:0.85; }
-.stock-btn.buy { background:#33aa55; } /* 초록색 매수 */
-.stock-btn.sell { background:#ee3344; } /* 빨간색 매도 */
+.stock-btn.buy { background:#ee3344; } /* 빨간색 매수 */
+.stock-btn.sell { background:#4477ff; } /* 파란색 매도 */
 .stock-locked {
   margin:6px 12px; border-radius:10px;
   background:#0d0d14; border:1px solid #1e1e28;
@@ -1545,7 +1545,7 @@ body, #app {
     
     <div style="font-size:15px; color:#ccc; margin-bottom:20px; text-align:center; line-height:1.6;">
         화면을 터치해 점프하세요 (최대 2단 점프)<br>
-        <span style="color:var(--red);">빨간색 하락선</span>을 밟으면 즉시 게임 종료!<br>
+        <span style="color:var(--blue);">파란색 하락선</span>을 밟으면 즉시 게임 종료!<br>
         1000m당 스카웃 티켓 1장 획득 (판당 최대 5장)
     </div>
 
@@ -3239,19 +3239,19 @@ function tick(silent) {
   } else {
     GS.noThemeTicks++;
     if (GS.noThemeTicks >= 40 && Math.random() < 0.015) {
-      if (Math.random() < 0.5) {
-        GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
-        if (!silent) showNewsToast(GS.currentNews, '#ff3333', null);
-        Object.keys(GS.chars).forEach(function(k) {
-          var ch = GS.chars[k];
-          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
-          ch._earningApplied = false; applyPriceChange(k);
-      });
-      } else {
-        GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
-        if (!silent) showNewsToast(GS.currentNews, '#ff55aa', null);
-        Object.keys(GS.chars).forEach(function(k) {
+    if (Math.random() < 0.5) {
+      GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
+      if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
+      Object.keys(GS.chars).forEach(function(k) {
+          var ch = GS.chars[k];
+          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
+          ch._earningApplied = false; applyPriceChange(k);
+      });
+    } else {
+      GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
+      if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
+      Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
           if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
@@ -3264,14 +3264,14 @@ function tick(silent) {
       return;
     }
     var shouldTrigger = (GS.noThemeTicks >= 80) || (GS.noThemeTicks >= 35 && Math.random() < 0.05);
-    if (shouldTrigger) {
-      GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
-      var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
-      var color = GS.currentTheme.type === 'bad' ? '#ff4455' : '#44cc66';
-      GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
-      if (!silent) showNewsToast(GS.currentNews, color, null);
-      if (!silent) playSound('event');
-    } else {
+  if (shouldTrigger) {
+    GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
+    var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
+    var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
+    GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
+    if (!silent) showNewsToast(GS.currentNews, color, null);
+    if (!silent) playSound('event');
+  } else {
       if (Math.random() < 0.06) generateNews(silent);
     }
   }
@@ -3400,7 +3400,7 @@ function generateNews(silent) {
   GS.stickyNewsTicks = 6;
   GS.currentNews = '[속보] ' + ch.name + ' - ' + ev.label + ' ' + flagText;
 
-  if (!silent) showNewsToast(GS.currentNews, ev.flag === 'good' ? '#44cc66' : '#ff4455', k);
+  if (!silent) showNewsToast(GS.currentNews, ev.flag === 'good' ? '#ff4455' : '#4477ff', k);
 }
 
 var EARNINGS_BEAT = ['깜짝 실적! EPS 예상치 대폭 상회', '매출 역대 최고치 경신!'];
@@ -3979,16 +3979,16 @@ function updateChartModalIfOpen() {
     var lastTick = ch.tick_history[ch.tick_history.length-1] || 0;
     var cmChange = document.getElementById('cm-change');
     cmChange.textContent = (lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%';
-    cmChange.style.color = lastTick >= 0 ? 'var(--green)' : 'var(--red)';
+    cmChange.style.color = lastTick >= 0 ? 'var(--red)' : 'var(--blue)';
 
     // 뉴스 및 이벤트 리스트 갱신
-    var list = document.getElementById('cm-event-list');
-    list.innerHTML = '';
-    if (ch.events.length === 0) {
-      list.innerHTML = '최근 기록된 이벤트가 없습니다.';
-    } else {
-      ch.events.slice(-5).reverse().forEach(function(ev) {
-        var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--green)' : 'var(--red)';
+    var list = document.getElementById('cm-event-list');
+    list.innerHTML = '';
+    if (ch.events.length === 0) {
+      list.innerHTML = '최근 기록된 이벤트가 없습니다.';
+    } else {
+      ch.events.slice(-5).reverse().forEach(function(ev) {
+        var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--red)' : 'var(--blue)';
         var timeStr = '';
         if (ev.absTick !== undefined) {
           var diffSec = (GS.total_game_ticks - ev.absTick) * 5;
@@ -4162,8 +4162,8 @@ function drawChangeGraph(canvas, priceHistory, tickHistory, currentPrice, compac
   var range = maxP - minP;
 
   var lastTick = hist[hist.length - 1];
-  // 💡 미니 차트 선 색상: 상승=초록, 하락=빨강
-  var col = lastTick >= 0 ? '#44cc66' : '#ff4455';
+  // 💡 미니 차트 선 색상: 상승=빨강, 하락=파랑
+  var col = lastTick >= 0 ? '#ff4455' : '#4477ff';
 
   // 💡 가로 점선을 과거 시작점이 아닌 '현재 주가(currentPrice)'를 기준으로 긋습니다!
   var currentY = h - pad - ((currentPrice - minP) / range) * (h - pad * 2);
@@ -4194,7 +4194,7 @@ function drawChangeGraph(canvas, priceHistory, tickHistory, currentPrice, compac
     
     // 미니 차트 색상은 캔들 개별 방향에 따름
     var isUp = closeP >= openP;
-    ctx.fillStyle = isUp ? '#44cc66' : '#ff4455';
+    ctx.fillStyle = isUp ? '#ff4455' : '#4477ff';
     
     var bodyTop = Math.min(y_open, y_close);
     var bodyH = Math.max(Math.abs(y_open - y_close), 1.5);
@@ -4280,8 +4280,8 @@ function renderMarketList() {
       var prRaw = (ch.avg_price > 0) ? (profitAmt / (ch.avg_price * ch.owned) * 100) : 0;
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
       
-      // 💡 거래소 보유 주식 수익률 색상: 상승=초록, 하락=빨강
-      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
+      // 💡 거래소 보유 주식 수익률 색상: 상승=빨강, 하락=파랑
+      holdHtml = '<div class="stock-hold" style="color:' + (profitAmt >= 0 ? 'var(--red)' : 'var(--blue)') + ';">' + fshare(ch.owned) + '주 | ' + (profitAmt > 0 ? '+' : '') + prStr + '%</div>';
     }
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
@@ -4308,7 +4308,7 @@ function renderMarketList() {
     // 3행: 현재가 + 등락률 나란히 + 보유현황 (모두 14px로 통일)
     + '<div style="display:flex; align-items:baseline; gap:8px;">'
     +   '<span style="font-size:14px; color:#eeeeee;">' + fcomma(ch.price) + '원</span>'
-    +   '<span style="font-size:14px; color:' + (chg ? '#44ee77' : '#ff4455') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
+    +   '<span style="font-size:14px; color:' + (chg ? '#ff4455' : '#4477ff') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
     +   '<span style="margin-left:auto; font-size:14px;">' + holdHtml.replace('<div class="stock-hold"', '<span').replace('</div>', '</span>') + '</span>'
     + '</div>'
 
@@ -4343,22 +4343,22 @@ function renderMarket() {
   var showBar = 'block';
 
   if (GS.inCrash) {
-    // 💡 시장 대폭락 색상: 빨강 유지
-    themeText = '⚡ 시장 대폭락 (' + GS.crashTicks + '틱 남음)'; themeBg = '#2a0000'; themeColor = 'var(--red)';
+    // 💡 시장 대폭락 색상: 딥 퍼플 (블랙스완)
+    themeText = '⚡ 시장 대폭락 (' + GS.crashTicks + '틱 남음)'; themeBg = '#1a0033'; themeColor = '#cc88ff';
   } else if (GS.inBull) {
-    // 💡 대세 상승장 색상: 초록색으로 변경
-    themeText = '📈 대세 상승장 (' + GS.bullTicks + '틱 남음)'; themeBg = '#002211'; themeColor = 'var(--green)';
+    // 💡 대세 상승장 색상: 핫핑크 (대세 상승 랠리)
+    themeText = '📈 대세 상승장 (' + GS.bullTicks + '틱 남음)'; themeBg = '#33001a'; themeColor = '#ff33aa';
   } else if (GS.earningSeasonTicks > 0) {
     themeText = '[어닝시즌] 진행중 (' + GS.earningSeasonTicks + '틱 남음)'; themeBg = '#1a0f00'; themeColor = '#ff9922';
   } else if (GS.currentTheme.target !== '없음') {
     if (GS.currentTheme.type === 'bad') {
-      // 💡 악재 테마 색상: 빨강으로 변경
+      // 💡 악재 테마 색상: 파랑으로 변경
       themeText = '❄️ ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
-      themeBg = '#2a0000'; themeColor = 'var(--red)';
+      themeBg = '#00002a'; themeColor = 'var(--blue)';
     } else {
-      // 💡 호재 테마 색상: 초록으로 변경
+      // 💡 호재 테마 색상: 빨강으로 변경
       themeText = '🔥 ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
-      themeBg = '#002211'; themeColor = 'var(--green)';
+      themeBg = '#2a0000'; themeColor = 'var(--red)';
     }
   } else {
     themeText = '평화로운 장세'; themeBg = '#0e0e1a'; themeColor = '#cccccc';
@@ -4426,20 +4426,20 @@ function renderPortfolioList() {
     var holdHtml = '<div class="port-hold" style="color:#555566">미보유 | ' + fcomma(ch.price) + '원</div>';
     var vipHtml = '';
     
-    if (ch.owned > 0) {
-      var val = ch.price * ch.owned;
-      var tax = Math.floor(val * 0.01);
-      var netValue = val - tax;
-      var principal = (typeof ch.total_principal !== 'undefined' && ch.total_principal > 0) 
-      ? ch.total_principal 
-      : ch.avg_price * ch.owned;
-      var profitAmt = netValue - principal;
-      var prRaw = (principal > 0) ? (profitAmt / principal * 100) : 0;
-      var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
-      var weightPct = totalInvested > 0 ? (val / totalInvested * 100).toFixed(1) : 0;
-      
-      // 💡 포트폴리오 수익률 색상: 상승=초록, 하락=빨강
-      holdHtml = '<div class="port-hold" style="color:' + (profitAmt >= 0 ? 'var(--green)' : 'var(--red)') + '">' +
+  if (ch.owned > 0) {
+    var val = ch.price * ch.owned;
+    var tax = Math.floor(val * 0.01);
+    var netValue = val - tax;
+    var principal = (typeof ch.total_principal !== 'undefined' && ch.total_principal > 0) 
+    ? ch.total_principal 
+    : ch.avg_price * ch.owned;
+    var profitAmt = netValue - principal;
+    var prRaw = (principal > 0) ? (profitAmt / principal * 100) : 0;
+    var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
+    var weightPct = totalInvested > 0 ? (val / totalInvested * 100).toFixed(1) : 0;
+    
+    // 💡 포트폴리오 수익률 색상: 상승=빨강, 하락=파랑
+    holdHtml = '<div class="port-hold" style="color:' + (profitAmt >= 0 ? 'var(--red)' : 'var(--blue)') + '">' +
         fshare(ch.owned) + '주 <span style="color:var(--text2); font-weight:normal;">(비중 ' + weightPct + '%)</span><br>' +
         '<span style="color:var(--text2); font-size:13px;">투자원금: ' + fcomma(Math.floor(principal)) + '원</span><br>' +
         '실제손익: ' + (profitAmt > 0 ? '+' : '') + fcomma(Math.floor(profitAmt)) + '원 (' + (profitAmt > 0 ? '+' : '') + prStr + '%)</div>';
@@ -4595,7 +4595,7 @@ function renderPortfolio() {
   var prStr = Math.abs(profitPct) < 10000 ? profitPct.toFixed(1) : fcomma(profitPct);
   var sign = totalProfit > 0 ? '+' : '';
   var pctStr = totalInvested > 0 ? ' (' + sign + prStr + '%)' : ''; 
-  var profitColor = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
+  var profitColor = totalProfit >= 0 ? 'var(--red)' : 'var(--blue)';
 
   var totalValueStr = fcomma(totalValue) + '원';
   var valFontSize = '26px';
@@ -4982,7 +4982,7 @@ function drawMg() {
   
   // 💡 렉 제거의 핵심: 빨간 선과 파란 선을 각각 '한 붓 그리기'로 묶어서 연산량 90% 감소!
   
-  // 1. 초록색(UP) 상승선 한 번에 묶어서 그리기
+  // 1. 빨간색(UP) 상승선 한 번에 묶어서 그리기 (초록 -> 빨강)
   mg.ctx.beginPath();
   for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'UP') {
@@ -4991,10 +4991,10 @@ function drawMg() {
       mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
-  mg.ctx.strokeStyle = 'rgba(68, 204, 102, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
-  mg.ctx.strokeStyle = '#44cc66'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
+  mg.ctx.strokeStyle = 'rgba(255, 68, 85, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
+  mg.ctx.strokeStyle = '#ff4455'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
 
-  // 2. 빨간색(DOWN) 하락선 한 번에 묶어서 그리기
+  // 2. 파란색(DOWN) 하락선 한 번에 묶어서 그리기 (빨강 -> 파랑)
   mg.ctx.beginPath();
   for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'DOWN') {
@@ -5003,8 +5003,8 @@ function drawMg() {
       mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
-  mg.ctx.strokeStyle = 'rgba(255, 68, 85, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
-  mg.ctx.strokeStyle = '#ff4455'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
+  mg.ctx.strokeStyle = 'rgba(68, 119, 255, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
+  mg.ctx.strokeStyle = '#4477ff'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
   
   // 플레이어 그리기 로직
   if (!mgSprite || !mgSprite.width) {
@@ -5748,15 +5748,15 @@ function showChartModal(k) {
   var lastTick = ch.tick_history[ch.tick_history.length-1] || 0;
   var cmChange = document.getElementById('cm-change');
   cmChange.textContent = (lastTick >= 0 ? '+' : '') + lastTick.toFixed(2) + '%';
-  cmChange.style.color = lastTick >= 0 ? 'var(--green)' : 'var(--red)';
+  cmChange.style.color = lastTick >= 0 ? 'var(--red)' : 'var(--blue)';
   
   var list = document.getElementById('cm-event-list');
-  list.innerHTML = '';
-  if (ch.events.length === 0) {
-    list.innerHTML = '최근 기록된 이벤트가 없습니다.';
-  } else {
-    ch.events.slice(-5).reverse().forEach(function(ev) {
-      var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--green)' : 'var(--red)';
+  list.innerHTML = '';
+  if (ch.events.length === 0) {
+    list.innerHTML = '최근 기록된 이벤트가 없습니다.';
+  } else {
+    ch.events.slice(-5).reverse().forEach(function(ev) {
+      var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--red)' : 'var(--blue)';
       var timeStr = '';
       if (ev.absTick !== undefined) {
         var diffSec = (GS.total_game_ticks - ev.absTick) * 5;
@@ -5955,7 +5955,7 @@ function drawAdvancedChart(k) {
   // ─── 7. 현재가 수평선 ────────────────────────────────────
   var curY = toY(ch.price);
   var lastCandle = candles[candles.length - 1];
-  var lineColor = (lastCandle && lastCandle.c >= lastCandle.o) ? '#44cc66' : '#ff4455';
+  var lineColor = (lastCandle && lastCandle.c >= lastCandle.o) ? '#ff4455' : '#4477ff';
   ctx.strokeStyle = lineColor;
   ctx.lineWidth   = 1;
   ctx.setLineDash([4, 4]);
@@ -5991,7 +5991,7 @@ function drawAdvancedChart(k) {
     var bodyH   = Math.max(Math.abs(yO - yC), 1.5);
 
     // 심지
-    ctx.strokeStyle = isUp ? '#44cc66cc' : '#ff4455cc';
+    ctx.strokeStyle = isUp ? '#ff4455cc' : '#4477ffcc';
     ctx.lineWidth   = Math.max(0.8, bodyW * 0.15);
     ctx.beginPath();
     ctx.moveTo(x, yH);
@@ -6001,10 +6001,10 @@ function drawAdvancedChart(k) {
     ctx.stroke();
 
     // 몸통
-    ctx.fillStyle = isUp ? '#44cc66' : '#ff4455';
+    ctx.fillStyle = isUp ? '#ff4455' : '#4477ff';
     if (bodyH <= 2) {
       // 도지 캔들 (십자선)
-      ctx.fillStyle = isUp ? '#88eeaa' : '#ff8888';
+      ctx.fillStyle = isUp ? '#ff8888' : '#88aaff';
       ctx.fillRect(x - bodyW / 2, bodyTop - 0.5, bodyW, 2);
     } else {
       ctx.fillRect(x - bodyW / 2, bodyTop, bodyW, bodyH);
@@ -6067,15 +6067,15 @@ function drawAdvancedChart(k) {
           if (!isGood) isAllGood = false;
           if (isGood) isAllBad = false;
 
-          var iconColor = isCorp ? '#ffd700' : (isGood ? '#44cc66' : '#ff4455');
+          var iconColor = isCorp ? '#ffd700' : (isGood ? '#ff4455' : '#4477ff');
           var iconText = isCorp ? (ev.type === 'split' ? '분할' : '병합') : (isGood ? '▲' : '▼');
           
           labelHtml += '<div style="color:' + iconColor + '; line-height: 1.2;">' + iconText + '</div>';
         });
 
         var markerColor = '#aaaaaa'; // 💡 호재/악재가 섞여 있으면 중립 색상(회색)
-        if (isAllGood) markerColor = '#44cc66';
-        else if (isAllBad) markerColor = '#ff4455';
+        if (isAllGood) markerColor = '#ff4455';
+        else if (isAllBad) markerColor = '#4477ff';
         
         // 코프(분할/병합) 이벤트가 포함되어 있고 방향이 한쪽일 땐 노란색 우선
         if ((isAllGood || isAllBad) && evList.some(function(e) { return e.type === 'split' || e.type === 'merge'; })) {
@@ -6613,11 +6613,11 @@ document.addEventListener('touchcancel', function(e) {
     <div class="chart-info-grid">
       <div class="chart-info-item">
         <div class="chart-info-label">최고가 (기간 내)</div>
-        <div id="cm-high" class="chart-info-val" style="color:var(--green);">0원</div>
+        <div id="cm-high" class="chart-info-val" style="color:var(--red);">0원</div>
       </div>
       <div class="chart-info-item">
         <div class="chart-info-label">최저가 (기간 내)</div>
-        <div id="cm-low" class="chart-info-val" style="color:var(--red);">0원</div>
+        <div id="cm-low" class="chart-info-val" style="color:var(--blue);">0원</div>
       </div>
     </div>
 
