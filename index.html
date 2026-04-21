@@ -3607,15 +3607,16 @@ function fireEarning(pending, silent) {
   ch._earningApplied = true;
 
   if (!silent) {
-    GS.earningPendingToast = {
-      key: pending.key, beat: pending.beat, label: label, charName: ch.name
-    };
-  }
+    var flagText = pending.beat ? '(호재)' : '(악재)';
+    var newsColor = pending.beat ? '#ff4455' : '#4477ff';
+    GS.currentNews = '[실적발표] ' + ch.name + ' - ' + label + ' ' + flagText;
+    showNewsToast(GS.currentNews, newsColor, pending.key);
+    playSound('event');
+  }
 
-  GS.newsLinkKey = null;
-  GS.stickyNewsKey = pending.key;
-  GS.stickyNewsTicks = 6;
-}
+  GS.newsLinkKey = null;
+  GS.stickyNewsKey = pending.key;
+  GS.stickyNewsTicks = 6;
 
 function updateDialogState(forceUpdate) {
   var ch = GS.chars[GS.mainChar];
