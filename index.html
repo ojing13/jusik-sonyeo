@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.3</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.2</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -3586,14 +3586,14 @@ function fireEarning(pending, silent) {
     var earnRate = 0.10 + Math.random() * 0.10;
     ch.ref_price = ch.ref_price * (1 + earnRate); 
     ch.latest_event = "[어닝 서프라이즈] " + label;
-    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', flag: 'good' });
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'good' });
   } else {
     label = EARNINGS_MISS[Math.floor(Math.random() * EARNINGS_MISS.length)];
     changeMin = -0.24 * seasonMult; changeMax = -0.08 * seasonMult;
     var earnRate = 0.10 + Math.random() * 0.10;
     ch.ref_price = ch.ref_price / (1 + earnRate);
     ch.latest_event = "[어닝 쇼크] " + label;
-    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', flag: 'bad' });
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "" + label, flag: 'bad' });
   }
 
   // 💡 실적 발표도 30개가 넘어가면 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
