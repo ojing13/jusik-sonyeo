@@ -3541,18 +3541,18 @@ function fireEarning(pending, silent) {
   if (typeof ch.ref_price === 'undefined') ch.ref_price = ch.price;
 
   if (pending.beat) {
-    label = EARNINGS_BEAT[Math.floor(Math.random() * EARNINGS_BEAT.length)];
-    changeMin = 0.10 * seasonMult; changeMax = 0.28 * seasonMult;
-    ch.ref_price = ch.ref_price * (1 + 0.10 + Math.random() * 0.10); 
-    ch.latest_event = "[어닝 서프라이즈] " + label;
-    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: "[실적발표] " + label, flag: 'good' });
-  } else {
-    label = EARNINGS_MISS[Math.floor(Math.random() * EARNINGS_MISS.length)];
-    changeMin = -0.24 * seasonMult; changeMax = -0.08 * seasonMult;
-    ch.ref_price = ch.ref_price * (1 - 0.10 - Math.random() * 0.10);
-    ch.latest_event = "[어닝 쇼크] " + label;
-    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'news', label: "[실적발표] " + label, flag: 'bad' });
-  }
+    label = EARNINGS_BEAT[Math.floor(Math.random() * EARNINGS_BEAT.length)];
+    changeMin = 0.10 * seasonMult; changeMax = 0.28 * seasonMult;
+    ch.ref_price = ch.ref_price * (1 + 0.10 + Math.random() * 0.10); 
+    ch.latest_event = "[어닝 서프라이즈] " + label;
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "[실적발표] " + label, flag: 'good' });
+  } else {
+    label = EARNINGS_MISS[Math.floor(Math.random() * EARNINGS_MISS.length)];
+    changeMin = -0.24 * seasonMult; changeMax = -0.08 * seasonMult;
+    ch.ref_price = ch.ref_price * (1 - 0.10 - Math.random() * 0.10);
+    ch.latest_event = "[어닝 쇼크] " + label;
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'earning', label: "[실적발표] " + label, flag: 'bad' });
+  }
 
   // 💡 실적 발표도 30개가 넘어가면 '일반 뉴스'만 지우고 분할/병합은 영구 보존!
   if (ch.events.length > 30) {
@@ -4103,7 +4103,10 @@ function updateChartModalIfOpen() {
           else if (diffSec < 3600) timeStr = ' (' + Math.floor(diffSec/60) + '분 전)';
           else timeStr = ' (' + Math.floor(diffSec/3600) + '시간 전)';
         }
-        list.innerHTML += `<div style="margin-bottom:4px;">• <span style="color:${color}">[${ev.type === 'news' ? '뉴스' : '공시'}]</span> ${ev.label} <span style="color:#888; font-size:11px;">${timeStr}</span></div>`;
+        // 💡 타입과 호재/악재 여부에 따라 태그 텍스트 결정
+      var tagText = ev.type === 'earning' ? '어닝' : 
+                    (ev.type === 'news' ? (ev.flag === 'good' ? '호재' : '악재') : '공시');
+      list.innerHTML += `<div style="margin-bottom:4px;">• <span style="color:${color}">[${tagText}]</span> ${ev.label} <span style="color:#888; font-size:11px;">${timeStr}</span></div>`;
       });
     }
 
@@ -5882,7 +5885,10 @@ function showChartModal(k) {
         else if (diffSec < 3600) timeStr = ' (' + Math.floor(diffSec/60) + '분 전)';
         else timeStr = ' (' + Math.floor(diffSec/3600) + '시간 전)';
       }
-      list.innerHTML += `<div style="margin-bottom:4px;">• <span style="color:${color}">[${ev.type === 'news' ? '뉴스' : '공시'}]</span> ${ev.label} <span style="color:#888; font-size:11px;">${timeStr}</span></div>`;
+      // 💡 타입과 호재/악재 여부에 따라 태그 텍스트 결정
+      var tagText = ev.type === 'earning' ? '어닝' : 
+                    (ev.type === 'news' ? (ev.flag === 'good' ? '호재' : '악재') : '공시');
+      list.innerHTML += `<div style="margin-bottom:4px;">• <span style="color:${color}">[${tagText}]</span> ${ev.label} <span style="color:#888; font-size:11px;">${timeStr}</span></div>`;
     });
   }
 
@@ -6195,71 +6201,87 @@ function drawAdvancedChart(k) {
       }
     });
 
-    Object.keys(groupedEvents).forEach(function(idxStr) {
-      var evIdx = parseInt(idxStr);
-      var evList = groupedEvents[evIdx];
-      
-      // 💡 마커 위치: 캔들과 완벽하게 동일한 X 좌표 계산식 사용!
-      var offsetFromRight = (n - 1) - evIdx;
-      var x = (padL + cW) - (offsetFromRight + 0.5) * spacing;
+    // 💡 X좌표 순서대로 처리하기 위해 인덱스를 정렬하고, 겹침 방지 변수를 준비합니다.
+    var sortedIndices = Object.keys(groupedEvents).map(Number).sort(function(a, b) { return a - b; });
+    var lastX = -999;
+    var level = 0;
 
-      var isAllGood = true;
-        var isAllBad = true;
-        var labelHtml = '';
+    sortedIndices.forEach(function(evIdx) {
+      var evList = groupedEvents[evIdx];
+      
+      // 💡 마커 위치 계산
+      var offsetFromRight = (n - 1) - evIdx;
+      var x = (padL + cW) - (offsetFromRight + 0.5) * spacing;
 
-        // 이벤트를 하나씩 순회하며 호재/악재 화살표를 세로로 쌓습니다.
-        evList.forEach(function(ev) {
-          var isCorp = ev.type === 'split' || ev.type === 'merge';
-          var isGood = ev.flag === 'good' || ev.type === 'split';
-          
-          if (!isGood) isAllGood = false;
-          if (isGood) isAllBad = false;
+      // 💡 핵심 마법: 이전 마커와 가로(X)로 35px 이내로 겹치면 높이(level)를 한 칸 내립니다.
+      if (x - lastX < 35) {
+          level = (level + 1) % 4; // 최대 4계단(지그재그)까지 내려감
+      } else {
+          level = 0; // 충분히 떨어져 있으면 다시 맨 위로 리셋
+      }
+      lastX = x;
 
-          var iconColor = isCorp ? '#ffd700' : (isGood ? '#ff4455' : '#4477ff');
-          var iconText = isCorp ? (ev.type === 'split' ? '분할' : '병합') : (isGood ? '▲' : '▼');
-          
-          labelHtml += '<div style="color:' + iconColor + '; line-height: 1.2;">' + iconText + '</div>';
-        });
+      var isAllGood = true;
+      var isAllBad = true;
+      var labelHtml = '';
 
-        var markerColor = '#aaaaaa'; // 💡 호재/악재가 섞여 있으면 중립 색상(회색)
-        if (isAllGood) markerColor = '#ff4455';
-        else if (isAllBad) markerColor = '#4477ff';
-        
-        // 코프(분할/병합) 이벤트가 포함되어 있고 방향이 한쪽일 땐 노란색 우선
-        if ((isAllGood || isAllBad) && evList.some(function(e) { return e.type === 'split' || e.type === 'merge'; })) {
-          markerColor = '#ffd700'; 
-        }
+      // 이벤트를 하나씩 순회하며 호재/악재/어닝 텍스트를 세로로 쌓습니다.
+      evList.forEach(function(ev) {
+        var isCorp = ev.type === 'split' || ev.type === 'merge';
+        var isEarning = ev.type === 'earning';
+        var isGood = ev.flag === 'good' || ev.type === 'split';
+        
+        if (!isGood) isAllGood = false;
+        if (isGood) isAllBad = false;
 
-        // 수직선
-        ctx.strokeStyle = markerColor + '55';
-        ctx.lineWidth   = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(x, padT);
-        ctx.lineTo(x, padT + cH);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        var iconColor = isCorp ? '#ffd700' : (isGood ? '#ff4455' : '#4477ff');
+        // 💡 기호 대신 텍스트로 변경
+        var iconText = isCorp ? (ev.type === 'split' ? '분할' : '병합') : 
+                       isEarning ? '어닝' : 
+                       (isGood ? '호재' : '악재');
+        
+        labelHtml += '<div style="color:' + iconColor + '; line-height: 1.2; font-weight: bold; font-size: 9px;">' + iconText + '</div>';
+      });
 
-        // 💡 태그 (아래로 길어지더라도 상단 탭을 가리지 않도록 위치 고정)
-        var tagY = padT - 18;
+      var markerColor = '#aaaaaa'; // 💡 호재/악재 섞여 있으면 회색
+      if (isAllGood) markerColor = '#ff4455';
+      else if (isAllBad) markerColor = '#4477ff';
+      
+      if ((isAllGood || isAllBad) && evList.some(function(e) { return e.type === 'split' || e.type === 'merge'; })) {
+        markerColor = '#ffd700'; 
+      }
 
-        var tag       = document.createElement('div');
-        tag.className = 'chart-event-tag';
-        tag.innerHTML = labelHtml; // 💡 텍스트 대신 HTML 삽입
-        tag.style.cssText = [
-          'left:' + x + 'px',
-          'top:' + tagY + 'px',
-          'background:' + markerColor + '22',
-          'border:1px solid ' + markerColor + '88',
-          'border-radius:4px',
-          'padding:2px 4px',
-          'font-size:10px',
-          'transform:translateX(-50%)',
-          'text-align:center', // 💡 세로 정렬 시 예쁘게 가운데 정렬
-          'white-space:nowrap'
-        ].join(';');
-        eventWrap.appendChild(tag);
-    });
+      // 수직선
+      ctx.strokeStyle = markerColor + '55';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, padT + cH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 💡 태그 높이를 level 변수를 이용해 지그재그(계단식)로 배치합니다!
+      var tagY = padT - 20 + (level * 22);
+
+      var tag       = document.createElement('div');
+      tag.className = 'chart-event-tag';
+      tag.innerHTML = labelHtml;
+      tag.style.cssText = [
+        'left:' + x + 'px',
+        'top:' + tagY + 'px',
+        'background:' + markerColor + '22',
+        'border:1px solid ' + markerColor + '88',
+        'border-radius:4px',
+        'padding:2px 4px',
+        'font-size:10px',
+        'transform:translateX(-50%)',
+        'text-align:center',
+        'white-space:nowrap',
+        'z-index: 10' // 겹치더라도 항상 위로 올라오게
+      ].join(';');
+      eventWrap.appendChild(tag);
+    });
   }
 
   // ─── 10. 최고/최저 업데이트 ──────────────────────────────
