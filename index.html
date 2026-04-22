@@ -3213,7 +3213,14 @@ function applyPriceChange(k) {
   }
   // 로그 수익률을 사용하여 상승과 하락의 괴리율을 완벽히 대칭으로 계산합니다.
   var logDiff = Math.log(ch.price / ch.ref_price);
-  var gravity = logDiff * 0.00015;
+
+  // 💡 단타의 재미를 위한 '느슨한 고무줄' 시스템
+  // 내재가치와 15% 이내(logDiff 약 0.15)로 차이날 때는 중력(회귀 본능)이 아예 없어서 위아래로 미친듯이 요동칩니다.
+  // 하지만 15%를 넘어가면 선을 넘었다고 판단하고 기하급수적으로 강하게 끌어내립니다.
+  var gravity = 0;
+  if (Math.abs(logDiff) > 0.15) {
+    gravity = Math.sign(logDiff) * Math.pow(Math.abs(logDiff) - 0.15, 2) * 0.02;
+  }
   effectiveChange -= gravity;
   effectiveChange = Math.max(-0.30, Math.min(0.30, effectiveChange));
 
@@ -3267,9 +3274,13 @@ function applyPriceChange(k) {
     ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'merge', label: '액면병합' });
   }
 
-  ch.price = Math.max(100, np); 
-  
-  if (!ch.price_history) ch.price_history = [ch.price];
+  ch.price = Math.max(100, np); 
+
+  // 💡 [우주 돌파 방지 완료] 기준점이 주가를 따라가게 하던 코드를 완전히 삭제했습니다!
+  // 이제 주가는 정해진 내재가치 주변 '15% 무중력 박스' 안에서만 단타용으로 미친듯이 요동치며,
+  // 며칠을 꺼둬도 선을 넘으면 강력한 중력이 작용해 절대 수만 퍼센트씩 폭등하지 않습니다.
+  
+  if (!ch.price_history) ch.price_history = [ch.price];
   ch.price_history.push(ch.price);
   if (ch.price_history.length > 40) ch.price_history.shift();
 
