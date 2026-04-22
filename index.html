@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.2</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.4</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -4313,38 +4313,53 @@ function drawChangeGraph(canvas, priceHistory, tickHistory, currentPrice, compac
     maxP = currentPrice * 1.01;
     minP = currentPrice * 0.99;
   }
-  var range = maxP - minP;
+  if (minP < 1) minP = 1;
+  if (maxP < 1) maxP = 2;
+  var logMinP = Math.log10(minP);
+  var logMaxP = Math.log10(maxP);
+  
+  // 💡 미니 차트에도 로그 비율로 상하 여백 생성
+  var logMargin = (logMaxP - logMinP) * 0.15;
+  if (logMargin === 0) logMargin = 0.1;
+  logMinP -= logMargin;
+  logMaxP += logMargin;
+  var logRange = logMaxP - logMinP || 1;
 
-  var lastTick = hist[hist.length - 1];
-  // 💡 미니 차트 선 색상: 상승=빨강, 하락=파랑
-  var col = lastTick >= 0 ? '#ff4455' : '#4477ff';
+  function toMiniY(p) {
+    if (p < 1) p = 1;
+    return h - pad - ((Math.log10(p) - logMinP) / logRange) * (h - pad * 2);
+  }
 
-  // 💡 가로 점선을 과거 시작점이 아닌 '현재 주가(currentPrice)'를 기준으로 긋습니다!
-  var currentY = h - pad - ((currentPrice - minP) / range) * (h - pad * 2);
-  ctx.strokeStyle = '#555566'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
-  ctx.beginPath(); ctx.moveTo(pad, currentY); ctx.lineTo(w - pad, currentY); ctx.stroke();
-  ctx.setLineDash([]);
+  var lastTick = hist[hist.length - 1];
+  // 💡 미니 차트 선 색상: 상승=빨강, 하락=파랑
+  var col = lastTick >= 0 ? '#ff4455' : '#4477ff';
 
-  // 💡 미니 캔들 차트 그리기
-  // 최대 캔들 개수(40개)를 기준으로 고정된 간격을 계산하여 띄엄띄엄해지는 현상을 막습니다.
-  var maxCandles = 40;
-  var candleW = Math.max(1.5, ((w - pad * 2) / maxCandles) * 0.7);
-  var usableW = (w - pad * 2) - candleW;
-  var spacing = usableW / (maxCandles - 1);
+  // 💡 가로 점선 (로그 스케일 적용!)
+  var currentY = toMiniY(currentPrice);
+  ctx.strokeStyle = '#555566'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+  ctx.beginPath(); ctx.moveTo(pad, currentY); ctx.lineTo(w - pad, currentY); ctx.stroke();
+  ctx.setLineDash([]);
 
-  // 가장 최근 데이터가 오른쪽 끝에 오도록 기준점을 잡습니다.
-  var rightEdge = pad + (candleW / 2) + usableW;
+  // 💡 미니 캔들 차트 그리기
+  // 최대 캔들 개수(40개)를 기준으로 고정된 간격을 계산하여 띄엄띄엄해지는 현상을 막습니다.
+  var maxCandles = 40;
+  var candleW = Math.max(1.5, ((w - pad * 2) / maxCandles) * 0.7);
+  var usableW = (w - pad * 2) - candleW;
+  var spacing = usableW / (maxCandles - 1);
 
-  prices.forEach(function(p, i) {
-    // 현재 캔들이 오른쪽 끝(최신)에서부터 몇 번째 떨어져 있는지 계산합니다.
-    var offsetFromRight = (prices.length - 1) - i;
-    var x = rightEdge - (offsetFromRight * spacing);
-    
-    var openP = (i === 0) ? p : prices[i - 1];
-    var closeP = p;
-    
-    var y_open = h - pad - ((openP - minP) / range) * (h - pad * 2);
-    var y_close = h - pad - ((closeP - minP) / range) * (h - pad * 2);
+  // 가장 최근 데이터가 오른쪽 끝에 오도록 기준점을 잡습니다.
+  var rightEdge = pad + (candleW / 2) + usableW;
+
+  prices.forEach(function(p, i) {
+    // 현재 캔들이 오른쪽 끝(최신)에서부터 몇 번째 떨어져 있는지 계산합니다.
+    var offsetFromRight = (prices.length - 1) - i;
+    var x = rightEdge - (offsetFromRight * spacing);
+    
+    var openP = (i === 0) ? p : prices[i - 1];
+    var closeP = p;
+    
+    var y_open = toMiniY(openP);
+    var y_close = toMiniY(closeP);
     
     // 미니 차트 색상은 캔들 개별 방향에 따름
     var isUp = closeP >= openP;
@@ -6045,55 +6060,96 @@ function drawAdvancedChart(k) {
   var cW = W - padL - padR;
   var cH = H - padT - padB;
 
-  // ─── 3. Y축 스케일 (데이터 범위 ±8% 여백) ─────────────────
-  var dMin = Infinity, dMax = -Infinity;
-  candles.forEach(function(c) {
-    if (c.h > dMax) dMax = c.h;
-    if (c.l < dMin) dMin = c.l;
-  });
-  var rawRange = dMax - dMin || dMax * 0.02;
-  var margin   = rawRange * 0.12;
-  var minP     = dMin - margin;
-  var maxP     = dMax + margin;
-  if (minP < 0) minP = 0;
-  var range    = maxP - minP || 1;
+  // ─── 3. Y축 스케일 (로그 스케일 적용) ─────────────────
+  var dMin = Infinity, dMax = -Infinity;
+  candles.forEach(function(c) {
+    if (c.h > dMax) dMax = c.h;
+    if (c.l < dMin) dMin = c.l;
+  });
 
-  // Y축 눈금 스텝 계산 (4~5개 눈금)
-  var idealStep = range / 4;
-  var mag  = Math.pow(10, Math.floor(Math.log10(idealStep || 1)));
-  var mults = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 10];
-  var step  = mag;
-  for (var mi = 0; mi < mults.length; mi++) {
-    if (mults[mi] * mag >= idealStep) { step = mults[mi] * mag; break; }
-  }
-  var gridMin = Math.floor(minP / step) * step;
-  var gridMax = Math.ceil(maxP  / step) * step;
-  var gridLines = [];
-  for (var g = gridMin; g <= gridMax + step * 0.1; g += step) {
-    if (g >= minP && g <= maxP) gridLines.push(g);
-  }
+  // 에러 방어: 데이터가 이상할 경우 최소한의 범위 보장
+  if (dMin === Infinity) { dMin = 100; dMax = 100; } 
+  if (dMin < 1) dMin = 1;
+  if (dMax < 1) dMax = 2;
+  if (dMin === dMax) {
+    dMax *= 1.05;
+    dMin *= 0.95;
+  }
 
-  function toY(price) {
-    return padT + cH - ((price - minP) / range) * cH;
-  }
+  var logDMin = Math.log10(dMin);
+  var logDMax = Math.log10(dMax);
+  var logDRange = logDMax - logDMin || 0.01;
 
-  // ─── 4. 배경 ──────────────────────────────────────────────
-  ctx.fillStyle = 'rgba(8, 8, 18, 0.0)';
-  ctx.fillRect(0, 0, W, H);
+  // 상하 여백 15% 부여
+  var logMargin = logDRange * 0.15;
+  if (logMargin <= 0) logMargin = 0.1;
 
-  // 차트 영역 배경
-  ctx.fillStyle = 'rgba(255,255,255,0.025)';
-  ctx.beginPath();
-  ctx.roundRect ? ctx.roundRect(padL, padT, cW, cH, 6) : ctx.rect(padL, padT, cW, cH);
-  ctx.fill();
+  var logMinP = logDMin - logMargin;
+  var logMaxP = logDMax + logMargin;
+  var logRange = logMaxP - logMinP || 1;
 
-  // ─── 5. 격자선 & Y축 라벨 ────────────────────────────────
-  ctx.font = 'bold 10px "Jua", sans-serif';
+  var minP = Math.pow(10, logMinP);
+  var maxP = Math.pow(10, logMaxP);
+  var range = maxP - minP || 1;
+
+  // 💡 눈금(Grid) 간격 최적화 (로그/선형 하이브리드 완벽판 v3)
+  var gridLines = [];
+  var priceRatio = maxP / minP;
+
+  if (priceRatio > 4) {
+    // 1. 주가가 4배 이상 폭등/폭락한 '초장기/대세' 차트:
+    // 1만, 5만, 10만 등 자릿수 기준으로 큼직하게 선을 긋습니다.
+    var minOrder = Math.floor(Math.log10(minP));
+    var maxOrder = Math.ceil(Math.log10(maxP));
+    var orderDiff = maxOrder - minOrder;
+    var mults = orderDiff > 2 ? [1] : [1, 5]; 
+    
+    for (var o = minOrder; o <= maxOrder; o++) {
+      var base = Math.pow(10, o);
+      mults.forEach(function(m) {
+        var val = base * m;
+        if (val >= minP && val <= maxP) gridLines.push(val);
+      });
+    }
+  } else {
+    // 2. 일반적인 변동폭 (실시간, 1시간, 1일 등 대부분의 경우):
+    // 무조건 똑같은 간격(예: 500원씩, 5000원씩)으로 정직하게 4~5칸을 나눕니다.
+    var idealStep = range / 4.5;
+    var mag  = Math.pow(10, Math.floor(Math.log10(idealStep || 1)));
+    var mults = [1, 2, 2.5, 5, 10];
+    var step  = mag;
+    for (var mi = 0; mi < mults.length; mi++) {
+      if (mults[mi] * mag >= idealStep) { step = mults[mi] * mag; break; }
+    }
+    var gridMin = Math.floor(minP / step) * step;
+    var gridMax = Math.ceil(maxP  / step) * step;
+    for (var g = gridMin; g <= gridMax + step * 0.1; g += step) {
+      if (g >= minP && g <= maxP) gridLines.push(g);
+    }
+  }
+
+  function toY(price) {
+    if (price < 1) price = 1;
+    var logP = Math.log10(price);
+    return padT + cH - ((logP - logMinP) / logRange) * cH;
+  }
+
+  // ─── 4. 배경 ──────────────────────────────────────────────
+  ctx.fillStyle = 'rgba(8, 8, 18, 0.0)';
+  ctx.fillRect(0, 0, W, H);
+
+  // 차트 영역 배경
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(padL, padT, cW, cH, 6) : ctx.rect(padL, padT, cW, cH);
+  ctx.fill();
+
+  // ─── 5. 격자선 & Y축 라벨 ────────────────────────────────
   ctx.textAlign = 'right';
 
   gridLines.forEach(function(val) {
     var y = toY(val);
-    // 격자선
+    // 격자선 그리기
     ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.lineWidth   = 1;
     ctx.setLineDash([3, 4]);
@@ -6102,14 +6158,24 @@ function drawAdvancedChart(k) {
     ctx.lineTo(W - padR, y);
     ctx.stroke();
     ctx.setLineDash([]);
-    var label = '';
-    // 💡 1억 이상일 때는 '억', 100만 이상일 때는 '만'으로 축약하고, 그 밑으로는 통일감 있게 콤마(,) 표기 유지!
-    if (val >= 1e8 && step >= 1e7) label = parseFloat((val/1e8).toFixed(2)) + '억';
-    else if (val >= 1e6 && step >= 1e5) label = parseFloat((val/1e4).toFixed(0)) + '만';
-    else label = Math.round(val).toLocaleString();
+    
+    // 💡 '만', '억' 글씨 없이 무조건 10,000 형태로 깔끔하게 쉼표 처리!
+    var label = Math.round(val).toLocaleString();
     
     ctx.fillStyle = 'rgba(180,180,210,0.75)';
-    ctx.fillText(label, padL - 5, y + 3.5);
+
+    // 💡 마법 1: 숫자가 길어지면 폰트 크기를 유동적으로 살짝 줄여줍니다.
+    var fontSize = 10;
+    if (label.length >= 8) { // 예: 1,000,000 (9글자) 이상
+      fontSize = 8;
+    } else if (label.length >= 6) { // 예: 100,000 (7글자) 이상
+      fontSize = 9;
+    }
+    ctx.font = 'bold ' + fontSize + 'px "Jua", sans-serif';
+
+    // 💡 마법 2: 캔버스의 maxWidth 파라미터를 추가하여 절대 왼쪽 여백을 넘지 않게 장평 압축! 
+    // (현재 왼쪽 여백 padL이 50이므로 최대 42픽셀까지만 공간을 쓰도록 제한합니다)
+    ctx.fillText(label, padL - 5, y + 3.5, padL - 8);
   });
 
   // ─── 6. X축 라벨 (해당 캔들과 완벽 동기화) ────────────────────────
