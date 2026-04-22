@@ -3617,10 +3617,11 @@ function fireEarning(pending, silent) {
   }
 
   ch.change = changeMin + Math.random() * (changeMax - changeMin);
-  ch._earningApplied = true;
+  ch._earningApplied = true;
 
-  if (!silent) {
-    var flagText = pending.beat ? '(호재)' : '(악재)';
+  if (!silent) {
+    var changePct = (ch.change * 100).toFixed(2);
+    var flagText = '(' + (ch.change >= 0 ? '+' : '') + changePct + '%)';
     var newsColor = pending.beat ? '#ff4455' : '#4477ff';
     GS.currentNews = '[실적발표] ' + ch.name + ' - ' + label + ' ' + flagText;
     showNewsToast(GS.currentNews, newsColor, pending.key);
