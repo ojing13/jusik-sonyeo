@@ -3764,34 +3764,41 @@ function showTapPopup(earned, x, y) {
 }
 
 function goToMarket(k) {
-  closeChartModal();
-  playSound('click');
-  var ch = GS.chars[k];
-  if (!ch) return;
-  marketTab = ch.sector;
-  switchScreen('market');
+  // 💡 모든 종류의 모달(상세창, 도감, 설정, 가이드 등)을 먼저 전부 닫습니다.
+  document.querySelectorAll('.modal-overlay').forEach(function(m) {
+    m.classList.remove('active');
+  });
+  // 💡 가챠 결과창(오버레이)이 열려있다면 함께 닫습니다.
+  var gachaOv = document.getElementById('gacha-overlay');
+  if (gachaOv) gachaOv.classList.remove('show');
 
-  setTimeout(function() {
-    // 💡 화면이 이동하고 애니메이션이 실제로 켜지는 정확한 시간을 기록합니다.
-    GS.highlightTarget = k;
-    GS.highlightStart = Date.now();
-    GS.highlightExpire = GS.highlightStart + 2000;
+  playSound('click');
+  var ch = GS.chars[k];
+  if (!ch) return;
+  marketTab = ch.sector;
+  switchScreen('market');
 
-    var el = document.getElementById('stock-card-' + k);
-    if (el) {
-      el.scrollIntoView({behavior: 'smooth', block: 'center'});
-      el.classList.add('flash-highlight');
-      
-      setTimeout(function() { 
-        GS.highlightTarget = null; 
-        var currentEl = document.getElementById('stock-card-' + k); 
-        if (currentEl) {
-            currentEl.classList.remove('flash-highlight'); 
-            currentEl.style.animationDelay = ''; // 💡 흔적 지우기
-        }
-      }, 2000);
-    }
-  }, 100);
+  setTimeout(function() {
+    // 💡 화면이 이동하고 애니메이션이 실제로 켜지는 정확한 시간을 기록합니다.
+    GS.highlightTarget = k;
+    GS.highlightStart = Date.now();
+    GS.highlightExpire = GS.highlightStart + 2000;
+
+    var el = document.getElementById('stock-card-' + k);
+    if (el) {
+      el.scrollIntoView({behavior: 'smooth', block: 'center'});
+      el.classList.add('flash-highlight');
+      
+      setTimeout(function() { 
+        GS.highlightTarget = null; 
+        var currentEl = document.getElementById('stock-card-' + k); 
+        if (currentEl) {
+            currentEl.classList.remove('flash-highlight'); 
+            currentEl.style.animationDelay = ''; // 💡 흔적 지우기
+        }
+      }, 2000);
+    }
+  }, 100);
 }
 
 var gachaResults = [];
