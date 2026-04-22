@@ -1654,11 +1654,11 @@ body, #app {
 </div>
 
 <div id="guide-modal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')">✖</div>
-    <div style="font-size:22px; color:var(--gold); margin-bottom:15px; text-align:center;">주식소녀 플레이 가이드</div>
+  <div class="modal-content" style="display:flex; flex-direction:column; padding: 16px 20px; overflow: hidden;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
+    <div style="font-size:22px; color:var(--gold); margin-top: -25px; margin-bottom:5px; text-align:center;">주식소녀 플레이 가이드</div>
 
-    <div style="font-size:15px; line-height:1.7; color:#ccc;">
+    <div class="scroll-area" style="flex:1; padding-bottom:0; font-size:15px; line-height:1.7; color:#ccc;">
       
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#ffcc44;">[1] 자본금 & 티켓 모으기</h4>
