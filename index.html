@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.4</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.5</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -4141,8 +4141,9 @@ function updateChartModalIfOpen() {
       list.innerHTML = '최근 기록된 이벤트가 없습니다.';
     } else {
       ch.events.slice(-5).reverse().forEach(function(ev) {
-        var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--red)' : 'var(--blue)';
-        var timeStr = '';
+      // 💡 분할/병합(공시)은 노란색(gold), 그 외 호재는 빨간색, 악재는 파란색
+      var color = (ev.type === 'split' || ev.type === 'merge') ? 'var(--gold)' : (ev.flag === 'good' ? 'var(--red)' : 'var(--blue)');
+      var timeStr = '';
         if (ev.absTick !== undefined) {
           var diffSec = (GS.total_game_ticks - ev.absTick) * 5;
           if (diffSec < 60) timeStr = ' (방금 전)';
@@ -5951,8 +5952,9 @@ function showChartModal(k) {
     list.innerHTML = '최근 기록된 이벤트가 없습니다.';
   } else {
     ch.events.slice(-5).reverse().forEach(function(ev) {
-      var color = ev.type === 'split' || ev.flag === 'good' ? 'var(--red)' : 'var(--blue)';
-      var timeStr = '';
+        // 💡 분할/병합(공시)은 노란색(gold), 그 외 호재는 빨간색, 악재는 파란색
+        var color = (ev.type === 'split' || ev.type === 'merge') ? 'var(--gold)' : (ev.flag === 'good' ? 'var(--red)' : 'var(--blue)');
+        var timeStr = '';
       if (ev.absTick !== undefined) {
         var diffSec = (GS.total_game_ticks - ev.absTick) * 5;
         if (diffSec < 60) timeStr = ' (방금 전)';
@@ -6315,14 +6317,22 @@ function drawAdvancedChart(k) {
       // 💡 1주(1h) 탭에서는 병합, 분할(공시) 마커만 표시하도록 필터링
       if (currentChartTab === '1h' && ev.type !== 'split' && ev.type !== 'merge') return;
       
-      // 💡 마커 위치 계산 완벽 수정:
-      // 현재 틱과 이벤트 틱의 단순 차이(뺄셈)를 이용하면 현재 캔들 진행도에 따라 오차가 생깁니다.
-      // 캔들이 묶이는 정확한 절대 '주기' 구간을 비교해야 마커가 흔들리지 않고 캔들에 딱 달라붙습니다!
+      // 💡 마커 위치 계산 완벽 수정 (가상 시계 버킷 기준 동기화!):
+      // 캔들을 자르는 기준점(virtual_time)과 이벤트를 동일한 시계로 맞춰서 계산합니다.
       var candlesAgo = 0;
       if (currentChartTab === 'tick') {
         candlesAgo = GS.total_game_ticks - ev.absTick;
       } else {
-        candlesAgo = Math.floor(GS.total_game_ticks / ticksPerCandle) - Math.floor(ev.absTick / ticksPerCandle);
+        var intervalMs = ticksPerCandle * 5000;
+        var currentVirtualTime = GS.virtual_time || Date.now();
+        // 이벤트가 발생했던 정확한 가상 시계의 밀리초(ms) 시점을 역산합니다.
+        var eventVirtualTime = currentVirtualTime - ((GS.total_game_ticks - ev.absTick) * 5000);
+        
+        // 각각 어느 버킷(캔들)에 속하는지 계산해서 차이를 구합니다.
+        var currentBucket = Math.floor(currentVirtualTime / intervalMs);
+        var eventBucket = Math.floor(eventVirtualTime / intervalMs);
+        
+        candlesAgo = currentBucket - eventBucket;
       }
 
       if (candlesAgo < 0) return;
