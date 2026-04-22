@@ -6063,17 +6063,25 @@ function drawAdvancedChart(k) {
   // ─── 3. Y축 스케일 (로그 스케일 적용) ─────────────────
   var dMin = Infinity, dMax = -Infinity;
   candles.forEach(function(c) {
-    if (c.h > dMax) dMax = c.h;
-    if (c.l < dMin) dMin = c.l;
+    // 💡 1차 방어: 고가(h)나 저가(l) 데이터가 비정상이거나 깨졌을 경우, 시가(o)와 종가(c)로 안전하게 대체
+    var validH = (typeof c.h === 'number' && !isNaN(c.h)) ? c.h : Math.max(c.o || ch.price, c.c || ch.price);
+    var validL = (typeof c.l === 'number' && !isNaN(c.l)) ? c.l : Math.min(c.o || ch.price, c.c || ch.price);
+    
+    if (validH > dMax) dMax = validH;
+    if (validL < dMin) dMin = validL;
   });
 
-  // 에러 방어: 데이터가 이상할 경우 최소한의 범위 보장
-  if (dMin === Infinity) { dMin = 100; dMax = 100; } 
+  // 💡 2차 방어: 캔들 연산이 끝난 후, 실시간 현재 주가가 범위를 뚫고 나갔다면 강제로 최고/최저가에 포함시킴
+  if (ch.price > dMax) dMax = ch.price;
+  if (ch.price < dMin) dMin = ch.price;
+
+  // 에러 방어: 데이터가 아예 없거나 Infinity, NaN일 경우 현재가 기준으로 범위 강제 초기화
+  if (dMin === Infinity || isNaN(dMin)) { dMin = ch.price; dMax = ch.price; } 
   if (dMin < 1) dMin = 1;
   if (dMax < 1) dMax = 2;
-  if (dMin === dMax) {
-    dMax *= 1.05;
-    dMin *= 0.95;
+  if (dMin >= dMax) {
+    dMax = dMin * 1.05;
+    dMin = dMin * 0.95;
   }
 
   var logDMin = Math.log10(dMin);
