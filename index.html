@@ -3221,49 +3221,51 @@ function applyPriceChange(k) {
   var totalCost = ch.total_principal || (ch.avg_price * ch.owned);
 
   // 💡 액면분할 (100만원 이상)
-  if (np >= 1000000) { 
-    np /= 10; ch.owned *= 10; ch.ref_price /= 10;
-    // 과거 캔들 객체 데이터를 안전하게 1/10로 스케일링 (NaN 방지)
-    ['chart_1m', 'chart_10m', 'chart_1h', 'chart_1d'].forEach(function(arr) {
-      if (ch[arr]) ch[arr] = ch[arr].map(function(p) { 
-        return typeof p === 'number' ? p / 10 : {o: p.o/10, h: p.h/10, l: p.l/10, c: p.c/10}; 
-      });
-    });
-    if (ch.price_history) ch.price_history = ch.price_history.map(function(v) { return v / 10; });
-    ['cur_1m', 'cur_10m', 'cur_1h', 'cur_1d'].forEach(function(cur) {
-      if (ch[cur]) { ch[cur].o /= 10; ch[cur].h /= 10; ch[cur].l /= 10; }
-    });
-    if (ch.owned > 0) ch.avg_price = totalCost / ch.owned;
-    if (ch.unlocked) {
-      setAction('[' + ch.name + '] 액면분할!', 2);
-      ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'split', label: '액면분할' });
-    }
-  } 
-  // 💡 액면병합 (1000원 미만)
-  else if (np < 1000 && np > 0) { 
-    var originalOwned = ch.owned, remainder = ch.owned % 10; 
-    np *= 10; ch.owned = Math.floor(ch.owned / 10); ch.ref_price *= 10; 
-    ['chart_1m', 'chart_10m', 'chart_1h', 'chart_1d'].forEach(function(arr) {
-      if (ch[arr]) ch[arr] = ch[arr].map(function(p) { 
-        return typeof p === 'number' ? p * 10 : {o: p.o*10, h: p.h*10, l: p.l*10, c: p.c*10}; 
-      });
-    });
-    if (ch.price_history) ch.price_history = ch.price_history.map(function(v) { return v * 10; });
-    ['cur_1m', 'cur_10m', 'cur_1h', 'cur_1d'].forEach(function(cur) {
-      if (ch[cur]) { ch[cur].o *= 10; ch[cur].h *= 10; ch[cur].l *= 10; }
-    });
-    if (remainder > 0) {
-      GS.money += Math.floor(remainder * (np / 10));
-      if (originalOwned > 0) totalCost = totalCost * ((ch.owned * 10) / originalOwned);
-    }
-    ch.total_principal = totalCost;
-    if (ch.owned > 0) ch.avg_price = totalCost / ch.owned;
-    else { ch.avg_price = 0; ch.total_principal = 0; if (ch.unlocked && originalOwned > 0) showToast('['+ch.name+'] 전량 강제 청산!', '#ff4444', null, 8000); }
-    if (ch.unlocked) {
-      if (originalOwned > 0) setAction('[' + ch.name + '] 액면병합!', 2);
-      ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'merge', label: '액면병합' });
-    }
-  }
+  if (np >= 1000000) { 
+    np /= 10; ch.owned *= 10; ch.ref_price /= 10;
+    // 과거 캔들 객체 데이터를 안전하게 1/10로 스케일링 (NaN 방지)
+    ['chart_1m', 'chart_10m', 'chart_1h', 'chart_1d'].forEach(function(arr) {
+      if (ch[arr]) ch[arr] = ch[arr].map(function(p) { 
+        return typeof p === 'number' ? p / 10 : {o: p.o/10, h: p.h/10, l: p.l/10, c: p.c/10}; 
+      });
+    });
+    if (ch.price_history) ch.price_history = ch.price_history.map(function(v) { return v / 10; });
+    ['cur_1m', 'cur_10m', 'cur_1h', 'cur_1d'].forEach(function(cur) {
+      if (ch[cur]) { ch[cur].o /= 10; ch[cur].h /= 10; ch[cur].l /= 10; }
+    });
+    if (ch.owned > 0) ch.avg_price = totalCost / ch.owned;
+    if (ch.unlocked) {
+      setAction('[' + ch.name + '] 액면분할!', 2);
+    }
+    // 마커는 잠겨있을 때도 무조건 기록하여 차트 꼬임을 방지!
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'split', label: '액면분할' });
+  } 
+  // 💡 액면병합 (1000원 미만)
+  else if (np < 1000 && np > 0) { 
+    var originalOwned = ch.owned, remainder = ch.owned % 10; 
+    np *= 10; ch.owned = Math.floor(ch.owned / 10); ch.ref_price *= 10; 
+    ['chart_1m', 'chart_10m', 'chart_1h', 'chart_1d'].forEach(function(arr) {
+      if (ch[arr]) ch[arr] = ch[arr].map(function(p) { 
+        return typeof p === 'number' ? p * 10 : {o: p.o*10, h: p.h*10, l: p.l*10, c: p.c*10}; 
+      });
+    });
+    if (ch.price_history) ch.price_history = ch.price_history.map(function(v) { return v * 10; });
+    ['cur_1m', 'cur_10m', 'cur_1h', 'cur_1d'].forEach(function(cur) {
+      if (ch[cur]) { ch[cur].o *= 10; ch[cur].h *= 10; ch[cur].l *= 10; }
+    });
+    if (remainder > 0) {
+      GS.money += Math.floor(remainder * (np / 10));
+      if (originalOwned > 0) totalCost = totalCost * ((ch.owned * 10) / originalOwned);
+    }
+    ch.total_principal = totalCost;
+    if (ch.owned > 0) ch.avg_price = totalCost / ch.owned;
+    else { ch.avg_price = 0; ch.total_principal = 0; if (ch.unlocked && originalOwned > 0) showToast('['+ch.name+'] 전량 강제 청산!', '#ff4444', null, 8000); }
+    if (ch.unlocked) {
+      if (originalOwned > 0) setAction('[' + ch.name + '] 액면병합!', 2);
+    }
+    // 마커는 잠겨있을 때도 무조건 기록하여 차트 꼬임을 방지!
+    ch.events.push({ tick: ch.tick_history.length, absTick: GS.total_game_ticks, type: 'merge', label: '액면병합' });
+  }
 
   ch.price = Math.max(100, np); 
   
