@@ -1688,8 +1688,8 @@ body, #app {
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#cc88ff;">[4] 배당금과 분산 투자</h4>
         <ul class="guide-list">
-          <li>💰 <span style="color:white; font-weight:bold;">1분마다 현금 지급:</span> 주식을 보유하기만 해도 1분마다 배당금이 들어옵니다. (캐릭터 레벨에 따라 복리로 증가)</li>
-          <li>💎 <span style="color:white; font-weight:bold;">등급별 기본 배당 (1분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.05%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.03%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.02%</span> / N <span style="color:#888899; font-weight:bold;">0.01%</span></li>
+          <li>💰 <span style="color:white; font-weight:bold;">5분마다 현금 지급:</span> 주식을 보유하기만 해도 5분마다 배당금이 들어옵니다. (캐릭터 레벨에 따라 복리로 증가)</li>
+          <li>💎 <span style="color:white; font-weight:bold;">등급별 기본 배당 (5분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.10%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.06%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.04%</span> / N <span style="color:#888899; font-weight:bold;">0.02%</span></li>
           <li>📊 <span style="color:white; font-weight:bold;">분산 투자 보너스:</span> 전체 투자금의 10% 이상을 차지하는 섹터가 <strong>3개면 총 배당금 1.2배</strong>, <strong>5개면 1.5배</strong> 보너스!</li>
           <li>💤 <span style="color:white; font-weight:bold;">오프라인 수익:</span> 게임을 꺼두어도 배당금은 쌓이지만, <strong>최대 24시간까지만 누적</strong>됩니다.</li>
         </ul>
@@ -1780,9 +1780,9 @@ body, #app {
         <span style="font-size:16px; color:var(--green);" id="sd-div-rate"></span>
       </div>
       <div style="display:flex; justify-content:space-between;">
-        <span style="color:var(--text2); font-size:15px;">1분당 예상 현금 배당</span>
-        <span style="font-size:18px; color:var(--gold);" id="sd-div-est"></span>
-      </div>
+        <span style="color:var(--text2); font-size:15px;">5분당 예상 현금 배당</span>
+        <span style="font-size:18px; color:var(--gold);" id="sd-div-est"></span>
+      </div>
     </div>
 
     <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px;">
@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.7</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.8</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -2387,8 +2387,8 @@ var GS = {
   earningPendingToast: null,
   momentumTimer: 0,
   biasTimer: 0, // 💡 바이어스 전용 타이머 추가!
-  dividendTimer: 12, skipGachaReveal: false,
-  mg_highscore: 0,
+  dividendTimer: 60, skipGachaReveal: false,
+  mg_highscore: 0,
   bgmOn: true, sfxOn: true, notiOn: true,
   // 💡 추가: 일일 광고 시청 횟수 제한 기록용 변수
   adTicketUses: 5,
@@ -2447,7 +2447,7 @@ var TUT = {
         { type: 'dialog', text: '이곳에선 매수한 주식의 평균 단가와 수익률 등 보유 현황을 한눈에 볼 수 있어요.' },
         { type: 'action', target: '.port-card[data-key="nflx"]', action: 'open_detail', text: '방금 매수한 \'노아\' 종목 카드를 눌러 상세 정보를 확인해 볼까요?' },
     { type: 'dialog', text: '한 종목을 많이 사서 목표 금액에 도달하면 경영권을 얻어요. 경영권을 따내면 그 종목의 터치 수익이 2배, 배당금이 1.5배로 영구 상승해요.' },
-    { type: 'dialog', text: '배당금은 주식을 가지고만 있어도 1분마다 들어와요. 여러 섹터에 골고루 분산 투자하면 배당금을 최대 1.5배 더 받을 수 있어요.' },
+    { type: 'dialog', text: '배당금은 주식을 가지고만 있어도 5분마다 들어와요. 여러 섹터에 골고루 분산 투자하면 배당금을 최대 1.5배 더 받을 수 있어요.' },
     { type: 'action', target: '#stock-detail-modal .modal-close', action: 'close_detail', text: '확인하셨다면 우측 상단의 [✖ 닫기] 버튼을 눌러 창을 닫아주세요.' },
     { type: 'action', target: '.nav-btn[data-screen="gacha"]', action: 'switch_gacha', text: '이제 하단의 [스카웃] 탭을 눌러 캐릭터 영입하러 가볼까요?' },
     { type: 'dialog', text: '새로운 주식을 거래하거나 수익을 높이려면 캐릭터 영입이 필수예요.' },
@@ -3338,7 +3338,7 @@ function tick(silent) {
   if (GS.stickyNewsTicks > 0) GS.stickyNewsTicks--;
 
   GS.dividendTimer--;
-  if (GS.dividendTimer <= 0) { payDividends(silent); GS.dividendTimer = 12; }
+  if (GS.dividendTimer <= 0) { payDividends(silent); GS.dividendTimer = 60; }
 
   GS.earningTimer--;
   if (GS.earningTimer <= 0) { GS.earningTimer = 15 + Math.floor(Math.random() * 16); scheduleEarning(silent); }
@@ -3493,7 +3493,7 @@ function payDividends(silent) {
   var total = 0;
   var sectorValues = {};
   var totalInvested = 0;
-  var divRates = { SSR:0.0005, SR:0.0003, R:0.0002, N:0.0001 };
+  var divRates = { SSR:0.0010, SR:0.0006, R:0.0004, N:0.0002 };
 
   Object.values(GS.chars).forEach(function(ch) {
     if (!ch.unlocked || ch.owned <= 0) return;
@@ -4286,8 +4286,8 @@ frameEl.style.border = '1px solid rgba(255, 255, 255, 0.1)';
         
         document.getElementById('div-time-text').textContent = timeStr;
         
-        // 배당 주기는 최대 12틱(60초) 기준이므로 게이지를 이에 맞게 채웁니다.
-        var maxTicks = 12; 
+        // 배당 주기는 최대 60틱(300초 = 5분) 기준이므로 게이지를 이에 맞게 채웁니다.
+        var maxTicks = 60;
         var pct = Math.max(0, Math.min(100, ((maxTicks - GS.dividendTimer) / maxTicks) * 100));
         document.getElementById('div-progress-fill').style.width = pct + '%';
         
@@ -4716,15 +4716,15 @@ function showStockDetail(k) {
   document.getElementById('sd-level').textContent = (ch.level >= 10 ? 'Lv.MAX' : 'Lv.' + ch.level);
   document.getElementById('sd-energy').textContent = ch.max_energy;
 
-  var divRates = { SSR:0.0005, SR:0.0003, R:0.0002, N:0.0001 };
+  var divRates = { SSR:0.0010, SR:0.0006, R:0.0004, N:0.0002 };
 
-  var baseRate = divRates[ch.rarity] || 0.0005;
+  var baseRate = divRates[ch.rarity] || 0.0010;
   var levelBonus = getDivLevelBonus(ch.rarity, ch.level);
   var finalRate = baseRate * levelBonus * (ch.is_vip ? 1.5 : 1);
   var expectedDiv = Math.floor(ch.price * ch.owned * finalRate);
 
-  document.getElementById('sd-div-rate').textContent = (finalRate * 100).toFixed(3) + '% (1분당)';
-  document.getElementById('sd-div-est').textContent = ch.owned > 0 ? fcomma(expectedDiv) + '원' : '0원 (미보유)';
+  document.getElementById('sd-div-rate').textContent = (finalRate * 100).toFixed(3) + '% (5분당)';
+  document.getElementById('sd-div-est').textContent = ch.owned > 0 ? fcomma(expectedDiv) + '원' : '0원 (미보유)';
 
   document.getElementById('sd-price').textContent = fcomma(ch.price) + '원';
   // 💡 저장해둔 이슈를 화면에 쏴줍니다! 없으면 '특이사항 없음'
@@ -5504,7 +5504,7 @@ function devResetStep() {
     GS.dialogState = 'normal';
     GS.dialogText = '다음 에피소드가 궁금하지 않으세요? 밤새도록 멈출 수 없을걸요.';
     GS.lastComboTime = 0;
-    GS.dividendTimer = 12;
+    GS.dividendTimer = 60;
     GS.earningTimer = 15;
     GS.mg_highscore = 0;
     GS.bgmOn = true; GS.sfxOn = true; GS.notiOn = true;
