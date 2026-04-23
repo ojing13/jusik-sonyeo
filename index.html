@@ -5658,6 +5658,30 @@ function applyCheat() {
       document.getElementById('settings-modal').classList.remove('active');
     }, 100);
 
+} else if (code === '위클리슬립') { 
+    playSound('click');
+    showToast("⏳ 1주일 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#cc88ff", null, 3000, false, true);
+
+    setTimeout(function() {
+      var moneyBefore = GS.money;
+      var skipTicks = 17280 * 7;
+
+      for (var i = 0; i < skipTicks; i++) {
+        tick(true);
+      }
+
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+
+      updateTotalAssets();
+      save();
+      renderAll();
+
+      playSound('dividend');
+      showToast("✨ 1주일 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#cc88ff", null, 5000, false, true);
+
+      document.getElementById('settings-modal').classList.remove('active');
+    }, 100);
+
   } else {
     // 다른 글자를 쳤을 때
     showToast("알 수 없는 코드입니다.", "#ff4444");
