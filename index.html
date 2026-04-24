@@ -2175,9 +2175,9 @@ var MISSIONS = [
   // [투자] 필요 자산 규모에 맞춰 자산 미션 보상과 동기화 (샀다 팔기 꼼수 고려)
   { id:'first_trade',   tab:'투자', name:'첫 거래',         desc:'주식을 1회 매수',                  reward:10,   target:1,              type:'trade' },
   { id:'div_get',       tab:'투자', name:'첫 배당 수익',      desc:'배당금을 1회 수령',                reward:10,   target:1,              type:'div' },
-  { id:'vip_first',     tab:'투자', name:'첫 경영권',        desc:'경영권을 1개 확보',                reward:10,  target:1,              type:'vip_count' },
-  { id:'vip_5',         tab:'투자', name:'기업 사냥꾼',      desc:'경영권을 동시에 5개 확보',          reward:15,  target:5,              type:'vip_count' },
-  { id:'vip_10',        tab:'투자', name:'재계 총수',        desc:'경영권을 동시에 10개 확보',         reward:20,  target:10,             type:'vip_count' },
+  { id:'vip_first',     tab:'투자', name:'첫 경영권',        desc:'경영권을 1개 확보',                reward:15,  target:1,              type:'vip_count' },
+  { id:'vip_5',         tab:'투자', name:'기업 사냥꾼',      desc:'경영권을 동시에 5개 확보',          reward:20,  target:5,              type:'vip_count' },
+  { id:'vip_10',        tab:'투자', name:'재계 총수',        desc:'경영권을 동시에 10개 확보',         reward:25,  target:10,             type:'vip_count' },
   { id:'ssr_vip_1',     tab:'투자', name:'포식자',          desc:'SSR 경영권을 1개 확보',            reward:30,  target:1,              type:'ssr_vip_count' },
   { id:'ssr_vip_5',     tab:'투자', name:'지배자',          desc:'SSR 경영권을 동시에 5개 확보',      reward:50,  target:5,              type:'ssr_vip_count' }
 ];
@@ -2374,7 +2374,7 @@ var GS = {
   virtual_time: Date.now(), // 💡 차트 전용 가상 시계 도입!
   tradeMode: 1,         // 💡 추가: 저장될 거래 수량
   tradeLabel: '1주',    // 💡 추가: 저장될 거래 수량 텍스트
-  money: 2000000, total_assets: 2000000, start_assets: 2000000,
+  money: 3000000, total_assets: 3000000, start_assets: 3000000,
   gacha_count: 0, pity_count: 0, tickets: 10,
   chars: {}, mainChar: 'nflx',
   themeTimer: 0, noThemeTicks: 0,
@@ -2522,7 +2522,7 @@ function startTutorial() {
   }
   
   GS.isTutorial = true; TUT.active = true; TUT.step = 0; TUT.tapCount = 0; TUT.isLocked = false;
-  GS.money = 2000000; GS.tickets = 10;
+  GS.money = 3000000; GS.tickets = 10;
   updateTotalAssets(); renderAll();
 
   initTutorialDOM();
@@ -5497,7 +5497,7 @@ function devResetStep() {
     localStorage.removeItem('sg_tutorial_done');
     
     // 2. 모든 내부 변수 초기 상태로 롤백
-    GS.money = 2000000; GS.total_assets = 2000000; GS.start_assets = 2000000;
+    GS.money = 3000000; GS.total_assets = 3000000; GS.start_assets = 3000000;
     GS.gacha_count = 0; GS.pity_count = 0; GS.tickets = 10;
     GS.mainChar = 'nflx'; GS.themeTimer = 0; GS.noThemeTicks = 0;
     GS.currentTheme = THEMES[0]; GS.inCrash = false; GS.crashTicks = 0; GS.inBull = false; GS.bullTicks = 0;
