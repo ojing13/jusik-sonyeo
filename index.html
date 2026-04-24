@@ -3469,7 +3469,7 @@ function tick(silent) {
 
       if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
         GS.newsBoost[k].ticks--;
-        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.050; } else { baseMin = -0.050; baseMax = 0.015; }
+        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.055; } else { baseMin = -0.055; baseMax = 0.015; }
         if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
       }
       ch.change = baseMin + Math.random() * (baseMax - baseMin);
