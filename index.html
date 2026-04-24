@@ -1513,7 +1513,7 @@ body, #app {
     <div class="market-top" style="width: 100%;">
       <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
         <span class="market-title" style="white-space: nowrap; flex-shrink: 0;">거래소</span>
-        <button onclick="openMarketHistory()" style="background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text2); font-size:11px; padding:4px 8px; cursor:pointer; font-family:'Jua',sans-serif; white-space: nowrap; flex-shrink: 0;">시황 기록</button>
+        <button onclick="openMarketHistory()" style="background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text2); font-size:11px; padding:4px 8px; cursor:pointer; font-family:'Jua',sans-serif; white-space: nowrap; flex-shrink: 0;">기록</button>
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
         <span id="m-cash" style="font-size:15px; color:var(--gold); white-space: nowrap; flex-shrink: 0;">0원</span>
@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.4</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.5</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -7004,7 +7004,7 @@ document.addEventListener('touchcancel', function(e) {
 <div id="market-history-modal" class="modal-overlay">
   <div class="modal-content" style="max-height: 70%; display:flex; flex-direction:column; padding: 16px 20px;">
     <div class="modal-close" onclick="playSound('click'); document.getElementById('market-history-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
-    <div style="font-size:20px; color:var(--gold); margin-top: 15px; margin-bottom:12px; text-align:center;">시황 기록</div>
+    <div style="font-size:20px; color:var(--gold); margin-top: 15px; margin-bottom:12px; text-align:center;">기록</div>
     <div class="scroll-area" id="market-history-list" style="flex:1; padding-bottom:0; font-size:13px; line-height:1.6; color:#ccc;">
       기록된 시황이 없습니다.
     </div>
