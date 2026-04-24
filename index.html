@@ -1511,10 +1511,10 @@ body, #app {
 <div id="screen-market" class="screen">
   <div class="market-header">
     <div class="market-top" style="width: 100%;">
-      <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
-        <span class="market-title" style="white-space: nowrap; flex-shrink: 0;">거래소</span>
-        <button onclick="openMarketHistory()" style="background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text2); font-size:11px; padding:4px 8px; cursor:pointer; font-family:'Jua',sans-serif; white-space: nowrap; flex-shrink: 0;">시황 기록</button>
-      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-start; flex-shrink: 0; justify-content:center; height:32px;">
+  <span class="market-title" style="white-space: nowrap; flex-shrink: 0; font-size:21px; line-height:1;">거래소</span>
+  <button onclick="openMarketHistory()" style="background:var(--bg3); border:1px solid var(--border); border-radius:4px; color:var(--text2); font-size:10px; padding:1px 7px; cursor:pointer; font-family:'Jua',sans-serif; white-space: nowrap; flex-shrink: 0; margin-top:3px; line-height:1;">시황 기록</button>
+</div>
       <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
         <span id="m-cash" style="font-size:15px; color:var(--gold); white-space: nowrap; flex-shrink: 0;">0원</span>
         <div style="position:relative; flex-shrink: 0;">
