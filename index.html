@@ -5798,13 +5798,12 @@ function initializeGame() {
         tick(true); 
       }
       window.offlineEarnedAmount = Math.max(0, GS.money - moneyBefore);
-    }
-    
-    // 연산 종료 후 가상 시계를 현실 시간에 완벽 동기화
-    GS.virtual_time = now; 
-  }
+    }
+    
+    // 💡 [버그 수정] 가상 시계를 현실에 강제 동기화하면 5초 격자가 부서져 마커가 밀립니다. 강제 동기화 삭제!
+  }
 
-  if (!GS.missions['first_trade'] || GS.missions['first_trade'].progress === 0) { marketTab = 'IT'; portTab = '보유'; }
+  if (!GS.missions['first_trade'] || GS.missions['first_trade'].progress === 0) { marketTab = 'IT'; portTab = '보유'; }
   
   // 💡 여기에 탭 스와이프 화살표 생성 함수를 추가합니다!
   initSwipeArrows();
@@ -6625,13 +6624,12 @@ document.addEventListener('visibilitychange', function() {
       }
     }
 
-    // 💡 [핵심] 백그라운드에서 복귀했을 때도 시계를 강제 동기화!
-    GS.virtual_time = now;
+    // 💡 [버그 수정] 복귀 시에도 강제 동기화를 없애서 차트 마커의 엇박자 발생을 원천 차단합니다.
 
-    updateTotalAssets();
-    renderAll(); 
-    save();
-  }
+    updateTotalAssets();
+    renderAll(); 
+    save();
+  }
 });
 // 하트 시스템 작동 코드
 function updateMgHearts() {
