@@ -3618,6 +3618,7 @@ function fireEarning(pending, silent) {
   }
 
   ch.change = changeMin + Math.random() * (changeMax - changeMin);
+  ch.change = Math.max(-0.30, Math.min(0.30, ch.change)); // 💡 알림창에 띄우기 전 미리 +-30%로 강제 제한!
   ch._earningApplied = true;
 
   if (!silent) {
