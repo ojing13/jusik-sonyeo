@@ -43,7 +43,7 @@
 }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
 html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%;}
-body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(--text); letter-spacing: 0.5px; }
+body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(--text); letter-spacing: 0.5px; word-break: keep-all; }
 #app {
   width:100%; max-width:430px; height:100%;
   margin:0 auto; position:relative; overflow:hidden;
@@ -565,8 +565,8 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .port-card.vip { border-color:rgba(255,215,0,0.5); }
 .port-sector-bar { position:absolute; left:0; top:0; bottom:0; width:4px; }
 .port-row1 { display:flex; justify-content:space-between; align-items:center; pointer-events:none; }
-.port-name { font-size:18px; }
-.port-val { font-size:16px; color:var(--gold); }
+.port-name { font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; }
+.port-val { font-size:16px; color:var(--gold); flex-shrink:0; margin-left:8px; text-align:right; }
 .port-sub { font-size:14px; color:var(--text2); margin-top:3px; pointer-events:none; }
 .port-hold { font-size:15px; margin-top:4px; pointer-events:none; }
 .vip-bar-wrap { height:6px; background:#1a1a1a; border-radius:3px; margin-top:6px; overflow:hidden; pointer-events:none; }
@@ -1779,10 +1779,10 @@ body, #app {
         <span style="color:var(--text2); font-size:15px;">배당률 (레벨/VIP 반영)</span>
         <span style="font-size:16px; color:var(--green);" id="sd-div-rate"></span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span style="color:var(--text2); font-size:15px;">5분당 예상 현금 배당</span>
-        <span style="font-size:18px; color:var(--gold);" id="sd-div-est"></span>
-      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+  <span style="color:var(--text2); font-size:15px;">5분당 예상 현금 배당</span>
+  <span style="font-size:18px; color:var(--gold); flex-shrink:0; text-align:right;" id="sd-div-est"></span>
+</div>
     </div>
 
     <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px;">
@@ -1837,7 +1837,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.8</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.2.9</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -4874,10 +4874,11 @@ function renderMission() {
     var canClaim = !state.done && state.everReached;
     var div = document.createElement('div');
     div.style.cssText = 'margin:6px 12px;border-radius:12px;padding:14px;background:' + (state.done ? '#0a1a0a' : canClaim ? '#1a1500' : 'var(--bg2)') + ';border:1px solid ' + (state.done ? '#1a3a1a' : canClaim ? '#886600' : 'var(--border)') + ';';
-    var progText = m.type === 'assets' ? fmoney(prog) + '/' + fmoney(m.target) : prog + '/' + m.target;
+    // 💡 무식하게 길던 숫자를 '조/억/만' 단위로 예쁘게 압축!
+    var progText = m.type === 'assets' ? fcomma(prog) + '/' + fcomma(m.target) : fcomma(prog) + '/' + fcomma(m.target);
 
-    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + (canClaim?'#ffd700':'#fff') + '">' + m.name + '</div><div style="font-size:12px;color:var(--text2);margin-top:3px">' + m.desc + '</div><div style="font-size:11px;color:#cc88ff;margin-top:3px;"> 티켓 ' + m.reward + '장</div></div>'
-    + '<div style="margin-left:12px">' + (state.done ? '<span style="color:var(--green); font-size:13px;">완료</span>' : canClaim ? '<button onclick="playSound(\'click\'); claimMission(\'' + m.id + '\')" style="padding:8px 14px;background:#886600;color:#000;font-weight:900;border-radius:8px;border:none;cursor:pointer;">수령</button>' : '<span style="font-size:12px;color:var(--text2)">' + progText + '</span>') + '</div></div>';
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="flex:1; min-width:0;"><div style="font-size:15px;font-weight:700;color:' + (canClaim?'#ffd700':'#fff') + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + m.name + '</div><div style="font-size:12px;color:var(--text2);margin-top:3px;">' + m.desc + '</div><div style="font-size:11px;color:#cc88ff;margin-top:3px;"> 티켓 ' + m.reward + '장</div></div>'
+    + '<div style="margin-left:12px; flex-shrink:0; text-align:right;">' + (state.done ? '<span style="color:var(--green); font-size:13px;">완료</span>' : canClaim ? '<button onclick="playSound(\'click\'); claimMission(\'' + m.id + '\')" style="padding:8px 14px;background:#886600;color:#000;font-weight:900;border-radius:8px;border:none;cursor:pointer;">수령</button>' : '<span style="font-size:12px;color:var(--text2)">' + progText + '</span>') + '</div></div>';
 
     list.appendChild(div);
   });
@@ -6373,8 +6374,9 @@ function drawAdvancedChart(k) {
         var eventVirtualTime = currentVirtualTime - ((GS.total_game_ticks - ev.absTick) * 5000);
         
         // 각각 어느 버킷(캔들)에 속하는지 계산해서 차이를 구합니다.
-        var currentBucket = Math.floor(currentVirtualTime / intervalMs);
-        var eventBucket = Math.floor(eventVirtualTime / intervalMs);
+        // 💡 [버그 수정] 이벤트 주가 변동이 이전 캔들에 담기는 경계선 오류를 막기 위해 1ms를 빼서 과거 캔들로 완벽 동기화!
+        var currentBucket = Math.floor(currentVirtualTime / intervalMs);
+        var eventBucket = Math.floor((eventVirtualTime - 1) / intervalMs);
         
         candlesAgo = currentBucket - eventBucket;
       }
