@@ -19,6 +19,12 @@
     link.as = 'image';
     link.href = 'imgs/' + mainCharKey.toLowerCase() + '.png';
     document.head.appendChild(link);
+
+    var linkTitle = document.createElement('link');
+    linkTitle.rel = 'preload';
+    linkTitle.as = 'image';
+    linkTitle.href = 'imgs/title_cover.gif';
+    document.head.appendChild(linkTitle);
   })();
 </script>
 <style>
@@ -1345,10 +1351,19 @@ body, #app {
 
 <div id="safe-area-detector" style="position: absolute; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px); visibility: hidden; pointer-events: none;"></div>
 
-<div id="start-screen" onclick="startGame()">
+<div id="start-screen" onclick="if(window.isLoadComplete) startGame();">
   <img src="imgs/title_cover.gif" id="bg-image" alt="타이틀 배경">
-  <div id="title-blink-text" style="z-index: 2;">화면을 터치해서 시작하세요</div>
-  <div style="position: absolute; bottom: 20px; z-index: 2; font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; width: 100%; word-break: keep-all; padding: 0 20px;">※ 본 게임의 모든 주식, 기업, 뉴스는 가상의 설정이며 실제 현실과 전혀 무관합니다.</div>
+  
+  <div id="loading-ui" style="position: absolute; bottom: 80px; left: 0; right: 0; width: 100%; z-index: 2; text-align: center;">
+    <div style="color: var(--gold); font-size: 14px; margin-bottom: 8px;" id="loading-text">데이터 불러오는 중... (0%)</div>
+    <div style="width: 80%; max-width: 300px; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; border: 1px solid var(--border); overflow: hidden; margin: 0 auto;">
+      <div id="loading-bar" style="width: 0%; height: 8px; background: #ffd700;"></div>
+    </div>
+  </div>
+
+  <div id="title-blink-text" style="position: absolute; bottom: 80px; left: 0; right: 0; text-align: center; width: 100%; z-index: 2; display: none; font-size: 20px; color: #aaaaaa; animation: blink-fade 1.5s infinite;">화면을 터치해서 시작하세요</div>
+  
+  <div style="position: absolute; bottom: 20px; z-index: 2; font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; width: 100%; word-break: keep-all; padding: 0 20px; pointer-events: none;">※ 본 게임의 모든 주식, 기업, 뉴스는 가상의 설정이며 실제 현실과 전혀 무관합니다.</div>
 </div>
 
 <div id="app" style="position: relative; overflow: hidden;">
@@ -1654,44 +1669,44 @@ body, #app {
 </div>
 
 <div id="guide-modal" class="modal-overlay">
-  <div class="modal-content" style="display:flex; flex-direction:column; padding: 16px 20px; overflow: hidden;">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
-    <div style="font-size:22px; color:var(--gold); margin-top: -25px; margin-bottom:5px; text-align:center;">주식소녀 플레이 가이드</div>
+  <div class="modal-content" style="display:flex; flex-direction:column; padding: 16px 20px; overflow: hidden;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
+    <div style="font-size:22px; color:var(--gold); margin-top: -25px; margin-bottom:5px; text-align:center;">주식소녀 플레이 가이드</div>
 
-    <div class="scroll-area" style="flex:1; padding-bottom:0; font-size:15px; line-height:1.7; color:#ccc;">
+    <div class="scroll-area" style="flex:1; padding-bottom:0; font-size:15px; line-height:1.7; color:#ccc;">
       
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#ffcc44;">[1] 자본금 & 티켓 모으기</h4>
         <ul class="guide-list">
-          <li>👆 <span style="color:white; font-weight:bold;">터치 수익:</span> 메인 캐릭터를 터치해 돈을 벌어보세요. (빠르게 연속 터치 시 콤보 수익 최대 2배)</li>
-          <li>🎫 <span style="color:white; font-weight:bold;">스카웃 티켓:</span> 화면 <strong>100회 터치</strong> 또는 미니게임 <strong>1,000m 달성</strong> 시 1장 확정 지급!</li>
+          <li><img src="imgs/icon_touch.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">터치 수익:</span> 메인 캐릭터를 터치해 돈을 벌어보세요. (빠르게 연속 터치 시 콤보 수익 최대 2배)</li>
+          <li><img src="imgs/scout_ticket_icon.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">스카웃 티켓:</span> 화면 <strong>100회 터치</strong> 또는 미니게임 <strong>1,000m 달성</strong> 시 1장 확정 지급!</li>
         </ul>
       </div>
 
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#4477ff;">[2] 캐릭터 영입과 성장</h4>
         <ul class="guide-list">
-          <li>🔓 <span style="color:white; font-weight:bold;">주식 해금:</span> 티켓으로 새 캐릭터를 영입해야 거래소에서 해당 주식을 살 수 있습니다.</li>
-          <li>⭐ <span style="color:white; font-weight:bold;">레벨업 (최대 Lv.10):</span> 중복 영입 시 레벨이 오르며, <strong>최대 체력(+10)</strong>과 <strong>터치 수익 배율</strong>이 크게 증가합니다.</li>
+          <li><img src="imgs/icon_unlock.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">주식 해금:</span> 티켓으로 새 캐릭터를 영입해야 거래소에서 해당 주식을 살 수 있습니다.</li>
+          <li><img src="imgs/icon_star.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">레벨업 (최대 Lv.10):</span> 중복 영입 시 레벨이 오르며, <strong>최대 체력(+10)</strong>과 <strong>터치 수익 배율</strong>이 크게 증가합니다.</li>
         </ul>
       </div>
 
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#44cc66;">[3] 주식 시장과 뉴스</h4>
         <ul class="guide-list">
-          <li>📈 <span style="color:white; font-weight:bold;">실시간 주가:</span> 주식은 5초마다 실시간으로 변동합니다.</li>
-          <li>📰 <span style="color:white; font-weight:bold;">뉴스 알림:</span> 속보가 뜨면 20초간 상승/하락 추세가 생기고, <strong>실적 발표</strong> 시엔 주가가 크게 요동칩니다.</li>
-          <li>🌪️ <span style="color:white; font-weight:bold;">특수 장세:</span> 섹터별 테마장, 블랙스완(대폭락), 대세 상승장 등 다양한 이벤트가 발생합니다.</li>
+          <li><img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">실시간 주가:</span> 주식은 5초마다 실시간으로 변동합니다.</li>
+          <li><img src="imgs/icon_news.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">뉴스 알림:</span> 속보가 뜨면 20초간 상승/하락 추세가 생기고, <strong>실적 발표</strong> 시엔 주가가 크게 요동칩니다.</li>
+          <li><img src="imgs/icon_tornado.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">특수 장세:</span> 섹터별 테마장, 블랙스완(대폭락), 대세 상승장 등 다양한 이벤트가 발생합니다.</li>
         </ul>
       </div>
 
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#cc88ff;">[4] 배당금과 분산 투자</h4>
         <ul class="guide-list">
-          <li>💰 <span style="color:white; font-weight:bold;">5분마다 현금 지급:</span> 주식을 보유하기만 해도 5분마다 배당금이 들어옵니다. (캐릭터 레벨에 따라 복리로 증가)</li>
-          <li>💎 <span style="color:white; font-weight:bold;">등급별 기본 배당 (5분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.15%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.09%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.06%</span> / N <span style="color:#888899; font-weight:bold;">0.03%</span></li>
-          <li>📊 <span style="color:white; font-weight:bold;">분산 투자 보너스:</span> 전체 투자금의 10% 이상을 차지하는 섹터가 <strong>3개면 총 배당금 1.2배</strong>, <strong>5개면 1.5배</strong> 보너스!</li>
-          <li>💤 <span style="color:white; font-weight:bold;">오프라인 수익:</span> 게임을 꺼두어도 배당금은 쌓이지만, <strong>최대 24시간까지만 누적</strong>됩니다.</li>
+          <li><img src="imgs/icon_moneybag.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">5분마다 현금 지급:</span> 주식을 보유하기만 해도 5분마다 배당금이 들어옵니다. (캐릭터 레벨에 따라 복리로 증가)</li>
+          <li><img src="imgs/icon_diamond.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">등급별 기본 배당 (5분당):</span> SSR <span style="color:#ffd700; font-weight:bold;">0.15%</span> / SR <span style="color:#b44fe8; font-weight:bold;">0.09%</span> / R <span style="color:#4a90d9; font-weight:bold;">0.06%</span> / N <span style="color:#888899; font-weight:bold;">0.03%</span></li>
+          <li><img src="imgs/icon_chart_bar.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">분산 투자 보너스:</span> 전체 투자금의 10% 이상을 차지하는 섹터가 <strong>3개면 총 배당금 1.2배</strong>, <strong>5개면 1.5배</strong> 보너스!</li>
+          <li><img src="imgs/icon_sleep.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">오프라인 수익:</span> 게임을 꺼두어도 배당금은 쌓이지만, <strong>최대 24시간까지만 누적</strong>됩니다.</li>
         </ul>
 
         <div style="margin-top:10px; background:#0d0d18; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
@@ -1720,15 +1735,15 @@ body, #app {
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#ff66aa;">[5] 경영권 확보</h4>
         <ul class="guide-list">
-          <li>👑 <span style="color:white; font-weight:bold;">조건:</span> 단일 종목 보유 금액이 목표치 도달 시 획득! (SSR 50억, SR 5억, R 5천만, N 1천만)</li>
-          <li>🎁 <span style="color:white; font-weight:bold;">혜택:</span> 해당 종목의 <strong>배당금 1.5배</strong>, <strong>터치 수익 2배</strong> 영구 상승! (단, 주가 하락/매도로 목표치 미달 시 즉시 상실)</li>
+          <li><img src="imgs/crown.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">조건:</span> 단일 종목 보유 금액이 목표치 도달 시 획득! (SSR 50억, SR 5억, R 5천만, N 1천만)</li>
+          <li><img src="imgs/icon_gift.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">혜택:</span> 해당 종목의 <strong>배당금 1.5배</strong>, <strong>터치 수익 2배</strong> 영구 상승! (단, 주가 하락/매도로 목표치 미달 시 즉시 상실)</li>
         </ul>
       </div>
 
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#ff4455;">[6] 액면분할 및 병합</h4>
         <ul class="guide-list">
-          <li>✂️ <span style="color:white; font-weight:bold;">자동 조절 시스템:</span> 주가가 너무 비싸지거나 싸지면 거래하기 편하게 비율이 자동 조절됩니다. <strong>(총 자산 가치는 1원도 변하지 않으니 안심하세요!)</strong></li>
+          <li><img src="imgs/icon_scissors.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">자동 조절 시스템:</span> 주가가 너무 비싸지거나 싸지면 거래하기 편하게 비율이 자동 조절됩니다. <strong>(총 자산 가치는 1원도 변하지 않으니 안심하세요!)</strong></li>
           <li style="font-size: 13px;">- 분할: 100만 원 이상 시 주가 1/10, 주식 수 10배<br>- 병합: 1,000원 미만 시 주가 10배, 주식 수 1/10</li>
         </ul>
       </div>
@@ -1837,7 +1852,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.5</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.6</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -1921,26 +1936,28 @@ function initAudioOnFirstTouch() {
   }
 }
 
+window.isGameStarted = false; // 💡 게임 시작 여부를 확인하는 자물쇠
+
 function startGame() {
   initAudioOnFirstTouch(); 
   playSound('click');
 
   var startScreen = document.getElementById('start-screen');
   if(startScreen) {
-    // 💡 시작 화면 여러 번 터치(연타) 방지용 잠금장치 추가!
-    if (startScreen.dataset.started) return;
-    startScreen.dataset.started = 'true';
+    if (startScreen.dataset.started) return;
+    startScreen.dataset.started = 'true';
+    
+    window.isGameStarted = true; // 💡 여기서 자물쇠를 해제! (이제 알림이 뜰 수 있음)
 
     startScreen.style.transition = 'opacity 0.5s ease';
     startScreen.style.opacity = '0';
     setTimeout(function() {
         startScreen.style.display = 'none';
-        startTutorial(); // 튜토리얼 감지 및 시작 (안전장치 포함)
+        startTutorial();
 
         if (window.offlineEarnedAmount > 0 && GS.notiOn) {
-            // 💡 금액을 미리 안전한 변수에 옮겨두고 즉시 0으로 초기화해요!
-            var earnedAmount = window.offlineEarnedAmount;
-            window.offlineEarnedAmount = 0; 
+            var earnedAmount = window.offlineEarnedAmount;
+            window.offlineEarnedAmount = 0; 
 
             setTimeout(function() {
                 setAction('휴식 중 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
@@ -2794,136 +2811,137 @@ function initChars() {
 var _toastMax = 3;
 
 // 💡 파라미터 맨 끝에 isNews 와 강제 표시 권한인 forceShow 를 추가합니다.
-/* 붙여넣을 코드 */
 function showToast(msg, color, linkKey, duration, isNews, forceShow) {
-    if (GS.isTutorial) return; 
-    
-    var mgScreen = document.getElementById('screen-minigame');
-    if (!forceShow && mgScreen && mgScreen.classList.contains('active')) return;
+    // 💡 타이틀 화면이거나 아직 게임 시작 버튼을 안 눌렀다면 모든 알림을 무시하고 버림!
+    if (!window.isGameStarted) return; 
+    if (GS.isTutorial) return; 
+    
+    var mgScreen = document.getElementById('screen-minigame');
+    if (!forceShow && mgScreen && mgScreen.classList.contains('active')) return;
 
-    var wrap = document.getElementById('toast-wrap');
-    if (!wrap) return;
+    var wrap = document.getElementById('toast-wrap');
+    if (!wrap) return;
 
-    // 💡 꽉 찼을 때 지우기 로직
-    while (wrap.children.length >= _toastMax) {
-        var targetToRemove = null;
-        for (var i = 0; i < wrap.children.length; i++) {
-            if (wrap.children[i].dataset.isNews !== 'true') {
-                targetToRemove = wrap.children[i];
-                break;
-            }
-        }
-        if (!targetToRemove) targetToRemove = wrap.firstChild;
-        if (targetToRemove) wrap.removeChild(targetToRemove);
-    }
+    // 💡 꽉 찼을 때 지우기 로직
+    while (wrap.children.length >= _toastMax) {
+        var targetToRemove = null;
+        for (var i = 0; i < wrap.children.length; i++) {
+            if (wrap.children[i].dataset.isNews !== 'true') {
+                targetToRemove = wrap.children[i];
+                break;
+            }
+        }
+        if (!targetToRemove) targetToRemove = wrap.firstChild;
+        if (targetToRemove) wrap.removeChild(targetToRemove);
+    }
 
-    var item = document.createElement('div');
-    item.className = 'toast-item';
-    if (isNews) item.dataset.isNews = 'true';
+    var item = document.createElement('div');
+    item.className = 'toast-item';
+    if (isNews) item.dataset.isNews = 'true';
 
-    // 💡 핸들 및 텍스트 추가
-    var handle = document.createElement('div');
-    handle.className = 'toast-swipe-handle';
-    item.appendChild(handle);
+    // 💡 핸들 및 텍스트 추가
+    var handle = document.createElement('div');
+    handle.className = 'toast-swipe-handle';
+    item.appendChild(handle);
 
-    var tx = document.createElement('span');
-    tx.className = 'toast-item-text';
-    tx.textContent = msg;
-    tx.style.color = color || '#66ff88';
-    item.appendChild(tx);
+    var tx = document.createElement('span');
+    tx.className = 'toast-item-text';
+    tx.innerHTML = msg;
+    tx.style.color = color || '#66ff88';
+    item.appendChild(tx);
 
-    if (linkKey && GS.chars && GS.chars[linkKey]) {
-        var lk = document.createElement('span');
-        lk.className = 'toast-item-link';
-        lk.textContent = GS.chars[linkKey].name + ' ➔';
-        lk.onclick = function() { goToMarket(linkKey); };
-        item.appendChild(lk);
-    }
+    if (linkKey && GS.chars && GS.chars[linkKey]) {
+        var lk = document.createElement('span');
+        lk.className = 'toast-item-link';
+        lk.textContent = GS.chars[linkKey].name + ' ➔';
+        lk.onclick = function() { goToMarket(linkKey); };
+        item.appendChild(lk);
+    }
 
-    wrap.appendChild(item);
+    wrap.appendChild(item);
 
-    // 💡 CSS 애니메이션 충돌 방지를 위해 클래스 부여 방식으로 등장
-    requestAnimationFrame(function() {
-        item.classList.add('show');
-    });
+    // 💡 CSS 애니메이션 충돌 방지를 위해 클래스 부여 방식으로 등장
+    requestAnimationFrame(function() {
+        item.classList.add('show');
+    });
 
-    var ms = duration || 4000;
-    var hideTimeout;
+    var ms = duration || 4000;
+    var hideTimeout;
 
-    function startHideTimer(time) {
-        hideTimeout = setTimeout(function() {
-            item.classList.remove('show');
-            item.classList.add('hiding');
-            setTimeout(function() {
-                if (item.parentNode) item.parentNode.removeChild(item);
-            }, 320);
-        }, time);
-    }
-    startHideTimer(ms);
+    function startHideTimer(time) {
+        hideTimeout = setTimeout(function() {
+            item.classList.remove('show');
+            item.classList.add('hiding');
+            setTimeout(function() {
+                if (item.parentNode) item.parentNode.removeChild(item);
+            }, 320);
+        }, time);
+    }
+    startHideTimer(ms);
 
-    // 🚀 쫀득한 자유 스와이프 로직
-    var startX, startY, lastX, lastY, velX = 0, velY = 0, isDragging = false;
+    // 🚀 쫀득한 자유 스와이프 로직
+    var startX, startY, lastX, lastY, velX = 0, velY = 0, isDragging = false;
 
-    item.addEventListener('pointerdown', function(e) {
-        isDragging = true;
-        startX = lastX = e.clientX;
-        startY = lastY = e.clientY;
-        item.setPointerCapture(e.pointerId);
-        item.classList.add('dragging');
-        clearTimeout(hideTimeout);
-    });
+    item.addEventListener('pointerdown', function(e) {
+        isDragging = true;
+        startX = lastX = e.clientX;
+        startY = lastY = e.clientY;
+        item.setPointerCapture(e.pointerId);
+        item.classList.add('dragging');
+        clearTimeout(hideTimeout);
+    });
 
-    item.addEventListener('pointermove', function(e) {
-        if (!isDragging) return;
-        
-        var currX = e.clientX;
-        var currY = e.clientY;
-        
-        // 속도 계산
-        velX = currX - lastX;
-        velY = currY - lastY;
-        lastX = currX;
-        lastY = currY;
+    item.addEventListener('pointermove', function(e) {
+        if (!isDragging) return;
+        
+        var currX = e.clientX;
+        var currY = e.clientY;
+        
+        // 속도 계산
+        velX = currX - lastX;
+        velY = currY - lastY;
+        lastX = currX;
+        lastY = currY;
 
-        var deltaX = currX - startX;
-        var deltaY = currY - startY;
-        
-        // 💡 자유 이동 + 살짝 회전
-        var rotate = deltaX * 0.08;
-        item.style.transform = 'translate3d(' + deltaX + 'px, ' + deltaY + 'px, 0) rotate(' + rotate + 'deg)';
-        
-        // 거리만큼 투명도 조절
-        var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        item.style.opacity = Math.max(0.3, 1 - (distance / 450));
-    });
+        var deltaX = currX - startX;
+        var deltaY = currY - startY;
+        
+        // 💡 자유 이동 + 살짝 회전
+        var rotate = deltaX * 0.08;
+        item.style.transform = 'translate3d(' + deltaX + 'px, ' + deltaY + 'px, 0) rotate(' + rotate + 'deg)';
+        
+        // 거리만큼 투명도 조절
+        var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        item.style.opacity = Math.max(0.3, 1 - (distance / 450));
+    });
 
-    item.addEventListener('pointerup', function(e) {
-        if (!isDragging) return;
-        isDragging = false;
-        item.classList.remove('dragging');
+    item.addEventListener('pointerup', function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        item.classList.remove('dragging');
 
-        var deltaX = e.clientX - startX;
-        var deltaY = e.clientY - startY;
-        var speed = Math.sqrt(velX * velX + velY * velY);
+        var deltaX = e.clientX - startX;
+        var deltaY = e.clientY - startY;
+        var speed = Math.sqrt(velX * velX + velY * velY);
 
-        // 🚀 던지기 판정 (이동거리가 길거나 속도가 빠를 때)
-        if (Math.abs(deltaX) > 110 || Math.abs(deltaY) > 80 || speed > 10) {
-            item.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
-            // 던진 방향으로 가속도 붙여 날림
-            var outX = deltaX + (velX * 15);
-            var outY = deltaY + (velY * 15);
-            item.style.transform = 'translate3d(' + outX + 'px, ' + outY + 'px, 0) rotate(' + (outX * 0.1) + 'deg)';
-            item.style.opacity = '0';
-            setTimeout(function() {
-                if (item.parentNode) item.parentNode.removeChild(item);
-            }, 350);
-        } else {
-            // 제자리로 쫀득하게 복귀
-            item.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
-            item.style.opacity = '1';
-            startHideTimer(2000); // 복귀 후 2초 뒤 삭제
-        }
-    });
+        // 🚀 던지기 판정 (이동거리가 길거나 속도가 빠를 때)
+        if (Math.abs(deltaX) > 110 || Math.abs(deltaY) > 80 || speed > 10) {
+            item.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
+            // 던진 방향으로 가속도 붙여 날림
+            var outX = deltaX + (velX * 15);
+            var outY = deltaY + (velY * 15);
+            item.style.transform = 'translate3d(' + outX + 'px, ' + outY + 'px, 0) rotate(' + (outX * 0.1) + 'deg)';
+            item.style.opacity = '0';
+            setTimeout(function() {
+                if (item.parentNode) item.parentNode.removeChild(item);
+            }, 350);
+        } else {
+            // 제자리로 쫀득하게 복귀
+            item.style.transform = 'translate3d(0, 0, 0) rotate(0deg)';
+            item.style.opacity = '1';
+            startHideTimer(2000); // 복귀 후 2초 뒤 삭제
+        }
+    });
 }
 function showNewsToast(msg, color, linkKey) {
   if (!GS.notiOn) return;
@@ -3336,163 +3354,164 @@ function applyPriceChange(k) {
   });
 }
 function tick(silent) {
-  if (mg.active) return;
-  if (GS.isTutorial) return;
-  GS.total_game_ticks = (GS.total_game_ticks || 0) + 1; 
+  if (mg.active) return;
+  if (GS.isTutorial) return;
+  GS.total_game_ticks = (GS.total_game_ticks || 0) + 1; 
   GS.virtual_time = (GS.virtual_time || Date.now()) + 5000; // 💡 틱마다 가상 시계가 딱 5초씩만 흐름!
-  GS.actionPriority = 0;
-  if (GS.stickyNewsTicks > 0) GS.stickyNewsTicks--;
+  GS.actionPriority = 0;
+  if (GS.stickyNewsTicks > 0) GS.stickyNewsTicks--;
 
-  GS.dividendTimer--;
+  GS.dividendTimer--;
   if (GS.dividendTimer <= 0) { payDividends(silent); GS.dividendTimer = 60; }
 
-  GS.earningTimer--;
-  if (GS.earningTimer <= 0) { GS.earningTimer = 15 + Math.floor(Math.random() * 16); scheduleEarning(silent); }
+  GS.earningTimer--;
+  if (GS.earningTimer <= 0) { GS.earningTimer = 15 + Math.floor(Math.random() * 16); scheduleEarning(silent); }
 
-  if (GS.earningPending) {
-    GS.earningPending.waitTicks--;
-    if (GS.earningPending.waitTicks <= 0) { fireEarning(GS.earningPending, silent); GS.earningPending = null; }
-  }
+  if (GS.earningPending) {
+    GS.earningPending.waitTicks--;
+    if (GS.earningPending.waitTicks <= 0) { fireEarning(GS.earningPending, silent); GS.earningPending = null; }
+  }
 
-  Object.keys(GS.chars).forEach(function(k) {
-    var ch = GS.chars[k];
-    if (ch.earningCooldown > 0) ch.earningCooldown--;
-    if (ch.energy < ch.max_energy) {
-      var regenPct = 0.015;
-      var regenAmount = ch.max_energy * regenPct;
-      ch.energy = Math.min(ch.max_energy, ch.energy + regenAmount);
-      if (ch.energy > ch.max_energy - 1) ch.energy = ch.max_energy; else ch.energy = Math.round(ch.energy);
-    }
-  });
+  Object.keys(GS.chars).forEach(function(k) {
+    var ch = GS.chars[k];
+    if (ch.earningCooldown > 0) ch.earningCooldown--;
+    if (ch.energy < ch.max_energy) {
+      var regenPct = 0.015;
+      var regenAmount = ch.max_energy * regenPct;
+      ch.energy = Math.min(ch.max_energy, ch.energy + regenAmount);
+      if (ch.energy > ch.max_energy - 1) ch.energy = ch.max_energy; else ch.energy = Math.round(ch.energy);
+    }
+  });
 
-  if (GS.inCrash) {
-    GS.newsLinkKey = null; GS.currentNews = '⚡ 시장 대폭락 진행 중';
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
-      ch._earningApplied = false; applyPriceChange(k);
-    });
-    GS.crashTicks--;
-    if (GS.crashTicks <= 0) { GS.inCrash = false; GS.newsLinkKey = null; GS.currentNews = '시장이 안정을 되찾고 있습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-    updateTotalAssets(); updateMissions(); updateDialogState();
-    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-    return;
-  }
+  if (GS.inCrash) {
+    GS.newsLinkKey = null; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 시장 대폭락 진행 중';
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+      if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
+      ch._earningApplied = false; applyPriceChange(k);
+    });
+    GS.crashTicks--;
+    if (GS.crashTicks <= 0) { GS.inCrash = false; GS.newsLinkKey = null; GS.currentNews = '시장이 안정을 되찾고 있습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+    updateTotalAssets(); updateMissions(); updateDialogState();
+    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+    return;
+  }
 
-  if (GS.inBull) {
-    GS.newsLinkKey = null; GS.currentNews = '[상승장] 글로벌 대세 상승장 랠리 중';
-    Object.keys(GS.chars).forEach(function(k) {
-      var ch = GS.chars[k];
-      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-      if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
-      ch._earningApplied = false; applyPriceChange(k);
-    });
-    GS.bullTicks--;
-    if (GS.bullTicks <= 0) { GS.inBull = false; GS.newsLinkKey = null; GS.currentNews = '대세 상승장이 끝나고 시장이 진정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-    updateTotalAssets(); updateMissions(); updateDialogState();
-    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-    return;
-  }
+  if (GS.inBull) {
+    GS.newsLinkKey = null; GS.currentNews = '<img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [상승장] 글로벌 대세 상승장 랠리 중';
+    Object.keys(GS.chars).forEach(function(k) {
+      var ch = GS.chars[k];
+      if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+      if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
+      ch._earningApplied = false; applyPriceChange(k);
+    });
+    GS.bullTicks--;
+    if (GS.bullTicks <= 0) { GS.inBull = false; GS.newsLinkKey = null; GS.currentNews = '대세 상승장이 끝나고 시장이 진정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+    updateTotalAssets(); updateMissions(); updateDialogState();
+    if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+    return;
+  }
 
-  if (GS.currentTheme.target !== '없음') {
-    if (Math.random() < 0.1) generateNews(silent);
-  } else {
+  if (GS.currentTheme.target !== '없음') {
+    if (Math.random() < 0.1) generateNews(silent);
+  } else {
         GS.noThemeTicks++;
         if (GS.noThemeTicks >= 45 && Math.random() < 0.01) {
         if (Math.random() < 0.5) {
-      GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '⚡ 긴급! 블랙스완 이벤트 발생! 시장 급락!';
-      if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
-      addMarketHistory('⚡ 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
-      Object.keys(GS.chars).forEach(function(k) {
+      GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 이벤트 발생! 시장 급락!';
+      if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
+      addMarketHistory('<img src="imgs/icon_lightning.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
+      Object.keys(GS.chars).forEach(function(k) {
           var ch = GS.chars[k];
           if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
           if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
           ch._earningApplied = false; applyPriceChange(k);
       });
     } else {
-      GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '[상승장] 글로벌 대세 상승장 진입!';
-      if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
-      addMarketHistory('📈 글로벌 대세 상승장 진입!', '#ff33aa');
-      Object.keys(GS.chars).forEach(function(k) {
-          var ch = GS.chars[k];
-          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
-          ch._earningApplied = false; applyPriceChange(k);
-        });
-      }
-      if (!silent) playSound('event');
-      updateTotalAssets(); updateMissions(); updateDialogState();
-      if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+      GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [상승장] 글로벌 대세 상승장 진입!';
+      if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
+      addMarketHistory('<img src="imgs/icon_chart_up.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 글로벌 대세 상승장 진입!', '#ff33aa');
+      Object.keys(GS.chars).forEach(function(k) {
+          var ch = GS.chars[k];
+          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
+          ch._earningApplied = false; applyPriceChange(k);
+        });
+      }
+      if (!silent) playSound('event');
+      updateTotalAssets(); updateMissions(); updateDialogState();
+      if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
       return;
     }
     var shouldTrigger = (GS.noThemeTicks >= 45 && Math.random() < 0.05);
   if (shouldTrigger) {
     GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
-    var icon = GS.currentTheme.type === 'bad' ? '❄️' : '🔥';
-    var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
-    GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
-    if (!silent) showNewsToast(GS.currentNews, color, null);
-    addMarketHistory(icon + ' 「' + GS.currentTheme.name + '」 시작', color);
-    if (!silent) playSound('event');
-  } else {
-      if (Math.random() < 0.06) generateNews(silent);
-    }
-  }
+    var icon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">';
+    var historyIcon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">';
+    var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
+    GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
+    if (!silent) showNewsToast(GS.currentNews, color, null);
+    addMarketHistory(historyIcon + ' 「' + GS.currentTheme.name + '」 시작', color);
+    if (!silent) playSound('event');
+  } else {
+      if (Math.random() < 0.06) generateNews(silent);
+    }
+  }
 
-  Object.keys(GS.chars).forEach(function(k) {
-    var ch = GS.chars[k];
-    ch.momentumTimer--;
-    if (ch.momentumTimer <= 0) { ch.momentumTimer = 6 + Math.floor(Math.random() * 7); ch.momentum = (Math.random() * 0.004) - 0.002; }
-    ch.biasTimer--;
-    if (ch.biasTimer <= 0) { ch.biasTimer = 6 + Math.floor(Math.random() * 7); ch.bias += (Math.random() * 0.0006) - 0.0003; ch.bias = Math.max(-0.001, Math.min(0.001, ch.bias)); }
+  Object.keys(GS.chars).forEach(function(k) {
+    var ch = GS.chars[k];
+    ch.momentumTimer--;
+    if (ch.momentumTimer <= 0) { ch.momentumTimer = 6 + Math.floor(Math.random() * 7); ch.momentum = (Math.random() * 0.004) - 0.002; }
+    ch.biasTimer--;
+    if (ch.biasTimer <= 0) { ch.biasTimer = 6 + Math.floor(Math.random() * 7); ch.bias += (Math.random() * 0.0006) - 0.0003; ch.bias = Math.max(-0.001, Math.min(0.001, ch.bias)); }
 
-    if (ch.new_recruit_ticks > 0) {
-      ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return;
-    }
+    if (ch.new_recruit_ticks > 0) {
+      ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return;
+    }
 
-    if (!ch._earningApplied) {
-      var isTheme = ch.sector === GS.currentTheme.target;
-      var seasonVol = GS.earningSeasonTicks > 0 ? 2.0 : 1.0;
-      var baseMin = -0.010 * seasonVol;
-      var baseMax = 0.010 * seasonVol;
+    if (!ch._earningApplied) {
+      var isTheme = ch.sector === GS.currentTheme.target;
+      var seasonVol = GS.earningSeasonTicks > 0 ? 2.0 : 1.0;
+      var baseMin = -0.010 * seasonVol;
+      var baseMax = 0.010 * seasonVol;
 
-      if (isTheme) {
-        if (GS.currentTheme.type === 'bad') {
-          baseMin = -0.06 * seasonVol;
-          baseMax = 0.015 * seasonVol;
-        } else {
-          baseMin = -0.015 * seasonVol;
-          baseMax = 0.06 * seasonVol;
-        }
-      }
+      if (isTheme) {
+        if (GS.currentTheme.type === 'bad') {
+          baseMin = -0.06 * seasonVol;
+          baseMax = 0.015 * seasonVol;
+        } else {
+          baseMin = -0.015 * seasonVol;
+          baseMax = 0.06 * seasonVol;
+        }
+      }
 
-      if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
-        GS.newsBoost[k].ticks--;
-        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.06; } else { baseMin = -0.06; baseMax = 0.015; }
-        if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
-      }
-      ch.change = baseMin + Math.random() * (baseMax - baseMin);
-      if (Math.random() < 0.15) ch.change += (Math.random() * 0.016) - 0.008;
-    }
-    ch._earningApplied = false; applyPriceChange(k);
-  });
+      if (GS.newsBoost[k] && GS.newsBoost[k].ticks > 0) {
+        GS.newsBoost[k].ticks--;
+        if (GS.newsBoost[k].flag === 'good') { baseMin = -0.015; baseMax = 0.06; } else { baseMin = -0.06; baseMax = 0.015; }
+        if (GS.newsBoost[k].ticks <= 0) delete GS.newsBoost[k];
+      }
+      ch.change = baseMin + Math.random() * (baseMax - baseMin);
+      if (Math.random() < 0.15) ch.change += (Math.random() * 0.016) - 0.008;
+    }
+    ch._earningApplied = false; applyPriceChange(k);
+  });
 
-  if (GS.currentTheme.target !== '없음') {
-    GS.themeTimer--;
-    if (GS.themeTimer <= 0) { GS.currentTheme = THEMES[0]; GS.noThemeTicks = 0; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.currentNews = '테마 종료. 시장이 평화로운 장세로 돌아왔습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-  }
-  if (GS.earningSeasonTicks > 0) {
-    GS.earningSeasonTicks--;
-    if (GS.earningSeasonTicks <= 0) { GS.newsLinkKey = null; GS.currentNews = '어닝시즌 종료. 변동성이 안정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
-  }
+  if (GS.currentTheme.target !== '없음') {
+    GS.themeTimer--;
+    if (GS.themeTimer <= 0) { GS.currentTheme = THEMES[0]; GS.noThemeTicks = 0; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.currentNews = '테마 종료. 시장이 평화로운 장세로 돌아왔습니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+  }
+  if (GS.earningSeasonTicks > 0) {
+    GS.earningSeasonTicks--;
+    if (GS.earningSeasonTicks <= 0) { GS.newsLinkKey = null; GS.currentNews = '어닝시즌 종료. 변동성이 안정됩니다.'; if (!silent) showNewsToast(GS.currentNews, '#aaaaaa', null); }
+  }
 
-  updateTotalAssets(); updateMissions(); updateDialogState();
-  if (!silent) { 
-    if (!mg.active) save(); 
-    var mgScreen = document.getElementById('screen-minigame'); 
-    if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); 
-  }
+  updateTotalAssets(); updateMissions(); updateDialogState();
+  if (!silent) { 
+    if (!mg.active) save(); 
+    var mgScreen = document.getElementById('screen-minigame'); 
+    if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); 
+  }
 }
 
 function payDividends(silent) {
@@ -3576,13 +3595,13 @@ function scheduleEarning(silent) {
   var keys = Object.keys(GS.chars).filter(function(k){ return GS.chars[k].earningCooldown <= 0; });
   if (!keys.length) return;
   if (Math.random() < 0.05 && GS.earningSeasonTicks === 0) {
-    GS.earningSeasonTicks = 6;
-    GS.newsLinkKey = null;
-    GS.currentNews = '[어닝시즌] 돌입! 전 종목 변동성 2배!';
-    if (!silent) showNewsToast(GS.currentNews, '#ff9922', null);
-    addMarketHistory('📊 어닝시즌 돌입! 전 종목 변동성 2배!', '#ff9922');
-    if (!silent) playSound('event');
-  }
+    GS.earningSeasonTicks = 6;
+    GS.newsLinkKey = null;
+    GS.currentNews = '<img src="imgs/icon_chart_bar.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [어닝시즌] 돌입! 전 종목 변동성 2배!';
+    if (!silent) showNewsToast(GS.currentNews, '#ff9922', null);
+    addMarketHistory('<img src="imgs/icon_chart_bar.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 어닝시즌 돌입! 전 종목 변동성 2배!', '#ff9922');
+    if (!silent) playSound('event');
+  }
   var picked = keys[Math.floor(Math.random() * keys.length)];
   var beat = Math.random() < 0.52;
   GS.earningPending = { key: picked, beat: beat, waitTicks: 4 + Math.floor(Math.random() * 3) };
@@ -4458,7 +4477,7 @@ function renderMarketList() {
     if (!ch.unlocked) {
       var div = document.createElement('div'); div.className = 'stock-locked';
       div.id = 'stock-card-' + k;
-      div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
+      div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
       list.appendChild(div); return;
     }
 
@@ -4491,16 +4510,16 @@ function renderMarketList() {
     }
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
-    var themeIcon = GS.currentTheme.type === 'bad' ? ' ❄️' : ' 🔥';
+    var themeIcon = GS.currentTheme.type === 'bad' ? ' <img src="imgs/icon_snow.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;">' : ' <img src="imgs/icon_fire.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;">';
 
     div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></div>'
     + '<div class="stock-card-inner" style="padding:12px 12px 12px 16px;">'
 
     // 💡 1행: 종목명(좌) + 매수/매도 버튼(우) -> 글씨 크기랑 버튼 크기 다시 시원하게 키움!
-    + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
-    +   '<div style="display:flex; align-items:center; gap:5px; font-size:18px;">'
-    +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '')
-    +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
+    + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
+    +   '<div style="display:flex; align-items:center; gap:5px; font-size:18px;">'
+    +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '')
+    +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
     +   '</div>'
     +   '<div style="display:flex; gap:6px;">'
     +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매수</button>'
@@ -4554,20 +4573,20 @@ function renderMarket() {
 
   if (GS.inCrash) {
     // 💡 시장 대폭락 색상: 딥 퍼플 (블랙스완)
-    themeText = '⚡ 시장 대폭락 (' + GS.crashTicks + '틱 남음)'; themeBg = '#1a0033'; themeColor = '#cc88ff';
+    themeText = '<img src="imgs/icon_lightning.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;"> 시장 대폭락 (' + GS.crashTicks + '틱 남음)'; themeBg = '#1a0033'; themeColor = '#cc88ff';
   } else if (GS.inBull) {
     // 💡 대세 상승장 색상: 핫핑크 (대세 상승 랠리)
-    themeText = '📈 대세 상승장 (' + GS.bullTicks + '틱 남음)'; themeBg = '#33001a'; themeColor = '#ff33aa';
+    themeText = '<img src="imgs/icon_chart_up.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;"> 대세 상승장 (' + GS.bullTicks + '틱 남음)'; themeBg = '#33001a'; themeColor = '#ff33aa';
   } else if (GS.earningSeasonTicks > 0) {
-    themeText = '[어닝시즌] 진행중 (' + GS.earningSeasonTicks + '틱 남음)'; themeBg = '#1a0f00'; themeColor = '#ff9922';
+    themeText = '<img src="imgs/icon_chart_bar.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;"> [어닝시즌] 진행중 (' + GS.earningSeasonTicks + '틱 남음)'; themeBg = '#1a0f00'; themeColor = '#ff9922';
   } else if (GS.currentTheme.target !== '없음') {
     if (GS.currentTheme.type === 'bad') {
       // 💡 악재 테마 색상: 파랑으로 변경
-      themeText = '❄️ ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
+      themeText = '<img src="imgs/icon_snow.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;"> ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
       themeBg = '#00002a'; themeColor = 'var(--blue)';
     } else {
       // 💡 호재 테마 색상: 빨강으로 변경
-      themeText = '🔥 ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
+      themeText = '<img src="imgs/icon_fire.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;"> ' + GS.currentTheme.name + ' (' + GS.themeTimer + '틱 남음)'; 
       themeBg = '#2a0000'; themeColor = 'var(--red)';
     }
   } else {
@@ -4576,7 +4595,7 @@ function renderMarket() {
   }
   
   var themeEl = document.getElementById('m-theme');
-  themeEl.textContent = themeText;
+  themeEl.innerHTML = themeText;
   themeEl.style.background = themeBg;
   themeEl.style.color = themeColor;
   themeEl.style.display = showBar;
@@ -4629,7 +4648,7 @@ function renderPortfolioList() {
 
     if (!ch.unlocked) {
       var div = document.createElement('div'); div.className = 'port-locked';
-      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px">🔒</div>';
+      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
       list.appendChild(div); return;
     }
     
@@ -4660,12 +4679,12 @@ function renderPortfolioList() {
     }
 
     var div = document.createElement('div');
-    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
-    div.dataset.key = k;
+    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
+    div.dataset.key = k;
 
-    var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
+    var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
 
-    div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml + '</div>'
+    div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml + '</div>'
     + (ch.owned > 0 ? '<div class="port-val">' + fcomma(ch.price * ch.owned) + '원</div>' : '') + '</div>'
     + '<div class="port-sub" style="display:flex; align-items:center; gap:6px; margin-top:4px;">' + ch.sector + '</div>' + holdHtml + vipHtml
     + '<div style="display:flex; align-items:center; gap:8px;">'
@@ -5697,18 +5716,78 @@ function applyCheat() {
   }
 }
 
-// 💡 새로 추가하는 프리로드(미리 불러오기) 함수
-function preloadCharacterImages() {
-  // 1. 모든 캐릭터 이미지 미리 다운로드
-  Object.keys(CHARS_DEF).forEach(function(k) {
+// 💡 완벽하게 작동하는 프리로드(미리 불러오기) 함수
+window.isLoadComplete = false;
+
+function preloadAllAssets() {
+  var imagesToLoad = [];
+
+  Object.keys(CHARS_DEF).forEach(function(k) { imagesToLoad.push('imgs/' + k.toLowerCase() + '.png'); });
+  ssrShowcaseList.forEach(function(item) { imagesToLoad.push(item.img); });
+  imagesToLoad.push('imgs/title_cover.gif', 'imgs/bg_char1.png', 'imgs/bg_char2.png', 'imgs/bg_char3.png', 'imgs/bg_char4.png', 'imgs/bg_char5.png', 'imgs/bg_char6.png', 'imgs/bg_char7.png');
+
+  // 중복된 이미지 요청 제거
+  imagesToLoad = imagesToLoad.filter((v, i, a) => a.indexOf(v) === i);
+
+  var loadedCount = 0;
+  var totalImages = imagesToLoad.length;
+  var imgElements = [];
+
+  var loadingText = document.getElementById('loading-text');
+  var loadingBar = document.getElementById('loading-bar');
+  var loadingUI = document.getElementById('loading-ui');
+  var blinkText = document.getElementById('title-blink-text');
+
+  var targetPercent = 0;
+  var visualPercent = 0;
+
+  function animateProgressBar() {
+    if (window.isLoadComplete) return;
+
+    if (visualPercent < targetPercent) {
+      visualPercent += Math.max(0.5, (targetPercent - visualPercent) * 0.15);
+      if (visualPercent > targetPercent) visualPercent = targetPercent;
+    }
+
+    var p = Math.floor(visualPercent);
+    if (loadingBar) loadingBar.style.width = p + '%';
+    if (loadingText) loadingText.textContent = '데이터 불러오는 중... (' + p + '%)';
+
+    if (visualPercent >= 100) {
+      finishLoading();
+    } else {
+      requestAnimationFrame(animateProgressBar);
+    }
+  }
+
+  requestAnimationFrame(animateProgressBar);
+
+  function finishLoading() {
+    if (window.isLoadComplete) return;
+    window.isLoadComplete = true; // 터치 잠금 해제!
+    
+    if (loadingBar) loadingBar.style.width = '100%';
+    if (loadingText) loadingText.textContent = '게임 준비 완료!';
+    
+    setTimeout(function() {
+      if (loadingUI) loadingUI.style.display = 'none';
+      if (blinkText) blinkText.style.display = 'block';
+    }, 400); // 💡 게이지가 100% 다 찬 모습을 유저가 볼 수 있도록 0.4초 딜레이!
+  }
+
+  function updateProgress() {
+    loadedCount++;
+    targetPercent = Math.floor((loadedCount / totalImages) * 100);
+  }
+
+  setTimeout(function() { targetPercent = 100; }, 5000); // 5초 최후 안전장치 (무한 로딩 방지)
+
+  imagesToLoad.forEach(function(src) {
     var img = new Image();
-    img.src = 'imgs/' + k.toLowerCase() + '.png';
-  });
-  
-  // 2. 가챠 화면 SSR 슬라이드쇼 이미지들도 미리 다운로드
-  ssrShowcaseList.forEach(function(item) {
-    var img = new Image();
-    img.src = item.img;
+    imgElements.push(img); // 브라우저가 몰래 지우는 것 방지
+    img.onload = updateProgress;
+    img.onerror = updateProgress;
+    img.src = src;
   });
 }
 
@@ -6918,7 +6997,10 @@ function renderBgEffects(time) {
 }
 
 // HTML 문서가 읽히자마자 비디오 로딩과 상관없이 즉시 별자리 렌더링 시작!
-document.addEventListener('DOMContentLoaded', initBackgroundEffects);
+document.addEventListener('DOMContentLoaded', function() {
+  initBackgroundEffects();
+  preloadAllAssets(); // 💡 여기서 로딩 바가 차오르기 시작함!
+});
 
 // --- [만능 버튼 반응속도 부스터] ---
 // 화면의 모든 버튼을 감지해서 스크롤 눈치 보지 않고 즉시 눌리게 만듭니다.
