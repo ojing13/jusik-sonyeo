@@ -1737,7 +1737,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.9</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.4.0</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -5083,10 +5083,16 @@ function endMg() {
   mg.active = false;
   playSound('crash');
 
-  // 💡 미니게임 플레이 시간만큼 밀린 틱 한번에 처리
+  // 💡 미니게임 플레이 시간만큼 밀린 틱 한 번에 처리 (자투리 밀리초까지 완벽 보존)
   var now = Date.now();
-  var offlineMs = now - mg.startTime;
+  
+  // 기존에 남아있던 자투리 밀리초(GS.mgLeftoverMs)까지 끌어와서 정확히 더합니다.
+  var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
   var missedTicks = Math.floor(offlineMs / 5000);
+  
+  // 이번에 처리하고 남은 1~4999밀리초의 자투리 시간은 증발시키지 않고 다시 보관!
+  GS.mgLeftoverMs = offlineMs % 5000;
+
   if (missedTicks > 0) {
     for (var i = 0; i < missedTicks; i++) {
       tick(true); // silent=true로 토스트/사운드 없이 조용히 처리
@@ -5370,15 +5376,25 @@ function drawMg() {
   
   mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, Math.round(drawW), Math.round(drawH));
 
-  // 💡 캔버스 내부에 점수를 직접 그립니다. (DOM 렉 0%)
+  // 💡 캔버스 내부에 점수를 직접 그립니다. (DOM 렉 0% & 메모리 쓰레기 제로)
   if (mg.active) {
     if (!mg._fontSet) {
       mg.ctx.font = 'bold 22px "Jua", sans-serif';
       mg.ctx.textAlign = 'right';
       mg._fontSet = true;
+      mg._lastScoreInt = -1; // 점수 캐싱용 변수 초기화
+      mg._lastScoreText = "";
     }
     mg.ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    mg.ctx.fillText(mg._scorePrefix + Math.floor(mg.score) + 'm', mg.w - 20 - mg.safeRight, 40 + mg.safeTop);
+    
+    // 💡 1초에 60번씩 글자를 새로 조립하지 않고, 점수가 실제로 바뀌었을 때만 문장을 갱신합니다.
+    var currentScoreInt = Math.floor(mg.score);
+    if (mg._lastScoreInt !== currentScoreInt) {
+      mg._lastScoreInt = currentScoreInt;
+      mg._lastScoreText = mg._scorePrefix + currentScoreInt + 'm';
+    }
+    
+    mg.ctx.fillText(mg._lastScoreText, mg.w - 20 - mg.safeRight, 40 + mg.safeTop);
   }
 }
 
@@ -6686,6 +6702,10 @@ function updateSsrSlide(direction) {
 function startSsrAutoTimer() {
   if (ssrAutoTimer) clearInterval(ssrAutoTimer);
   ssrAutoTimer = setInterval(function() {
+    // 💡 미니게임 중이거나 가챠 화면이 아닐 때는 무거운 DOM 애니메이션을 강제 스킵!
+    var gachaScreen = document.getElementById('screen-gacha');
+    if (mg.isScreenActive || !gachaScreen || !gachaScreen.classList.contains('active')) return;
+    
     currentSsrIdx = (currentSsrIdx + 1) % ssrShowcaseList.length;
     updateSsrSlide('right'); // 5초마다 알아서 오른쪽으로 휙! 넘겨요
   }, 5000);
