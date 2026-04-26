@@ -4438,12 +4438,19 @@ function renderMarketList() {
   if (cashEl) cashEl.textContent = fcomma(GS.money) + '원';
 
   var list = document.getElementById('market-list');
-  list.innerHTML = '';
+  
+  // 💡 탭이 바뀌었거나 화면을 처음 그릴 때만 완전히 비우고 다시 그립니다.
+  if (list.dataset.currentTab !== marketTab) {
+    list.innerHTML = '';
+    list.dataset.currentTab = marketTab;
+  }
+
   var sc = SECTOR_COLORS[marketTab] || '#555566';
   var isThemeSector = marketTab === GS.currentTheme.target;
 
   var sectorKeys = Object.keys(GS.chars).filter(function(k) { return GS.chars[k].sector === marketTab; });
 
+  // 해금된 주식이 항상 위로 오도록 정렬
   sectorKeys.sort(function(a, b) {
     return (GS.chars[b].unlocked === true) - (GS.chars[a].unlocked === true);
   });
@@ -4451,23 +4458,24 @@ function renderMarketList() {
   sectorKeys.forEach(function(k) {
     var ch = GS.chars[k];
     var rc = RARITY_COLORS[ch.rarity] || '#aaa';
+    var existingCard = document.getElementById('stock-card-' + k);
 
+    // 💡 1. 잠긴 주식 처리
     if (!ch.unlocked) {
-      var div = document.createElement('div'); div.className = 'stock-locked';
-      div.id = 'stock-card-' + k;
-      div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
-      list.appendChild(div); return;
+      if (!existingCard) {
+        var div = document.createElement('div'); div.className = 'stock-locked'; div.id = 'stock-card-' + k;
+        div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
+        list.appendChild(div);
+      } else {
+        list.appendChild(existingCard); // 정렬 순서 유지를 위해 끝으로 이동
+      }
+      return;
     }
 
     var lastTick = ch.tick_history[ch.tick_history.length - 1] || 0;
     var chg = lastTick >= 0;
     var isHighlighting = (GS.highlightTarget === k && Date.now() < GS.highlightExpire);
     
-    var div = document.createElement('div');
-    div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
-    div.id = 'stock-card-' + k;
-
-    // 💡 보유현황 HTML 생성 (수량, 수익률 2줄)
     var holdHtml = '<div class="stock-hold" style="color:#666677; font-size:14px; text-align:right; margin-top:4px;">미보유</div>';
     if (ch.owned > 0) {
       var val = ch.price * ch.owned;
@@ -4476,11 +4484,9 @@ function renderMarketList() {
       var profitAmt = netValue - (ch.avg_price * ch.owned);
       var prRaw = (ch.avg_price > 0) ? (profitAmt / (ch.avg_price * ch.owned) * 100) : 0;
       var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
-      
       var profitColor = profitAmt >= 0 ? 'var(--red)' : 'var(--blue)';
       var sign = profitAmt > 0 ? '+' : '';
       
-      // 💡 2줄로 깔끔하게, 폰트 크기 원래대로 복구!
       holdHtml = '<div class="stock-hold" style="font-size:15px; text-align:right; margin-top:4px; line-height:1.4;">' +
                  '<div style="color:#eeeeee; letter-spacing:-0.5px;">' + fshare(ch.owned) + '주</div>' +
                  '<div style="color:' + profitColor + '; letter-spacing:-0.5px; font-weight:bold;">' + sign + prStr + '%</div>' +
@@ -4490,40 +4496,66 @@ function renderMarketList() {
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
     var themeIcon = GS.currentTheme.type === 'bad' ? ' <img src="imgs/icon_snow.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;">' : ' <img src="imgs/icon_fire.png" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;">';
 
-    div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></div>'
-    + '<div class="stock-card-inner" style="padding:12px 12px 12px 16px;">'
+    // 💡 2. 해금된 주식 처리 (카드가 아예 없거나, 아까 잠겨있었던 경우 새로 만듦)
+    if (!existingCard || existingCard.classList.contains('stock-locked')) {
+      if (existingCard) existingCard.remove();
+      
+      var div = document.createElement('div');
+      div.id = 'stock-card-' + k;
+      div.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
+      
+      div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '"></div>'
+      + '<div class="stock-card-inner" style="padding:12px 12px 12px 16px;">'
+      + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
+      +   '<div id="m-title-' + k + '" style="display:flex; align-items:center; gap:5px; font-size:18px;">'
+      +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '')
+      +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
+      +   '</div>'
+      +   '<div style="display:flex; gap:6px;">'
+      +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매수</button>'
+      +     '<button class="stock-btn sell" data-key="' + k + '" data-buy="0" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매도</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="display:flex; justify-content:space-between; align-items:flex-end;">'
+      +   '<div style="display:flex; flex-direction:column; gap:6px;">'
+      +     '<div style="height:38px; width:200px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
+      +     '<div style="display:flex; align-items:baseline; gap:8px; margin-left:2px;">'
+      +       '<span id="m-price-' + k + '" style="font-size:15px; color:#eeeeee;">' + fcomma(ch.price) + '원</span>'
+      +       '<span id="m-change-' + k + '" style="font-size:14px; color:' + (chg ? '#ff4455' : '#4477ff') + ';">' + (chg?'+':'') + lastTick.toFixed(2) + '%</span>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div id="m-hold-' + k + '" style="display:flex; flex-direction:column; justify-content:flex-end;">'
+      +     holdHtml
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+      list.appendChild(div);
 
-    // 💡 1행: 종목명(좌) + 매수/매도 버튼(우) -> 글씨 크기랑 버튼 크기 다시 시원하게 키움!
-    + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
-    +   '<div style="display:flex; align-items:center; gap:5px; font-size:18px;">'
-    +     (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '')
-    +     ch.name + rarityHtml + (isThemeSector ? themeIcon : '')
-    +   '</div>'
-    +   '<div style="display:flex; gap:6px;">'
-    +     '<button class="stock-btn buy" data-key="' + k + '" data-buy="1" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매수</button>'
-    +     '<button class="stock-btn sell" data-key="' + k + '" data-buy="0" style="height:34px; width:58px; font-size:14px; padding:0; border-radius:8px;">매도</button>'
-    +   '</div>'
-    + '</div>'
+    } else {
+      // 💡 3. 이미 화면에 그려져 있는 경우: 껍데기(DOM)는 건드리지 않고 안의 텍스트와 숫자만 업데이트
+      existingCard.className = 'stock-card' + (isThemeSector ? ' theme' : ch.is_vip ? ' vip' : '') + (isHighlighting ? ' flash-highlight' : '');
+      
+      var titleEl = document.getElementById('m-title-' + k);
+      if (titleEl) titleEl.innerHTML = (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml + (isThemeSector ? themeIcon : '');
+      
+      var priceEl = document.getElementById('m-price-' + k);
+      if (priceEl) priceEl.textContent = fcomma(ch.price) + '원';
+      
+      var changeEl = document.getElementById('m-change-' + k);
+      if (changeEl) {
+        changeEl.textContent = (chg?'+':'') + lastTick.toFixed(2) + '%';
+        changeEl.style.color = chg ? '#ff4455' : '#4477ff';
+      }
+      
+      var holdEl = document.getElementById('m-hold-' + k);
+      if (holdEl) holdEl.innerHTML = holdHtml;
 
-    // 💡 2행: 차트+현재가(좌) / 보유현황 2줄(우)
-    + '<div style="display:flex; justify-content:space-between; align-items:flex-end;">'
-    +   '<div style="display:flex; flex-direction:column; gap:6px;">'
-    +     '<div style="height:38px; width:200px; border-radius:5px; overflow:hidden; background:rgba(0,0,0,0.25);"><canvas id="mc-' + k + '" style="width:100%;height:100%"></canvas></div>'
-    +     '<div style="display:flex; align-items:baseline; gap:8px; margin-left:2px;">'
-    +       '<span style="font-size:15px; color:#eeeeee;">' + fcomma(ch.price) + '원</span>'
-    +       '<span style="font-size:14px; color:' + (chg ? '#ff4455' : '#4477ff') + ';">' + (chg?'+':'') + (ch.tick_history[ch.tick_history.length-1]).toFixed(2) + '%</span>'
-    +     '</div>'
-    +   '</div>'
-    +   '<div style="display:flex; flex-direction:column; justify-content:flex-end;">'
-    +     holdHtml
-    +   '</div>'
-    + '</div>'
-
-    + '</div>';
-
-    list.appendChild(div);
+      // DOM의 가장 끝으로 이동시켜 정렬(Sort) 순서를 완벽하게 유지시킵니다.
+      list.appendChild(existingCard);
+    }
   });
 
+  // 클릭 이벤트 (이전 클릭 이벤트는 덮어써짐)
   list.onclick = function(e) {
     var btn = e.target.closest('.stock-btn');
     if (btn) {
@@ -4536,11 +4568,14 @@ function renderMarketList() {
       showChartModal(key);
     }
   };
+
+  // 💡 캔버스 업데이트도 최적화: 새로 그릴 필요가 있는 것들만 가볍게 업데이트
   requestAnimationFrame(function() {
-    Object.keys(GS.chars).forEach(function(k) {
+    sectorKeys.forEach(function(k) {
       var ch = GS.chars[k];
-      if (!ch.unlocked || ch.sector !== marketTab) return;
-      drawChangeGraph(document.getElementById('mc-' + k), ch.price_history, ch.tick_history, ch.price, true);
+      if (!ch.unlocked) return;
+      var canvas = document.getElementById('mc-' + k);
+      if (canvas) drawChangeGraph(canvas, ch.price_history, ch.tick_history, ch.price, true);
     });
   });
 }
@@ -4600,7 +4635,13 @@ function renderPortfolioTabs() {
 
 function renderPortfolioList() {
   var list = document.getElementById('port-list');
-  list.innerHTML = '';
+  
+  // 💡 탭이 바뀌었거나 화면을 처음 그릴 때만 완전히 비웁니다.
+  if (list.dataset.currentTab !== portTab) {
+    list.innerHTML = '';
+    list.dataset.currentTab = portTab;
+  }
+
   var keys = Object.keys(GS.chars).filter(function(k) {
     if (portTab === '보유') return GS.chars[k].owned > 0;
     return GS.chars[k].sector === portTab;
@@ -4623,55 +4664,93 @@ function renderPortfolioList() {
     var ch = GS.chars[k];
     var sc = SECTOR_COLORS[ch.sector] || '#555566';
     var rc = RARITY_COLORS[ch.rarity] || '#aaa';
+    var existingCard = document.getElementById('port-card-' + k);
 
     if (!ch.unlocked) {
-      var div = document.createElement('div'); div.className = 'port-locked';
-      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
-      list.appendChild(div); return;
+      if (!existingCard) {
+        var div = document.createElement('div'); div.className = 'port-locked'; div.id = 'port-card-' + k;
+        div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
+        list.appendChild(div);
+      } else {
+        list.appendChild(existingCard);
+      }
+      return;
     }
     
     var holdHtml = '<div class="port-hold" style="color:#555566">미보유 | ' + fcomma(ch.price) + '원</div>';
     var vipHtml = '';
+    var valHtml = '';
     
-  if (ch.owned > 0) {
-    var val = ch.price * ch.owned;
-    var tax = Math.floor(val * 0.01);
-    var netValue = val - tax;
-    var principal = (typeof ch.total_principal !== 'undefined' && ch.total_principal > 0) 
-    ? ch.total_principal 
-    : ch.avg_price * ch.owned;
-    var profitAmt = netValue - principal;
-    var prRaw = (principal > 0) ? (profitAmt / principal * 100) : 0;
-    var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
-    var weightPct = totalInvested > 0 ? (val / totalInvested * 100).toFixed(1) : 0;
-    
-    // 💡 포트폴리오 수익률 색상: 상승=빨강, 하락=파랑
-    holdHtml = '<div class="port-hold" style="color:' + (profitAmt >= 0 ? 'var(--red)' : 'var(--blue)') + '">' +
-        fshare(ch.owned) + '주 <span style="color:var(--text2); font-weight:normal;">(비중 ' + weightPct + '%)</span><br>' +
-        '<span style="color:var(--text2); font-size:13px;">투자원금: ' + fcomma(Math.floor(principal)) + '원</span><br>' +
-        '실제손익: ' + (profitAmt > 0 ? '+' : '') + fcomma(Math.floor(profitAmt)) + '원 (' + (profitAmt > 0 ? '+' : '') + prStr + '%)</div>';
+    if (ch.owned > 0) {
+      var val = ch.price * ch.owned;
+      var tax = Math.floor(val * 0.01);
+      var netValue = val - tax;
+      var principal = (typeof ch.total_principal !== 'undefined' && ch.total_principal > 0) 
+      ? ch.total_principal 
+      : ch.avg_price * ch.owned;
+      var profitAmt = netValue - principal;
+      var prRaw = (principal > 0) ? (profitAmt / principal * 100) : 0;
+      var prStr = prRaw < 10000 ? prRaw.toFixed(1) : fcomma(prRaw);
+      var weightPct = totalInvested > 0 ? (val / totalInvested * 100).toFixed(1) : 0;
       
+      holdHtml = '<div class="port-hold" style="color:' + (profitAmt >= 0 ? 'var(--red)' : 'var(--blue)') + '">' +
+          fshare(ch.owned) + '주 <span style="color:var(--text2); font-weight:normal;">(비중 ' + weightPct + '%)</span><br>' +
+          '<span style="color:var(--text2); font-size:13px;">투자원금: ' + fcomma(Math.floor(principal)) + '원</span><br>' +
+          '실제손익: ' + (profitAmt > 0 ? '+' : '') + fcomma(Math.floor(profitAmt)) + '원 (' + (profitAmt > 0 ? '+' : '') + prStr + '%)</div>';
+        
       var reqAmt = getVipReq(ch.rarity);
       var vr = Math.min(1, val / reqAmt);
       vipHtml = '<div class="vip-bar-wrap"><div class="vip-bar-fill" style="width:' + (vr*100) + '%"></div></div>';
+      valHtml = '<div class="port-val">' + fcomma(ch.price * ch.owned) + '원</div>';
     }
-
-    var div = document.createElement('div');
-    div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
-    div.dataset.key = k;
 
     var rarityHtml = '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span>';
 
-    div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml + '</div>'
-    + (ch.owned > 0 ? '<div class="port-val">' + fcomma(ch.price * ch.owned) + '원</div>' : '') + '</div>'
-    + '<div class="port-sub" style="display:flex; align-items:center; gap:6px; margin-top:4px;">' + ch.sector + '</div>' + holdHtml + vipHtml
-    + '<div style="display:flex; align-items:center; gap:8px;">'
-    + '<button data-mainkey="' + k + '" style="font-size:11px;padding:3px 10px;border-radius:12px;margin-top:6px;cursor:pointer;background:' + (GS.mainChar===k?'#ffcc44':'#111') + ';color:' + (GS.mainChar===k?'#000':'#aaa') + '">' + (GS.mainChar===k?'★ 대표중':'대표 설정') + '</button>'
-    + '<button data-tradekey="' + k + '" style="font-size:11px;padding:3px 10px;border-radius:12px;margin-top:6px;margin-left:8px;cursor:pointer;background:#2a2a35;color:white;border:none;font-family:\'Jua\',sans-serif;">매매 ➔</button>'
-    + '<span id="cd-' + k + '" style="font-size:10px; color:var(--red); margin-left:6px; margin-top:8px; font-weight:normal; display:none;"></span>'
-    + '</div>';
+    // 💡 카드가 처음 만들어질 때 (또는 풀렸을 때)
+    if (!existingCard || existingCard.classList.contains('port-locked')) {
+      if (existingCard) existingCard.remove();
 
-    list.appendChild(div);
+      var div = document.createElement('div');
+      div.className = 'port-card' + (ch.is_vip ? ' vip' : '');
+      div.dataset.key = k;
+      div.id = 'port-card-' + k;
+
+      div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '"></div><div class="port-row1"><div id="p-title-' + k + '" class="port-name" style="display:flex; align-items:center; gap:4px;">' + (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml + '</div>'
+      + '<div id="p-val-' + k + '">' + valHtml + '</div></div>'
+      + '<div class="port-sub" style="display:flex; align-items:center; gap:6px; margin-top:4px;">' + ch.sector + '</div>' 
+      + '<div id="p-hold-' + k + '">' + holdHtml + '</div>'
+      + '<div id="p-vip-' + k + '">' + vipHtml + '</div>'
+      + '<div style="display:flex; align-items:center; gap:8px;">'
+      + '<button id="p-btn-main-' + k + '" data-mainkey="' + k + '" style="font-size:11px;padding:3px 10px;border-radius:12px;margin-top:6px;cursor:pointer;background:' + (GS.mainChar===k?'#ffcc44':'#111') + ';color:' + (GS.mainChar===k?'#000':'#aaa') + '">' + (GS.mainChar===k?'★ 대표중':'대표 설정') + '</button>'
+      + '<button data-tradekey="' + k + '" style="font-size:11px;padding:3px 10px;border-radius:12px;margin-top:6px;margin-left:8px;cursor:pointer;background:#2a2a35;color:white;border:none;font-family:\'Jua\',sans-serif;">매매 ➔</button>'
+      + '</div>';
+
+      list.appendChild(div);
+    } else {
+      // 💡 3. 이미 있는 카드의 텍스트만 업데이트 (DOM 재활용)
+      existingCard.className = 'port-card' + (ch.is_vip ? ' vip' : '');
+      
+      var titleEl = document.getElementById('p-title-' + k);
+      if (titleEl) titleEl.innerHTML = (ch.is_vip ? '<img src="imgs/crown.png" style="width:24px;height:24px;object-fit:contain; margin-top:-2px;">' : '') + ch.name + rarityHtml;
+
+      var valEl = document.getElementById('p-val-' + k);
+      if (valEl) valEl.innerHTML = valHtml;
+
+      var holdEl = document.getElementById('p-hold-' + k);
+      if (holdEl) holdEl.innerHTML = holdHtml;
+
+      var vipEl = document.getElementById('p-vip-' + k);
+      if (vipEl) vipEl.innerHTML = vipHtml;
+
+      var btnMainEl = document.getElementById('p-btn-main-' + k);
+      if (btnMainEl) {
+        btnMainEl.style.background = (GS.mainChar===k?'#ffcc44':'#111');
+        btnMainEl.style.color = (GS.mainChar===k?'#000':'#aaa');
+        btnMainEl.textContent = (GS.mainChar===k?'★ 대표중':'대표 설정');
+      }
+      
+      list.appendChild(existingCard); // 정렬 순서 유지
+    }
   });
 
   list.onclick = function(e) {
