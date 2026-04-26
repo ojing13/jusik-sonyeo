@@ -1853,7 +1853,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.7</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.8</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -4446,27 +4446,25 @@ function drawChangeGraph(canvas, priceHistory, tickHistory, currentPrice, compac
 
   var pad = compact ? 3 : 8;
   var minP = Math.min.apply(null, prices);
-  var maxP = Math.max.apply(null, prices);
-  
-  if (maxP === minP) {
-    maxP = currentPrice * 1.01;
-    minP = currentPrice * 0.99;
-  }
-  if (minP < 1) minP = 1;
+  var maxP = Math.max.apply(null, prices);
+  
+  if (maxP === minP) {
+    maxP = currentPrice * 1.01;
+    minP = currentPrice * 0.99;
+  }
+  if (minP < 1) minP = 1;
   if (maxP < 1) maxP = 2;
-  var logMinP = Math.log10(minP);
-  var logMaxP = Math.log10(maxP);
-  
-  // 💡 미니 차트에도 로그 비율로 상하 여백 생성
-  var logMargin = (logMaxP - logMinP) * 0.15;
-  if (logMargin === 0) logMargin = 0.1;
-  logMinP -= logMargin;
-  logMaxP += logMargin;
-  var logRange = logMaxP - logMinP || 1;
+  
+  // 💡 선형 스케일에 맞춘 상하 여백 15% 생성
+  var margin = (maxP - minP) * 0.15;
+  if (margin === 0) margin = minP * 0.05 || 1;
+  var adjMinP = minP - margin;
+  var adjMaxP = maxP + margin;
+  var pRange = adjMaxP - adjMinP || 1;
 
   function toMiniY(p) {
     if (p < 1) p = 1;
-    return h - pad - ((Math.log10(p) - logMinP) / logRange) * (h - pad * 2);
+    return h - pad - ((p - adjMinP) / pRange) * (h - pad * 2);
   }
 
   var lastTick = hist[hist.length - 1];
@@ -6300,7 +6298,7 @@ function drawAdvancedChart(k) {
   if (ch.price < dMin) dMin = ch.price;
 
   // 에러 방어: 데이터가 아예 없거나 Infinity, NaN일 경우 현재가 기준으로 범위 강제 초기화
-  if (dMin === Infinity || isNaN(dMin)) { dMin = ch.price; dMax = ch.price; } 
+  if (dMin === Infinity || isNaN(dMin)) { dMin = ch.price; dMax = ch.price; } 
   if (dMin < 1) dMin = 1;
   if (dMax < 1) dMax = 2;
   if (dMin >= dMax) {
@@ -6308,62 +6306,34 @@ function drawAdvancedChart(k) {
     dMin = dMin * 0.95;
   }
 
-  var logDMin = Math.log10(dMin);
-  var logDMax = Math.log10(dMax);
-  var logDRange = logDMax - logDMin || 0.01;
+  // 💡 선형 스케일에 맞춘 상하 여백 15% 부여
+  var dRange = dMax - dMin || 0.01;
+  var margin = dRange * 0.15;
+  if (margin <= 0) margin = dMin * 0.05 || 1;
 
-  // 상하 여백 15% 부여
-  var logMargin = logDRange * 0.15;
-  if (logMargin <= 0) logMargin = 0.1;
-
-  var logMinP = logDMin - logMargin;
-  var logMaxP = logDMax + logMargin;
-  var logRange = logMaxP - logMinP || 1;
-
-  var minP = Math.pow(10, logMinP);
-  var maxP = Math.pow(10, logMaxP);
+  var minP = dMin - margin;
+  var maxP = dMax + margin;
   var range = maxP - minP || 1;
 
-  // 💡 눈금(Grid) 간격 최적화 (로그/선형 하이브리드 완벽판 v3)
+  // 💡 눈금(Grid) 간격 최적화 (순수 선형 스케일 전용)
   var gridLines = [];
-  var priceRatio = maxP / minP;
-
-  if (priceRatio > 4) {
-    // 1. 주가가 4배 이상 폭등/폭락한 '초장기/대세' 차트:
-    // 1만, 5만, 10만 등 자릿수 기준으로 큼직하게 선을 긋습니다.
-    var minOrder = Math.floor(Math.log10(minP));
-    var maxOrder = Math.ceil(Math.log10(maxP));
-    var orderDiff = maxOrder - minOrder;
-    var mults = orderDiff > 2 ? [1] : [1, 5]; 
-    
-    for (var o = minOrder; o <= maxOrder; o++) {
-      var base = Math.pow(10, o);
-      mults.forEach(function(m) {
-        var val = base * m;
-        if (val >= minP && val <= maxP) gridLines.push(val);
-      });
-    }
-  } else {
-    // 2. 일반적인 변동폭 (실시간, 1시간, 1일 등 대부분의 경우):
-    // 무조건 똑같은 간격(예: 500원씩, 5000원씩)으로 정직하게 4~5칸을 나눕니다.
-    var idealStep = range / 4.5;
-    var mag  = Math.pow(10, Math.floor(Math.log10(idealStep || 1)));
-    var mults = [1, 2, 2.5, 5, 10];
-    var step  = mag;
-    for (var mi = 0; mi < mults.length; mi++) {
-      if (mults[mi] * mag >= idealStep) { step = mults[mi] * mag; break; }
-    }
-    var gridMin = Math.floor(minP / step) * step;
-    var gridMax = Math.ceil(maxP  / step) * step;
-    for (var g = gridMin; g <= gridMax + step * 0.1; g += step) {
-      if (g >= minP && g <= maxP) gridLines.push(g);
-    }
+  // 무조건 똑같은 간격(예: 500원씩, 5000원씩)으로 정직하게 4~5칸을 나눕니다.
+  var idealStep = range / 4.5;
+  var mag  = Math.pow(10, Math.floor(Math.log10(idealStep || 1)));
+  var mults = [1, 2, 2.5, 5, 10];
+  var step  = mag;
+  for (var mi = 0; mi < mults.length; mi++) {
+    if (mults[mi] * mag >= idealStep) { step = mults[mi] * mag; break; }
+  }
+  var gridMin = Math.floor(minP / step) * step;
+  var gridMax = Math.ceil(maxP  / step) * step;
+  for (var g = gridMin; g <= gridMax + step * 0.1; g += step) {
+    if (g >= minP && g <= maxP) gridLines.push(g);
   }
 
   function toY(price) {
     if (price < 1) price = 1;
-    var logP = Math.log10(price);
-    return padT + cH - ((logP - logMinP) / logRange) * cH;
+    return padT + cH - ((price - minP) / range) * cH;
   }
 
   // ─── 4. 배경 ──────────────────────────────────────────────
