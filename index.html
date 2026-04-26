@@ -21,10 +21,10 @@
     document.head.appendChild(link);
 
     var linkTitle = document.createElement('link');
-    linkTitle.rel = 'preload';
-    linkTitle.as = 'image';
-    linkTitle.href = 'imgs/title_cover.webp';
-    document.head.appendChild(linkTitle);
+    linkTitle.rel = 'preload';
+    linkTitle.as = 'image';
+    linkTitle.href = 'imgs/title_static.jpg';
+    document.head.appendChild(linkTitle);
   })();
 </script>
 <style>
@@ -1352,7 +1352,7 @@ body, #app {
 <div id="safe-area-detector" style="position: absolute; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px); visibility: hidden; pointer-events: none;"></div>
 
 <div id="start-screen" onclick="if(window.isLoadComplete) startGame();">
-  <img src="imgs/title_cover.webp" id="bg-image" alt="타이틀 배경">
+  <img src="imgs/title_static.jpg" id="bg-image" alt="타이틀 배경">
   
   <div id="loading-ui" style="position: absolute; bottom: 80px; left: 0; right: 0; width: 100%; z-index: 2; text-align: center;">
     <div style="color: var(--gold); font-size: 14px; margin-bottom: 8px;" id="loading-text">데이터 불러오는 중... (0%)</div>
@@ -5726,7 +5726,7 @@ function preloadAllAssets() {
 
   Object.keys(CHARS_DEF).forEach(function(k) { imagesToLoad.push('imgs/' + k.toLowerCase() + '.png'); });
   ssrShowcaseList.forEach(function(item) { imagesToLoad.push(item.img); });
-  imagesToLoad.push('imgs/title_cover.webp', 'imgs/bg_char1.png', 'imgs/bg_char2.png', 'imgs/bg_char3.png', 'imgs/bg_char4.png', 'imgs/bg_char5.png', 'imgs/bg_char6.png', 'imgs/bg_char7.png');
+  imagesToLoad.push('imgs/title_static.jpg', 'imgs/bg_char1.png', 'imgs/bg_char2.png', 'imgs/bg_char3.png', 'imgs/bg_char4.png', 'imgs/bg_char5.png', 'imgs/bg_char6.png', 'imgs/bg_char7.png');
 
   // 중복된 이미지 요청 제거
   imagesToLoad = imagesToLoad.filter((v, i, a) => a.indexOf(v) === i);
