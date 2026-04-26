@@ -3868,29 +3868,29 @@ function doGacha(count) {
 }
 
 function showOverlay() {
-  var ov = document.getElementById('gacha-overlay');
-  ov.classList.add('show');
-  isGridDetailMode = false;
-  var rcCard = document.getElementById('reveal-card');
-  rcCard.style.cursor = 'default';
-  
-  if (GS.skipGachaReveal) { showGrid(); return; }
-  document.getElementById('gacha-grid-wrap').style.display = 'none';
-  document.getElementById('reveal-card').style.display = '';
+  var ov = document.getElementById('gacha-overlay');
+  ov.classList.add('show');
+  isGridDetailMode = false;
+  var rcCard = document.getElementById('reveal-card');
+  rcCard.style.cursor = 'default';
+  
+  if (GS.skipGachaReveal) { showGrid(); return; }
+  document.getElementById('gacha-grid-wrap').style.display = 'none';
+  document.getElementById('reveal-card').style.display = '';
 
-  if (gachaResults.length === 1) {
-    document.getElementById('reveal-next').style.display = 'none';
-    document.getElementById('reveal-skip').style.display = 'none';
-    document.getElementById('reveal-close').style.display = '';
-  } else {
-    document.getElementById('reveal-next').style.display = '';
-    document.getElementById('reveal-skip').style.display = '';
-    document.getElementById('reveal-close').style.display = 'none';
-  }
+  if (gachaResults.length === 1) {
+    document.getElementById('reveal-next').style.display = 'none';
+    document.getElementById('reveal-skip').style.display = 'none';
+    document.getElementById('reveal-close').style.display = '';
+  } else {
+    document.getElementById('reveal-next').style.display = '';
+    document.getElementById('reveal-skip').style.display = '';
+    document.getElementById('reveal-close').style.display = 'none';
+  }
 
-  document.getElementById('reveal-status').style.display = '';
-  document.getElementById('reveal-counter').style.display = '';
-  showRevealCard();
+  document.getElementById('reveal-status').style.display = '';
+  document.getElementById('reveal-counter').style.display = 'none'; // 💡 어떤 상황이든 카운터는 절대 표시 안 함
+  showRevealCard();
 }
 
 function updateCharImage(container, key, tickerText, fallbackSelector) {
