@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html><html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -939,27 +941,17 @@ body, #app {
   background: var(--bg) !important;
 }
 
-/* 💡 각 화면별 배경 이미지 설정 */
+/* 각 화면별 배경 이미지 위에 어두운 필터를 깔아서 글씨가 잘 보이게 합니다 */
 #screen-home { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_home.jpg') no-repeat center/cover !important; }
 #screen-portfolio { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_portfolio.jpg') no-repeat center/cover !important; }
 #screen-gacha { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_gacha.jpg') no-repeat center/cover !important; }
 #screen-market { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_market.jpg') no-repeat center/cover !important; }
 #screen-mission { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_mission.jpg') no-repeat center/cover !important; }
-
-/* 💡 화면이 아래로 도망가지 않게 원래 설정(absolute)을 유지합니다 */
-#screen-home, #screen-portfolio, #screen-gacha, #screen-market, #screen-mission {
-  position: absolute !important;
-  inset: 0 !important;
-  overflow: hidden; 
-  z-index: 0; 
-}
-
-/* 💡 무거운 반딧불이 CSS 애니메이션 삭제 완료 */
-/* 상단 헤더 덮개들을 반투명한 유리 느낌으로 바꾸기 (그대로 유지) */
+/* 상단 헤더 덮개들을 반투명한 유리 느낌으로 바꾸기 */
 .home-header, .market-header, .port-header, .gacha-header {
-  background: rgba(10, 10, 20, 0.4) !important; 
-  backdrop-filter: blur(10px); 
-  -webkit-backdrop-filter: blur(10px); 
+  background: rgba(10, 10, 20, 0.4) !important; /* 까만색을 아주 투명하게 칠함 */
+  backdrop-filter: blur(10px); /* 뒤에 비치는 오로라를 예쁘게 흐려줌 (유리창 효과) */
+  -webkit-backdrop-filter: blur(10px); /* 아이폰, 맥북 사파리용 */
 }
 /* 화면을 가리는 모든 중간 탭과 네모 상자들을 반투명한 유리로 변경 */
 .sector-tabs, 
@@ -5162,7 +5154,7 @@ function updateMg(ts) {
 }
 
 function drawMg() {
-  // 💡 원래의 화려한 그라데이션 배경 복구
+  // 💡 무거운 그라데이션을 1초에 60번씩 생성하지 않고, 한 번만 만들어서 저장(캐싱)해둠!
   if (!mg.bgGradient) {
     mg.bgGradient = mg.ctx.createLinearGradient(0, 0, 0, mg.h);
     mg.bgGradient.addColorStop(0, '#0a0a1a');
@@ -5172,12 +5164,13 @@ function drawMg() {
   mg.ctx.fillStyle = mg.bgGradient;
   mg.ctx.fillRect(0, 0, mg.w, mg.h);
 
-  // 배경 네온 입자 그리기 (원형 대신 사각형으로 렌더링 부하 최소화)
+  // 배경 네온 입자 그리기 (그림자 효과 제거)
   for (var i = 0; i < mg.bgParticles.length; i++) {
     var p = mg.bgParticles[i];
+    mg.ctx.beginPath();
+    mg.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     mg.ctx.fillStyle = p.color;
-    // 💡 동그라미 대신 사각형으로 찍어서 모바일 연산량을 100배 줄임
-    mg.ctx.fillRect(p.x | 0, p.y | 0, p.size * 2, p.size * 2); 
+    mg.ctx.fill();
   }
   
   // 사이버펑크 바닥 그리드 그리기 (그림자 효과 제거)
@@ -5189,39 +5182,31 @@ function drawMg() {
   
   
   
-  // 💡 렌더링 렉 완벽 제거: '진짜' 한 붓 그리기 (선이 끊기지 않게 연결)
-  mg.ctx.lineJoin = 'round';
-  mg.ctx.lineCap = 'round';
-
-  // 💡 GPU 부하를 주는 12px 반투명 그림자 제거 (선 두께 4px, 단일 패스 적용)
-  mg.ctx.lineJoin = 'round';
-  mg.ctx.lineCap = 'round';
-
-  // 💡 원래의 화려한 네온 디자인으로 원복 (그림자 효과 포함)
-  mg.ctx.lineJoin = 'round';
-  mg.ctx.lineCap = 'round';
-
-  // 1. 빨간색(UP) 상승선 (그림자 + 선)
+  // 💡 렉 제거의 핵심: 빨간 선과 파란 선을 각각 '한 붓 그리기'로 묶어서 연산량 90% 감소!
+  
+  // 1. 빨간색(UP) 상승선 한 번에 묶어서 그리기 (초록 -> 빨강)
   mg.ctx.beginPath();
-  for (var i = 0; i < mg.points.length - 1; i++) {
+  for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'UP') {
+      // 💡 마법 2: 좌표 뒤에 | 0 을 붙여서 소수점을 날려버립니다.
       mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
       mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
-  mg.ctx.strokeStyle = 'rgba(255, 68, 85, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 네온 빛
-  mg.ctx.strokeStyle = '#ff4455'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 메인 선
+  mg.ctx.strokeStyle = 'rgba(255, 68, 85, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
+  mg.ctx.strokeStyle = '#ff4455'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
 
-  // 2. 파란색(DOWN) 하락선 (그림자 + 선)
+  // 2. 파란색(DOWN) 하락선 한 번에 묶어서 그리기 (빨강 -> 파랑)
   mg.ctx.beginPath();
-  for (var i = 0; i < mg.points.length - 1; i++) {
+  for (var i=0; i<mg.points.length-1; i++) {
     if (mg.points[i+1].type === 'DOWN') {
+      // 💡 마법 2: 좌표 뒤에 | 0 을 붙여서 소수점을 날려버립니다.
       mg.ctx.moveTo(mg.points[i].x | 0, mg.points[i].y | 0);
       mg.ctx.lineTo(mg.points[i+1].x | 0, mg.points[i+1].y | 0);
     }
   }
-  mg.ctx.strokeStyle = 'rgba(68, 119, 255, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 네온 빛
-  mg.ctx.strokeStyle = '#4477ff'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 메인 선
+  mg.ctx.strokeStyle = 'rgba(68, 119, 255, 0.3)'; mg.ctx.lineWidth = 12; mg.ctx.stroke(); // 바깥쪽 흐린 빛
+  mg.ctx.strokeStyle = '#4477ff'; mg.ctx.lineWidth = 4; mg.ctx.stroke(); // 안쪽 선명한 선
   
   // 플레이어 그리기 로직
   if (!mgSprite || !mgSprite.width) {
@@ -5294,22 +5279,13 @@ function drawMg() {
   // 높이(drawH)가 작아진 만큼 dy(시작 Y좌표)가 알아서 아래로 내려가기 때문에 발바닥 위치는 허공에 뜨지 않고 딱 맞게 유지됩니다!
   var dy = Math.round(mg.p.y - drawH + 17); 
   
-  // 💡 가장 치명적인 렉 원인 파괴: 소수점 좌표를 정수(Math.floor)로 강제 변환!
-  // 브라우저가 소프트웨어 연산으로 픽셀을 쪼개는 현상을 완벽하게 차단합니다.
-  mg.ctx.drawImage(
-    mgSprite, 
-    Math.floor(sx), Math.floor(sy), Math.floor(sWidth), Math.floor(sHeight), 
-    dx, dy, Math.round(drawW), Math.round(drawH)
-  );
+  mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, Math.round(drawW), Math.round(drawH));
 
   // 💡 캔버스 내부에 점수를 직접 그립니다. (DOM 렉 0%)
   if (mg.active) {
     mg.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    // 💡 매 프레임마다 폰트를 재설정하는 딜레이를 방지
-    if (mg.ctx.font !== 'bold 22px "Jua", sans-serif') {
-      mg.ctx.font = 'bold 22px "Jua", sans-serif';
-      mg.ctx.textAlign = 'right';
-    }
+    mg.ctx.font = 'bold 22px "Jua", sans-serif';
+    mg.ctx.textAlign = 'right';
     // X좌표(mg.w - 20)에는 safeRight를 빼주고, Y좌표(40)에는 safeTop을 더해줍니다!
     mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20 - mg.safeRight, 40 + mg.safeTop);
   }
@@ -5319,14 +5295,28 @@ function drawMg() {
 // 💡 함수 바깥에 변수를 하나 만들어서 화면 요소를 딱 한 번만 찾아둡니다.
 var cachedMgScreen = document.getElementById('screen-minigame');
 
+// 기존 function loopMg(time) { ... } 를 아래 코드로 전체 교체하세요.
 function loopMg(time) {
   if (!cachedMgScreen || !cachedMgScreen.classList.contains('active')) {
     return; 
   }
   mg.reqId = requestAnimationFrame(loopMg);
   
-  // 💡 텔레포트 렉 방지: 모든 시간차 연산을 제거하고 1프레임당 고정 속도로 달립니다.
-  var ts = 1.0;
+  var now = performance.now();
+  if (!mg.lastTime) mg.lastTime = now;
+  var dt = now - mg.lastTime;
+mg.lastTime = now;
+
+// 💡 마법 1: 프레임 타임 보정 (Jitter 방지)
+if (dt > 15 && dt < 18.5) {
+  dt = 16.666; // 60Hz 환경의 미세한 요동은 강제 고정!
+} else if (dt > 7 && dt < 9.5) {
+  dt = 8.333;  // 120Hz 환경의 미세한 요동은 강제 고정!
+} else if (dt > 100) {
+  dt = 16.666; // 렉 스파이크 방어
+}
+
+var ts = dt / 16.666;
   
   if (mg.active) {
     updateMg(ts); 
@@ -6378,123 +6368,132 @@ function drawAdvancedChart(k) {
   });
 
   // ─── 9. 이벤트 마커 (줌아웃 시 마커 겹침 방지 적용) ─────────────
-      var eventWrap = document.getElementById('chart-event-wrap');
-      var eventWrapHtml = ''; // 💡 매번 appendChild 하지 않고 HTML 문자열로 한 번에 모아서 렌더링!
+  var eventWrap = document.getElementById('chart-event-wrap');
+  eventWrap.innerHTML = '';
 
-      // 💡 마커 끄기 설정이면 여기서 중단!
-      if (!GS.showEventMarkers) {
-        eventWrap.innerHTML = '';
-        return;
+  // 💡 마커 끄기 설정이면 여기서 중단!
+  if (!GS.showEventMarkers) return;
+
+  if (ch.events && ch.events.length > 0) {
+    var groupedEvents = {}; // 같은 캔들에 겹치는 이벤트 그룹화
+
+    ch.events.forEach(function(ev) {
+      if (ev.absTick === undefined) return;
+
+      // 💡 1주(1h) 탭에서는 병합, 분할(공시) 마커만 표시하도록 필터링
+      if (currentChartTab === '1h' && ev.type !== 'split' && ev.type !== 'merge') return;
+      
+      // 💡 마커 위치 계산 완벽 수정 (가상 시계 버킷 기준 동기화!):
+      // 캔들을 자르는 기준점(virtual_time)과 이벤트를 동일한 시계로 맞춰서 계산합니다.
+      var candlesAgo = 0;
+      if (currentChartTab === 'tick') {
+        candlesAgo = GS.total_game_ticks - ev.absTick;
+      } else {
+        var intervalMs = ticksPerCandle * 5000;
+        var currentVirtualTime = GS.virtual_time || Date.now();
+        // 이벤트가 발생했던 정확한 가상 시계의 밀리초(ms) 시점을 역산합니다.
+        var eventVirtualTime = currentVirtualTime - ((GS.total_game_ticks - ev.absTick) * 5000);
+        
+        // 각각 어느 버킷(캔들)에 속하는지 계산해서 차이를 구합니다.
+        // 💡 [버그 수정] 이벤트 주가 변동이 이전 캔들에 담기는 경계선 오류를 막기 위해 1ms를 빼서 과거 캔들로 완벽 동기화!
+        var currentBucket = Math.floor(currentVirtualTime / intervalMs);
+        var eventBucket = Math.floor((eventVirtualTime - 1) / intervalMs);
+        
+        candlesAgo = currentBucket - eventBucket;
       }
 
-      if (ch.events && ch.events.length > 0) {
-        var groupedEvents = {}; // 같은 캔들에 겹치는 이벤트 그룹화
+      if (candlesAgo < 0) return;
 
-        ch.events.forEach(function(ev) {
-          if (ev.absTick === undefined) return;
+      var evIdx = (n - 1) - candlesAgo; // 오른쪽 끝(현재)에서 과거 방향으로 위치 계산
 
-          // 💡 1주(1h) 탭에서는 병합, 분할(공시) 마커만 표시하도록 필터링
-          if (currentChartTab === '1h' && ev.type !== 'split' && ev.type !== 'merge') return;
-          
-          // 💡 마커 위치 계산 완벽 수정 (가상 시계 버킷 기준 동기화!):
-          // 캔들을 자르는 기준점(virtual_time)과 이벤트를 동일한 시계로 맞춰서 계산합니다.
-          var candlesAgo = 0;
-          if (currentChartTab === 'tick') {
-            candlesAgo = GS.total_game_ticks - ev.absTick;
-          } else {
-            var intervalMs = ticksPerCandle * 5000;
-            var currentVirtualTime = GS.virtual_time || Date.now();
-            // 이벤트가 발생했던 정확한 가상 시계의 밀리초(ms) 시점을 역산합니다.
-            var eventVirtualTime = currentVirtualTime - ((GS.total_game_ticks - ev.absTick) * 5000);
-            
-            // 각각 어느 버킷(캔들)에 속하는지 계산해서 차이를 구합니다.
-            // 💡 [버그 수정] 이벤트 주가 변동이 이전 캔들에 담기는 경계선 오류를 막기 위해 1ms를 빼서 과거 캔들로 완벽 동기화!
-            var currentBucket = Math.floor(currentVirtualTime / intervalMs);
-            var eventBucket = Math.floor((eventVirtualTime - 1) / intervalMs);
-            
-            candlesAgo = currentBucket - eventBucket;
-          }
-
-          if (candlesAgo < 0) return;
-
-          var evIdx = (n - 1) - candlesAgo; // 오른쪽 끝(현재)에서 과거 방향으로 위치 계산
-
-          if (evIdx >= 0 && evIdx < n) {
-            if (!groupedEvents[evIdx]) groupedEvents[evIdx] = [];
-            groupedEvents[evIdx].push(ev);
-          }
-        });
-
-        // 💡 X좌표 순서대로 처리하기 위해 인덱스를 정렬하고, 겹침 방지 변수를 준비합니다.
-        var sortedIndices = Object.keys(groupedEvents).map(Number).sort(function(a, b) { return a - b; });
-        var lastX = -999;
-        var level = 0;
-
-        sortedIndices.forEach(function(evIdx) {
-          var evList = groupedEvents[evIdx];
-          
-          // 💡 마커 위치 계산
-          var offsetFromRight = (n - 1) - evIdx;
-          var x = (padL + cW) - (offsetFromRight + 0.5) * spacing;
-
-          // 💡 핵심 마법: 이전 마커와 가로(X)로 35px 이내로 겹치면 높이(level)를 한 칸 내립니다.
-          if (x - lastX < 35) {
-              level = (level + 1) % 4; // 최대 4계단(지그재그)까지 내려감
-          } else {
-              level = 0; // 충분히 떨어져 있으면 다시 맨 위로 리셋
-          }
-          lastX = x;
-
-          var isAllGood = true;
-          var isAllBad = true;
-          var labelHtml = '';
-
-          // 이벤트를 하나씩 순회하며 호재/악재/어닝 텍스트를 세로로 쌓습니다.
-          evList.forEach(function(ev) {
-            var isCorp = ev.type === 'split' || ev.type === 'merge';
-            var isEarning = ev.type === 'earning';
-            var isGood = ev.flag === 'good' || ev.type === 'split';
-            
-            if (!isGood) isAllGood = false;
-            if (isGood) isAllBad = false;
-
-            var iconColor = isCorp ? '#ffd700' : (isGood ? '#ff4455' : '#4477ff');
-            // 💡 기호 대신 텍스트로 변경
-            var iconText = isCorp ? (ev.type === 'split' ? '분할' : '병합') : 
-                           isEarning ? '어닝' : 
-                           (isGood ? '호재' : '악재');
-            
-            labelHtml += '<div style="color:' + iconColor + '; line-height: 1.2; font-weight: bold; font-size: 9px;">' + iconText + '</div>';
-          });
-
-          var markerColor = '#aaaaaa'; // 💡 호재/악재 섞여 있으면 회색
-          if (isAllGood) markerColor = '#ff4455';
-          else if (isAllBad) markerColor = '#4477ff';
-          
-          if ((isAllGood || isAllBad) && evList.some(function(e) { return e.type === 'split' || e.type === 'merge'; })) {
-            markerColor = '#ffd700'; 
-          }
-
-          // 수직선
-          ctx.strokeStyle = markerColor + '55';
-          ctx.lineWidth   = 1;
-          ctx.setLineDash([3, 3]);
-          ctx.beginPath();
-          ctx.moveTo(x, padT);
-          ctx.lineTo(x, padT + cH);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          // 💡 태그 높이를 level 변수를 이용해 지그재그(계단식)로 배치합니다!
-          var tagY = padT - 20 + (level * 22);
-
-          // 💡 문자열 누적
-          eventWrapHtml += '<div class="chart-event-tag" style="left:' + x + 'px; top:' + tagY + 'px; background:' + markerColor + '22; border:1px solid ' + markerColor + '88; border-radius:4px; padding:2px 4px; font-size:10px; transform:translateX(-50%); text-align:center; white-space:nowrap; z-index:10;">' + labelHtml + '</div>';
-        });
+      if (evIdx >= 0 && evIdx < n) {
+        if (!groupedEvents[evIdx]) groupedEvents[evIdx] = [];
+        groupedEvents[evIdx].push(ev);
       }
-      
-      // 💡 DOM 조작을 반복문 밖에서 딱 1번만 실행하여 렌더링 파이프라인 병목 완벽 해소!
-      eventWrap.innerHTML = eventWrapHtml;
+    });
+
+    // 💡 X좌표 순서대로 처리하기 위해 인덱스를 정렬하고, 겹침 방지 변수를 준비합니다.
+    var sortedIndices = Object.keys(groupedEvents).map(Number).sort(function(a, b) { return a - b; });
+    var lastX = -999;
+    var level = 0;
+
+    sortedIndices.forEach(function(evIdx) {
+      var evList = groupedEvents[evIdx];
+      
+      // 💡 마커 위치 계산
+      var offsetFromRight = (n - 1) - evIdx;
+      var x = (padL + cW) - (offsetFromRight + 0.5) * spacing;
+
+      // 💡 핵심 마법: 이전 마커와 가로(X)로 35px 이내로 겹치면 높이(level)를 한 칸 내립니다.
+      if (x - lastX < 35) {
+          level = (level + 1) % 4; // 최대 4계단(지그재그)까지 내려감
+      } else {
+          level = 0; // 충분히 떨어져 있으면 다시 맨 위로 리셋
+      }
+      lastX = x;
+
+      var isAllGood = true;
+      var isAllBad = true;
+      var labelHtml = '';
+
+      // 이벤트를 하나씩 순회하며 호재/악재/어닝 텍스트를 세로로 쌓습니다.
+      evList.forEach(function(ev) {
+        var isCorp = ev.type === 'split' || ev.type === 'merge';
+        var isEarning = ev.type === 'earning';
+        var isGood = ev.flag === 'good' || ev.type === 'split';
+        
+        if (!isGood) isAllGood = false;
+        if (isGood) isAllBad = false;
+
+        var iconColor = isCorp ? '#ffd700' : (isGood ? '#ff4455' : '#4477ff');
+        // 💡 기호 대신 텍스트로 변경
+        var iconText = isCorp ? (ev.type === 'split' ? '분할' : '병합') : 
+                       isEarning ? '어닝' : 
+                       (isGood ? '호재' : '악재');
+        
+        labelHtml += '<div style="color:' + iconColor + '; line-height: 1.2; font-weight: bold; font-size: 9px;">' + iconText + '</div>';
+      });
+
+      var markerColor = '#aaaaaa'; // 💡 호재/악재 섞여 있으면 회색
+      if (isAllGood) markerColor = '#ff4455';
+      else if (isAllBad) markerColor = '#4477ff';
+      
+      if ((isAllGood || isAllBad) && evList.some(function(e) { return e.type === 'split' || e.type === 'merge'; })) {
+        markerColor = '#ffd700'; 
+      }
+
+      // 수직선
+      ctx.strokeStyle = markerColor + '55';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, padT + cH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 💡 태그 높이를 level 변수를 이용해 지그재그(계단식)로 배치합니다!
+      var tagY = padT - 20 + (level * 22);
+
+      var tag       = document.createElement('div');
+      tag.className = 'chart-event-tag';
+      tag.innerHTML = labelHtml;
+      tag.style.cssText = [
+        'left:' + x + 'px',
+        'top:' + tagY + 'px',
+        'background:' + markerColor + '22',
+        'border:1px solid ' + markerColor + '88',
+        'border-radius:4px',
+        'padding:2px 4px',
+        'font-size:10px',
+        'transform:translateX(-50%)',
+        'text-align:center',
+        'white-space:nowrap',
+        'z-index: 10' // 겹치더라도 항상 위로 올라오게
+      ].join(';');
+      eventWrap.appendChild(tag);
+    });
+  }
 
   // ─── 10. 최고/최저 업데이트 ──────────────────────────────
   document.getElementById('cm-high').textContent = fcomma(Math.round(dMax)) + '원';
