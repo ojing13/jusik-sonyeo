@@ -1737,7 +1737,7 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.8</div>
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.3.9</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -6808,6 +6808,80 @@ document.addEventListener('touchcancel', function(e) {
   }
 }, {passive: true});
 // -----------------------------------
+
+/* ============================================================
+   🚀 [시스템] 하드웨어 가속 기반 초경량 은은한 반딧불이 배경 시스템 (레이어 완벽 수정본)
+============================================================ */
+(function initSubtleFireflies() {
+  var existing = document.querySelectorAll('.subtle-fireflies-layer');
+  existing.forEach(function(el) { el.remove(); }); // 중복 방지
+
+  var FIREFLY_COUNT = 50;
+  var styles = "\n" +
+    "/* 반딧불이 컨테이너: 각 화면(screen) 내부에 위치 */\n" +
+    ".subtle-fireflies-layer {\n" +
+    "  position: absolute; top: 0; left: 0; width: 100%; height: 100%;\n" +
+    "  pointer-events: none;\n" +
+    "  z-index: 1;  /* 💡 화면 배경보다는 위! */\n" +
+    "  overflow: hidden; opacity: 0.8;\n" +
+    "}\n" +
+    "/* 💡 핵심: 캐릭터와 카드가 반딧불이보다 앞으로 나오게 강제 지정! */\n" +
+    ".scroll-area {\n" +
+    "  position: relative;\n" +
+    "  z-index: 5; /* 반딧불이(1)보다 높게! */\n" +
+    "}\n" +
+    ".ff-particle {\n" +
+    "  position: absolute; border-radius: 50%;\n" +
+    "  background: radial-gradient(#fffba0 20%, rgba(255, 251, 160, 0) 70%);\n" +
+    "  filter: blur(1px);\n" +
+    "  backface-visibility: hidden; will-change: transform, opacity;\n" +
+    "  transform: translateZ(0);\n" +
+    "}\n" +
+    "@keyframes ff-glimmer {\n" +
+    "  0%, 100% { opacity: 0.1; transform: scale(0.8) translateZ(0); }\n" +
+    "  50% { opacity: 0.6; transform: scale(1.1) translateZ(0); }\n" +
+    "}\n" +
+    "@keyframes ff-drift {\n" +
+    "  0% { transform: translate(0, 0) translateZ(0); }\n" +
+    "  25% { transform: translate(3vw, -5vh) translateZ(0); }\n" +
+    "  50% { transform: translate(-2vw, 3vh) translateZ(0); }\n" +
+    "  75% { transform: translate(5vw, 1vh) translateZ(0); }\n" +
+    "  100% { transform: translate(0, 0) translateZ(0); }\n" +
+    "}";
+
+  var styleSheet = document.createElement("style");
+  styleSheet.type = "text/css";
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+
+  // 💡 모든 화면(홈, 거래소, 포트폴리오 등)에 각각 샌드위치처럼 반딧불이를 끼워 넣습니다.
+  var screens = document.querySelectorAll('.screen');
+  screens.forEach(function(screen) {
+    if (screen.id === 'screen-minigame') return; // 미니게임은 자체 네온 파티클이 있으니 패스!
+
+    var container = document.createElement('div');
+    container.className = 'subtle-fireflies-layer';
+    screen.insertBefore(container, screen.firstChild); // 배경 바로 위에 삽입
+
+    for (var i = 0; i < FIREFLY_COUNT; i++) {
+      var firefly = document.createElement('div');
+      firefly.className = 'ff-particle';
+      var size = (Math.random() * 4 + 3) + 'px';
+      firefly.style.width = size;
+      firefly.style.height = size;
+      firefly.style.left = (Math.random() * 96 + 2) + '%';
+      firefly.style.top = (Math.random() * 96 + 2) + '%'; 
+      
+      var glimmerDuration = (Math.random() * 5 + 6) + 's';
+      var driftDuration = (Math.random() * 15 + 20) + 's';
+      var delay = (Math.random() * -15) + 's';
+
+      firefly.style.animation = "ff-glimmer " + glimmerDuration + " ease-in-out " + delay + " infinite, " +
+                                "ff-drift " + driftDuration + " ease-in-out " + delay + " infinite";
+      container.appendChild(firefly);
+    }
+  });
+})();
 
 </script>
 <div id="chart-modal" class="modal-overlay">
