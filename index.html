@@ -3481,10 +3481,9 @@ function tick(silent) {
   }
 
   updateTotalAssets(); updateMissions(); updateDialogState();
-  if (!silent) { 
-    if (!mg.active) save(); 
-    var mgScreen = document.getElementById('screen-minigame'); 
-    if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); 
+  if (!silent && !mg.isScreenActive) {
+    save();
+    renderAll();
   }
 }
 
@@ -4197,119 +4196,126 @@ function renderAll() {
 }
 
 function renderHome() {
-  var ch = GS.chars[GS.mainChar];
-  var sc = SECTOR_COLORS[ch.sector] || '#555566';
-  var rc = RARITY_COLORS[ch.rarity] || '#aaa';
-  var cc = ch.color || '#444455';
+  var ch = GS.chars[GS.mainChar];
+  var sc = SECTOR_COLORS[ch.sector] || '#555566';
+  var rc = RARITY_COLORS[ch.rarity] || '#aaa';
+  var cc = ch.color || '#444455';
 
-  // 💡 불필요하게 텍스트부터 넣던 줄은 깔끔하게 삭제!
-  var titleIdx = getTitle(); 
-  var titleEl = document.getElementById('h-title');
+  // 💡 불필요하게 텍스트부터 넣던 줄은 깔끔하게 삭제!
+  var titleIdx = getTitle(); 
+  var titleEl = document.getElementById('h-title');
 
-  // 🚀 핵심 마법: "현재 화면에 떠 있는 칭호 번호가 진짜 다를 때만 렌더링해라!"
-  // 이렇게 하면 1초에 10번을 터치해도 이미지는 가만히 얌전하게 있습니다.
-  if (titleEl.dataset.currentIdx !== String(titleIdx)) {
-    titleEl.innerHTML = '<img src="imgs/title_' + titleIdx + '.png" style="height: 19px; object-fit: contain; vertical-align: middle;">';
-    titleEl.dataset.currentIdx = String(titleIdx); // 지금 번호를 폰에 기억시켜둠
-  }
+  // 🚀 핵심 마법: "현재 화면에 떠 있는 칭호 번호가 진짜 다를 때만 렌더링해라!"
+  // 이렇게 하면 1초에 10번을 터치해도 이미지는 가만히 얌전하게 있습니다.
+  if (titleEl.dataset.currentIdx !== String(titleIdx)) {
+    titleEl.innerHTML = '<img src="imgs/title_' + titleIdx + '.png" style="height: 19px; object-fit: contain; vertical-align: middle;">';
+    titleEl.dataset.currentIdx = String(titleIdx); // 지금 번호를 폰에 기억시켜둠
 
-  // 💡 1. 큰 글씨 (총 자산) - "총자산" 글씨 빼고 숫자만!
-  var totalAssetStr = fcomma(GS.total_assets) + ' 원';
-  var moneyEl = document.getElementById('h-money');
-  moneyEl.textContent = totalAssetStr;
-  
-  moneyEl.style.lineHeight = '32px'; 
-  if (totalAssetStr.length >= 22) { moneyEl.style.fontSize = '16px'; }
-  else if (totalAssetStr.length >= 18) { moneyEl.style.fontSize = '20px'; }
-  else if (totalAssetStr.length >= 14) { moneyEl.style.fontSize = '24px'; }
-  else { moneyEl.style.fontSize = '28px'; }
+    // 💡 칭호가 바뀔 때 홈 화면 배경 이미지도 함께 교체해줍니다!
+    var homeScreen = document.getElementById('screen-home');
+    if (homeScreen) {
+      var newBgUrl = "url('imgs/bg_home_" + titleIdx + ".jpg')";
+      homeScreen.style.setProperty('background', 'linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), ' + newBgUrl + ' no-repeat center/cover', 'important');
+    }
+  }
 
-  // 💡 2. 작은 글씨 (현금) - 퍼센트 싹 지움!
-  var cashStr = '현금 ' + fcomma(GS.money) + '원';
-  var el = document.getElementById('h-assets');
-  el.textContent = cashStr;
-  el.style.color = 'var(--gold)';
-  el.style.lineHeight = '20px';
+  // 💡 1. 큰 글씨 (총 자산) - "총자산" 글씨 빼고 숫자만!
+  var totalAssetStr = fcomma(GS.total_assets) + ' 원';
+  var moneyEl = document.getElementById('h-money');
+  moneyEl.textContent = totalAssetStr;
+  
+  moneyEl.style.lineHeight = '32px'; 
+  if (totalAssetStr.length >= 22) { moneyEl.style.fontSize = '16px'; }
+  else if (totalAssetStr.length >= 18) { moneyEl.style.fontSize = '20px'; }
+  else if (totalAssetStr.length >= 14) { moneyEl.style.fontSize = '24px'; }
+  else { moneyEl.style.fontSize = '28px'; }
 
-  if (cashStr.length >= 34) { el.style.fontSize = '10px'; }
-  else if (cashStr.length >= 31) { el.style.fontSize = '11px'; }
-  else if (cashStr.length >= 28) { el.style.fontSize = '12px'; }
-  else { el.style.fontSize = '14px'; }
+  // 💡 2. 작은 글씨 (현금) - 퍼센트 싹 지움!
+  var cashStr = '현금 ' + fcomma(GS.money) + '원';
+  var el = document.getElementById('h-assets');
+  el.textContent = cashStr;
+  el.style.color = 'var(--gold)';
+  el.style.lineHeight = '20px';
 
-  document.getElementById('h-ticket').querySelector('.ticket-label').textContent = GS.tickets + '장';
-  document.getElementById('char-ticker-big').textContent = ch.ticker;
-  document.getElementById('char-ticker-big').style.color = cc;
-  document.getElementById('char-sector-badge').textContent = ch.sector;
-  document.getElementById('char-sector-badge').style.background = sc + '88';
-  document.getElementById('char-avatar').style.background = cc + '22';
-  // 💡 'char-frame' -> 'char-tap' 으로 수정!
-  var frameEl = document.getElementById('char-tap');
+  if (cashStr.length >= 34) { el.style.fontSize = '10px'; }
+  else if (cashStr.length >= 31) { el.style.fontSize = '11px'; }
+  else if (cashStr.length >= 28) { el.style.fontSize = '12px'; }
+  else { el.style.fontSize = '14px'; }
+
+  document.getElementById('h-ticket').querySelector('.ticket-label').textContent = GS.tickets + '장';
+  document.getElementById('char-ticker-big').textContent = ch.ticker;
+  document.getElementById('char-ticker-big').style.color = cc;
+  document.getElementById('char-sector-badge').textContent = ch.sector;
+  document.getElementById('char-sector-badge').style.background = sc + '88';
+  document.getElementById('char-avatar').style.background = cc + '22';
+  // 💡 'char-frame' -> 'char-tap' 으로 수정!
+  var frameEl = document.getElementById('char-tap');
 frameEl.style.borderRadius = '16px';
 frameEl.style.boxShadow = '0 0 45px ' + rc + '77';
 frameEl.style.background = 'rgba(20, 20, 35, 0.5)';
 frameEl.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-  document.getElementById('char-name').innerHTML = ch.name + ' ' + (ch.level >= 10 ? 'Lv.MAX' : 'Lv.' + ch.level);
+  document.getElementById('char-name').innerHTML = ch.name + ' ' + (ch.level >= 10 ? 'Lv.MAX' : 'Lv.' + ch.level);
 
-  var avatarContainer = document.getElementById('char-avatar');
-  updateCharImage(avatarContainer, GS.mainChar, ch.ticker, '.char-avatar-inner');
+  var avatarContainer = document.getElementById('char-avatar');
+  updateCharImage(avatarContainer, GS.mainChar, ch.ticker, '.char-avatar-inner');
 
-  var fill = document.getElementById('energy-fill');
-  fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
-  fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
-  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭: ' + GS.tapCount + '/100';
-  document.getElementById('char-dialog').textContent = GS.dialogText;
-  drawGraph();
+  var fill = document.getElementById('energy-fill');
+  fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
+  fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
+  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭: ' + GS.tapCount + '/100';
+  document.getElementById('char-dialog').textContent = GS.dialogText;
+  drawGraph();
 
-  var totalInvested = 0;
-  var sectorValues = {};
-  Object.values(GS.chars).forEach(function(c) {
-    if (c.owned > 0) {
-      var val = c.price * c.owned;
-      totalInvested += val;
-      sectorValues[c.sector] = (sectorValues[c.sector] || 0) + val;
-    }
-  });
-  var validSectors = 0;
-      if (totalInvested > 0) {
-        Object.keys(sectorValues).forEach(function(sec) {
-          if (sectorValues[sec] >= totalInvested * 0.1) validSectors++;
-        });
-      }
-      
-      // 💡 직관적인 배당금 프로그레스 바 업데이트
-      var divWrap = document.getElementById('dividend-wrap');
-      if (divWrap) {
-        var divSec = Math.max(0, GS.dividendTimer * 5);
-        var divMinStr = Math.floor(divSec / 60);
-        var divSecStr = divSec % 60;
-        var timeStr = (divMinStr > 0 ? divMinStr + '분 ' : '') + divSecStr + '초 남음';
-        
-        document.getElementById('div-time-text').textContent = timeStr;
-        
-        // 배당 주기는 최대 60틱(300초 = 5분) 기준이므로 게이지를 이에 맞게 채웁니다.
-        var maxTicks = 60;
-        var pct = Math.max(0, Math.min(100, ((maxTicks - GS.dividendTimer) / maxTicks) * 100));
-        document.getElementById('div-progress-fill').style.width = pct + '%';
-        
-        var bonusStr = '';
-        var bonusColor = 'var(--text2)';
-        
-        // 유저에게 '무엇을 해야 보너스를 받는지' 미니 목표를 제시합니다.
-        if (validSectors >= 5) {
-          bonusStr = '분산 보너스 최대치 적용 중! (+50%)';
-          bonusColor = '#ffcc44';
-        } else if (validSectors >= 3) {
-          bonusStr = '분산 보너스 적용 중! (+20%)';
-          bonusColor = '#ffcc44';
-        } else {
-          bonusStr = '';
-        }
-        
-        var bonusEl = document.getElementById('div-bonus-text');
-        bonusEl.textContent = bonusStr;
-        bonusEl.style.color = bonusColor;
-      }
-    }
+  var totalInvested = 0;
+  var sectorValues = {};
+  Object.values(GS.chars).forEach(function(c) {
+    if (c.owned > 0) {
+      var val = c.price * c.owned;
+      totalInvested += val;
+      sectorValues[c.sector] = (sectorValues[c.sector] || 0) + val;
+    }
+  });
+  var validSectors = 0;
+      if (totalInvested > 0) {
+        Object.keys(sectorValues).forEach(function(sec) {
+          if (sectorValues[sec] >= totalInvested * 0.1) validSectors++;
+        });
+      }
+      
+      // 💡 직관적인 배당금 프로그레스 바 업데이트
+      var divWrap = document.getElementById('dividend-wrap');
+      if (divWrap) {
+        var divSec = Math.max(0, GS.dividendTimer * 5);
+        var divMinStr = Math.floor(divSec / 60);
+        var divSecStr = divSec % 60;
+        var timeStr = (divMinStr > 0 ? divMinStr + '분 ' : '') + divSecStr + '초 남음';
+        
+        document.getElementById('div-time-text').textContent = timeStr;
+        
+        // 배당 주기는 최대 60틱(300초 = 5분) 기준이므로 게이지를 이에 맞게 채웁니다.
+        var maxTicks = 60;
+        var pct = Math.max(0, Math.min(100, ((maxTicks - GS.dividendTimer) / maxTicks) * 100));
+        document.getElementById('div-progress-fill').style.width = pct + '%';
+        
+        var bonusStr = '';
+        var bonusColor = 'var(--text2)';
+        
+        // 유저에게 '무엇을 해야 보너스를 받는지' 미니 목표를 제시합니다.
+        if (validSectors >= 5) {
+          bonusStr = '분산 보너스 최대치 적용 중! (+50%)';
+          bonusColor = '#ffcc44';
+        } else if (validSectors >= 3) {
+          bonusStr = '분산 보너스 적용 중! (+20%)';
+          bonusColor = '#ffcc44';
+        } else {
+          bonusStr = '';
+        }
+        
+        var bonusEl = document.getElementById('div-bonus-text');
+        bonusEl.textContent = bonusStr;
+        bonusEl.style.color = bonusColor;
+      }
+    }
 
 function drawChangeGraph(canvas, priceHistory, tickHistory, currentPrice, compact) {
   if (!canvas) return;
@@ -4897,8 +4903,11 @@ var mg = {
   lastJumpTime: 0, 
   reqId: null, lastTime: 0,
   initialized: false,
-  bgParticles: [],    // 흐르는 네온 입자들
-  bgGridOffset: 0     // 바닥 그리드 이동값
+  bgParticles: [],
+  bgGridOffset: 0,
+  isScreenActive: false,
+  _fontSet: false,
+  _scorePrefix: '거리: '
 };
 
 function resizeMg() {
@@ -4913,11 +4922,12 @@ function resizeMg() {
       mg.safeRight = parseFloat(getComputedStyle(detector).right) || 0;
     }
 
-    // 💡 누락됐던 핵심 마법: 아이폰의 미친 해상도를 제한해서 과부하를 막습니다!
     var dpr = Math.min(window.devicePixelRatio || 1, 2); 
     cvs.width = mg.w * dpr; 
     cvs.height = mg.h * dpr;
     mg.ctx.scale(dpr, dpr);
+    mg.bgGradient = null;
+    mg._fontSet = false;
   }
 }
 
@@ -4980,7 +4990,7 @@ function startMg() {
   mg.downCount = 0;
   mg.lastJumpTime = 0;
   mg.points = [];
-
+  mg._fontSet = false;
   mg.points.push({ x: 0, y: mg.h / 2, type: 'UP' });
   mg.points.push({ x: mg.w + 100, y: mg.h / 2, type: 'UP' });
 
@@ -5283,11 +5293,13 @@ function drawMg() {
 
   // 💡 캔버스 내부에 점수를 직접 그립니다. (DOM 렉 0%)
   if (mg.active) {
-    mg.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    mg.ctx.font = 'bold 22px "Jua", sans-serif';
-    mg.ctx.textAlign = 'right';
-    // X좌표(mg.w - 20)에는 safeRight를 빼주고, Y좌표(40)에는 safeTop을 더해줍니다!
-    mg.ctx.fillText('거리: ' + Math.floor(mg.score) + 'm', mg.w - 20 - mg.safeRight, 40 + mg.safeTop);
+    if (!mg._fontSet) {
+      mg.ctx.font = 'bold 22px "Jua", sans-serif';
+      mg.ctx.textAlign = 'right';
+      mg._fontSet = true;
+    }
+    mg.ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    mg.ctx.fillText(mg._scorePrefix + Math.floor(mg.score) + 'm', mg.w - 20 - mg.safeRight, 40 + mg.safeTop);
   }
 }
 
@@ -5297,26 +5309,22 @@ var cachedMgScreen = document.getElementById('screen-minigame');
 
 // 기존 function loopMg(time) { ... } 를 아래 코드로 전체 교체하세요.
 function loopMg(time) {
-  if (!cachedMgScreen || !cachedMgScreen.classList.contains('active')) {
-    return; 
+  if (!mg.isScreenActive) {
+    mg.reqId = null;
+    return;
   }
   mg.reqId = requestAnimationFrame(loopMg);
   
   var now = performance.now();
   if (!mg.lastTime) mg.lastTime = now;
   var dt = now - mg.lastTime;
-mg.lastTime = now;
+  mg.lastTime = now;
 
-// 💡 마법 1: 프레임 타임 보정 (Jitter 방지)
-if (dt > 15 && dt < 18.5) {
-  dt = 16.666; // 60Hz 환경의 미세한 요동은 강제 고정!
-} else if (dt > 7 && dt < 9.5) {
-  dt = 8.333;  // 120Hz 환경의 미세한 요동은 강제 고정!
-} else if (dt > 100) {
-  dt = 16.666; // 렉 스파이크 방어
-}
+  if (dt > 15 && dt < 18.5) dt = 16.666;
+  else if (dt > 7 && dt < 9.5) dt = 8.333;
+  else if (dt > 100) dt = 16.666;
 
-var ts = dt / 16.666;
+  var ts = dt / 16.666;
   
   if (mg.active) {
     updateMg(ts); 
@@ -5346,6 +5354,7 @@ function switchScreen(name) {
   if(targetBtn) targetBtn.classList.add('active');
   
   if (name === 'minigame') {
+  mg.isScreenActive = true;
     document.getElementById('mg-best-score').textContent = '최고 기록: ' + Math.floor(GS.mg_highscore || 0) + 'm';
     initMg();
     resizeMg(); 
@@ -5376,8 +5385,9 @@ function switchScreen(name) {
     document.getElementById('mg-over-ui').style.display = 'none';
 
   } else {
-    mg.active = false;
-    if (mg.reqId) cancelAnimationFrame(mg.reqId);
+    mg.isScreenActive = false;
+    mg.active = false;
+    if (mg.reqId) { cancelAnimationFrame(mg.reqId); mg.reqId = null; }
 
     // 미니게임 BGM 끄고 메인 BGM 복귀
     var mgBgm = document.getElementById('mg-bgm-player');
@@ -6655,8 +6665,7 @@ document.addEventListener('visibilitychange', function() {
 });
 // 하트 시스템 작동 코드
 function updateMgHearts() {
-    // 💡 마법 3: 미니게임이 켜져있을 땐 무거운 HTML 조작을 완전히 멈춥니다!
-    if (typeof mg !== 'undefined' && mg.active) return;
+    if (mg.active) return;
 
     var now = Date.now();
     var rechargeTime = 1800000; // 30분
