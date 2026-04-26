@@ -5545,149 +5545,180 @@ function devResetStep() {
   }
 }
 
-// --- 🛠️ 개발자용 치트키 시스템 (1회용 특별 보상 + 무한 하트 충전) ---
+// --- 🛠️ 개발자용 치트키 시스템 (1회용 특별 보상 + 무한 하트 충전 + 자산 임의 조절) ---
 function applyCheat() {
-  playSound('click');
-  var inputEl = document.getElementById('cheat-input');
-  var code = inputEl.value.trim(); // 앞뒤 공백 제거
-  inputEl.value = ''; // 입력창 비우기
+  playSound('click');
+  var inputEl = document.getElementById('cheat-input');
+  var code = inputEl.value.trim(); // 앞뒤 공백 제거
+  inputEl.value = ''; // 입력창 비우기
 
-  if (!code) return;
+  if (!code) return;
 
-  if (code === '운유산') {
-    // 1. 이미 썼는지 확인
-    if (localStorage.getItem('cheat_unyusan_used') === 'true') {
-      showToast("이미 사용한 코드입니다.", "#ff4444");
-      return;
-    }
+  // 💡 [추가된 기능] 자산 임의 조절 (예: 자산 10경, 자산 100조, 자산 1억)
+  if (code.startsWith('자산') || code.startsWith('돈')) {
+    var isKyeong = code.indexOf('경') > -1;
+    var isJo = code.indexOf('조') > -1;
+    var isEok = code.indexOf('억') > -1;
+    var isMan = code.indexOf('만') > -1;
+    var amountStr = code.replace(/[^0-9]/g, ''); // 숫자만 추출
+    
+    if (amountStr.length > 0) {
+      var amount = parseFloat(amountStr); // 경 단위처럼 큰 숫자를 위해 parseFloat 사용
+      
+      // '경', '조', '억', '만' 단위가 포함되어 있으면 자동으로 곱해줍니다.
+      if (isKyeong) amount *= 10000000000000000;
+      else if (isJo) amount *= 1000000000000;
+      else if (isEok) amount *= 100000000;
+      else if (isMan) amount *= 10000;
 
-    // 2. 보상 지급 (10억 + 티켓 100장)
-    GS.money += 1000000000; 
-    GS.tickets += 100;      
-    
-    // 3. 영구 도장 쾅! (다시 못 쓰게)
-    localStorage.setItem('cheat_unyusan_used', 'true');
+      // 증가가 아니라 딱 그 금액으로 덮어씌웁니다.
+      GS.money = amount;
+      
+      playSound('event'); 
+      showToast("자산이 " + fcomma(amount) + "원으로 설정되었습니다!", "#ffd700", null, 3000); 
+      
+      updateTotalAssets();
+      save(); 
+      renderAll();
+      
+      document.getElementById('settings-modal').classList.remove('active');
+      return;
+    } else {
+      showToast("금액을 숫자로 함께 입력해주세요. (예: 자산 10조)", "#ff4444");
+      return;
+    }
+  }
 
-    // 4. 연출 및 저장
-    playSound('event'); 
-    showToast("지급 완료", "#ffd700", null, 5000); 
-    
-    updateTotalAssets();
-    save(); 
-    renderAll();
-    
-    // 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
+  if (code === '운유산') {
+    // 1. 이미 썼는지 확인
+    if (localStorage.getItem('cheat_unyusan_used') === 'true') {
+      showToast("이미 사용한 코드입니다.", "#ff4444");
+      return;
+    }
 
-  } else if (code === '하트만땅') { // 💡 여기에 새로운 하트 치트키를 추가했어요!
-    // 1. 하트를 최대치(4개)로 꽉 채웁니다.
-    GS.mg_hearts = 4;
-    
-    // 2. 하트가 꽉 찼으니 타이머 기준 시간을 지금으로 초기화합니다.
-    GS.mg_last_heart_time = Date.now();
+    // 2. 보상 지급 (10억 + 티켓 100장)
+    GS.money += 1000000000; 
+    GS.tickets += 100;      
+    
+    // 3. 영구 도장 쾅! (다시 못 쓰게)
+    localStorage.setItem('cheat_unyusan_used', 'true');
 
-    // 3. 연출 및 저장
-    playSound('event'); 
-    showToast("하트 충전 완료!", "#ff3264", null, 3000); 
-    
-    // 4. 즉시 화면의 하트 개수를 새로고침하고 저장합니다.
-    updateMgHearts();
-    save(); 
-    
-    // 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
-  
-  } else if (code === '티켓만땅') { // 💡 여기에 티켓 1000장 치트키를 추가했어요!
-    // 1. 스카웃 티켓 1000장을 즉시 추가합니다.
-    GS.tickets += 1000;
-    
-    // 2. 연출 및 저장
-    playSound('event'); 
-    showToast("티켓 1000장 충전 완료!", "#cc88ff", null, 3000); 
-    
-    // 3. 화면의 숫자들을 즉시 갱신하고 저장합니다.
-    updateTotalAssets();
-    save(); 
-    renderAll();
-    
-    // 4. 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
+    // 4. 연출 및 저장
+    playSound('event'); 
+    showToast("지급 완료", "#ffd700", null, 5000); 
+    
+    updateTotalAssets();
+    save(); 
+    renderAll();
+    
+    // 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
 
-  } else if (code === '광고초기화') { // 💡 개발자 테스트용: 하트 광고 횟수 리셋
-    // 1. 하트 광고 횟수 초기화
-    GS.adHeartUses = 5;
+  } else if (code === '하트만땅') { 
+    // 1. 하트를 최대치(4개)로 꽉 채웁니다.
+    GS.mg_hearts = 4;
+    
+    // 2. 하트가 꽉 찼으니 타이머 기준 시간을 지금으로 초기화합니다.
+    GS.mg_last_heart_time = Date.now();
 
-    // 2. 미니게임 하트 광고 UI 즉시 복구
-    var heartCounts = document.querySelectorAll('.ad-heart-count');
-    heartCounts.forEach(function(el) { 
-        el.textContent = GS.adHeartUses;
-        el.parentElement.style.opacity = "1";
-    });
+    // 3. 연출 및 저장
+    playSound('event'); 
+    showToast("하트 충전 완료!", "#ff3264", null, 3000); 
+    
+    // 4. 즉시 화면의 하트 개수를 새로고침하고 저장합니다.
+    updateMgHearts();
+    save(); 
+    
+    // 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
+  
+  } else if (code === '티켓만땅') { 
+    // 1. 스카웃 티켓 1000장을 즉시 추가합니다.
+    GS.tickets += 1000;
+    
+    // 2. 연출 및 저장
+    playSound('event'); 
+    showToast("티켓 1000장 충전 완료!", "#cc88ff", null, 3000); 
+    
+    // 3. 화면의 숫자들을 즉시 갱신하고 저장합니다.
+    updateTotalAssets();
+    save(); 
+    renderAll();
+    
+    // 4. 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
 
-    // 3. 연출 및 저장
-    playSound('event'); 
-    showToast("하트 광고 시청 횟수가 초기화되었습니다!", "#66ff88", null, 3000); 
-    save();
-    
-    // 4. 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
+  } else if (code === '광고초기화') { 
+    // 1. 하트 광고 횟수 초기화
+    GS.adHeartUses = 5;
 
-  } else if (code === '타임슬립') { 
-    // 💡 개발자 테스트용: 24시간(오프라인 최대 한도) 강제 진행
-    playSound('click');
-    showToast("⏳ 24시간 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#ffcc44", null, 3000, false, true);
+    // 2. 미니게임 하트 광고 UI 즉시 복구
+    var heartCounts = document.querySelectorAll('.ad-heart-count');
+    heartCounts.forEach(function(el) { 
+        el.textContent = GS.adHeartUses;
+        el.parentElement.style.opacity = "1";
+    });
 
-    // 안내 토스트가 화면에 뜰 시간을 주기 위해 0.1초 뒤에 무거운 연산 시작
-    setTimeout(function() {
-      var moneyBefore = GS.money;
-      var skipTicks = 17280; // 24시간을 틱(5초) 단위로 환산한 수치 (최대 한도)
+    // 3. 연출 및 저장
+    playSound('event'); 
+    showToast("하트 광고 시청 횟수가 초기화되었습니다!", "#66ff88", null, 3000); 
+    save();
+    
+    // 4. 설정창 자동으로 닫기
+    document.getElementById('settings-modal').classList.remove('active');
 
-      // 17,280번의 차트 변동, 배당금 지급, 뉴스 발생을 순식간에 시뮬레이션!
-      for (var i = 0; i < skipTicks; i++) {
-        tick(true); // 조용히(silent) 연산만 실행
-      }
+  } else if (code === '타임슬립') { 
+    playSound('click');
+    showToast("⏳ 24시간 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#ffcc44", null, 3000, false, true);
 
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+    setTimeout(function() {
+      var moneyBefore = GS.money;
+      var skipTicks = 17280; 
 
-      updateTotalAssets();
-      save();
-      renderAll();
+      for (var i = 0; i < skipTicks; i++) {
+        tick(true); 
+      }
 
-      playSound('dividend');
-      showToast("✨ 24시간 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#66ff88", null, 5000, false, true);
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
 
-      // 설정창 자동으로 닫기
-      document.getElementById('settings-modal').classList.remove('active');
-    }, 100);
+      updateTotalAssets();
+      save();
+      renderAll();
 
-} else if (code === '위클리슬립') { 
-    playSound('click');
-    showToast("⏳ 1주일 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#cc88ff", null, 3000, false, true);
+      playSound('dividend');
+      showToast("✨ 24시간 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#66ff88", null, 5000, false, true);
 
-    setTimeout(function() {
-      var moneyBefore = GS.money;
-      var skipTicks = 17280 * 7;
+      document.getElementById('settings-modal').classList.remove('active');
+    }, 100);
 
-      for (var i = 0; i < skipTicks; i++) {
-        tick(true);
-      }
+  } else if (code === '위클리슬립') { 
+    playSound('click');
+    showToast("⏳ 1주일 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#cc88ff", null, 3000, false, true);
 
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+    setTimeout(function() {
+      var moneyBefore = GS.money;
+      var skipTicks = 17280 * 7;
 
-      updateTotalAssets();
-      save();
-      renderAll();
+      for (var i = 0; i < skipTicks; i++) {
+        tick(true);
+      }
 
-      playSound('dividend');
-      showToast("✨ 1주일 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#cc88ff", null, 5000, false, true);
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
 
-      document.getElementById('settings-modal').classList.remove('active');
-    }, 100);
+      updateTotalAssets();
+      save();
+      renderAll();
 
-  } else {
-    // 다른 글자를 쳤을 때
-    showToast("알 수 없는 코드입니다.", "#ff4444");
-  }
+      playSound('dividend');
+      showToast("✨ 1주일 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#cc88ff", null, 5000, false, true);
+
+      document.getElementById('settings-modal').classList.remove('active');
+    }, 100);
+
+  } else {
+    // 다른 글자를 쳤을 때
+    showToast("알 수 없는 코드입니다.", "#ff4444");
+  }
 }
 
 // 💡 완벽하게 작동하는 프리로드(미리 불러오기) 함수
