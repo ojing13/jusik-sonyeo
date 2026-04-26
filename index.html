@@ -1353,8 +1353,9 @@ body, #app {
 
 <div id="start-screen" onclick="if(window.isLoadComplete) startGame();">
   <img src="imgs/title_static.jpg" id="bg-image" alt="타이틀 배경">
-  
-  <div id="loading-ui" style="position: absolute; bottom: 80px; left: 0; right: 0; width: 100%; z-index: 2; text-align: center;">
+  <canvas id="title-effect-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;"></canvas>
+  
+  <div id="loading-ui" style="position: absolute; bottom: 80px; left: 0; right: 0; width: 100%; z-index: 2; text-align: center;">
     <div style="color: var(--gold); font-size: 14px; margin-bottom: 8px;" id="loading-text">데이터 불러오는 중... (0%)</div>
     <div style="width: 80%; max-width: 300px; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; border: 1px solid var(--border); overflow: hidden; margin: 0 auto;">
       <div id="loading-bar" style="width: 0%; height: 8px; background: #ffd700;"></div>
@@ -1936,6 +1937,91 @@ function initAudioOnFirstTouch() {
   }
 }
 
+// --- 타이틀 화면 전용 은은한 파티클 & 별빛 효과 ---
+var titleCanvas, titleCtx, titleAnimId;
+var titleParticles = [];
+var titleStars = [];
+var isTitleEffectRunning = false;
+
+function initTitleEffects() {
+  titleCanvas = document.getElementById('title-effect-canvas');
+  if (!titleCanvas) return;
+  titleCtx = titleCanvas.getContext('2d');
+  
+  var w = titleCanvas.parentElement.clientWidth || 430;
+  var h = titleCanvas.parentElement.clientHeight || window.innerHeight;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  
+  titleCanvas.width = w * dpr;
+  titleCanvas.height = h * dpr;
+  titleCtx.scale(dpr, dpr);
+
+  // 떠다니는 빛 입자 생성 (효과 1)
+  for (var i = 0; i < 40; i++) {
+    titleParticles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      size: Math.random() * 2 + 0.5,
+      speedY: Math.random() * 0.5 + 0.2,
+      speedX: (Math.random() - 0.5) * 0.3,
+      opacity: Math.random() * 0.5 + 0.1
+    });
+  }
+
+  // 반짝이는 별빛 생성 (효과 3)
+  for (var j = 0; j < 30; j++) {
+    titleStars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      size: Math.random() * 1.5 + 0.5,
+      blinkSpeed: Math.random() * 0.02 + 0.01,
+      angle: Math.random() * Math.PI * 2
+    });
+  }
+
+  isTitleEffectRunning = true;
+  renderTitleEffects(w, h);
+}
+
+function renderTitleEffects(w, h) {
+  if (!isTitleEffectRunning) return;
+  
+  titleCtx.clearRect(0, 0, w, h);
+
+  // 1. 빛 입자 애니메이션
+  titleParticles.forEach(function(p) {
+    p.y -= p.speedY;
+    p.x += p.speedX;
+    if (p.y < -10) {
+      p.y = h + 10;
+      p.x = Math.random() * w;
+    }
+    titleCtx.beginPath();
+    titleCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    titleCtx.fillStyle = 'rgba(255, 230, 150, ' + p.opacity + ')';
+    titleCtx.fill();
+  });
+
+  // 3. 별빛 반짝임 애니메이션
+  titleStars.forEach(function(s) {
+    s.angle += s.blinkSpeed;
+    var currentOpacity = (Math.sin(s.angle) + 1) / 2 * 0.8; // 0 ~ 0.8
+    titleCtx.beginPath();
+    titleCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    titleCtx.fillStyle = 'rgba(255, 255, 255, ' + currentOpacity + ')';
+    titleCtx.fill();
+  });
+
+  titleAnimId = requestAnimationFrame(function() {
+    renderTitleEffects(w, h);
+  });
+}
+
+function stopTitleEffects() {
+  isTitleEffectRunning = false;
+  if (titleAnimId) cancelAnimationFrame(titleAnimId);
+}
+
 window.isGameStarted = false; // 💡 게임 시작 여부를 확인하는 자물쇠
 
 function startGame() {
@@ -1946,11 +2032,13 @@ function startGame() {
   if(startScreen) {
     if (startScreen.dataset.started) return;
     startScreen.dataset.started = 'true';
-    
+    
     window.isGameStarted = true; // 💡 여기서 자물쇠를 해제! (이제 알림이 뜰 수 있음)
 
     startScreen.style.transition = 'opacity 0.5s ease';
     startScreen.style.opacity = '0';
+    stopTitleEffects(); // 💡 게임이 시작되면 타이틀 애니메이션 중지!
+
     setTimeout(function() {
         startScreen.style.display = 'none';
         startTutorial();
@@ -7000,6 +7088,7 @@ function renderBgEffects(time) {
 
 // HTML 문서가 읽히자마자 비디오 로딩과 상관없이 즉시 별자리 렌더링 시작!
 document.addEventListener('DOMContentLoaded', function() {
+  initTitleEffects(); // 💡 타이틀 화면 파티클 & 별빛 효과 시작!
   initBackgroundEffects();
   preloadAllAssets(); // 💡 여기서 로딩 바가 차오르기 시작함!
 });
