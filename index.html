@@ -5727,12 +5727,31 @@ window.isLoadComplete = false;
 function preloadAllAssets() {
   var imagesToLoad = [];
 
+  // 1. 캐릭터 이미지 및 가챠 이미지
   Object.keys(CHARS_DEF).forEach(function(k) { imagesToLoad.push('imgs/' + k.toLowerCase() + '.png'); });
   ssrShowcaseList.forEach(function(item) { imagesToLoad.push(item.img); });
+  
+  // 2. 고정 배경 이미지
   imagesToLoad.push('imgs/title_static.jpg', 'imgs/bg_home.jpg', 'imgs/bg_portfolio.jpg', 'imgs/bg_gacha.jpg', 'imgs/bg_market.jpg', 'imgs/bg_mission.jpg');
 
-  // 중복된 이미지 요청 제거
-  imagesToLoad = imagesToLoad.filter((v, i, a) => a.indexOf(v) === i);
+  // 3. 💡 등급별 동적 배경화면 및 칭호 이미지 (1~10단계 20장 전부 추가!)
+  for (var i = 1; i <= 10; i++) {
+    imagesToLoad.push('imgs/bg_home_' + i + '.jpg');
+    imagesToLoad.push('imgs/title_' + i + '.png');
+  }
+
+  // 4. 💡 누락되었던 각종 UI 아이콘들 전부 추가!
+  var uiIcons = [
+    'imgs/icon_home.png', 'imgs/icon_portfolio.png', 'imgs/icon_gacha.png', 'imgs/icon_market.png', 'imgs/icon_mission.png',
+    'imgs/scout_ticket_icon.png', 'imgs/setting_icon.png', 'imgs/bgm_icon.png', 'imgs/sfx_icon.png', 'imgs/noti_icon.png', 'imgs/ad_icon.png',
+    'imgs/crown.png', 'imgs/icon_lock.png', 'imgs/icon_lightning.png', 'imgs/icon_snow.png', 'imgs/icon_fire.png',
+    'imgs/icon_chart_up.png', 'imgs/icon_chart_bar.png', 'imgs/player.png', 'imgs/icon_touch.png', 'imgs/icon_unlock.png', 'imgs/icon_star.png', 
+    'imgs/icon_news.png', 'imgs/icon_tornado.png', 'imgs/icon_moneybag.png', 'imgs/icon_diamond.png', 'imgs/icon_sleep.png', 'imgs/icon_scissors.png'
+  ];
+  imagesToLoad = imagesToLoad.concat(uiIcons);
+
+  // 중복된 이미지 요청 제거 (구형 기기 호환성 유지)
+  imagesToLoad = imagesToLoad.filter(function(v, i, a) { return a.indexOf(v) === i; });
 
   var loadedCount = 0;
   var totalImages = imagesToLoad.length;
