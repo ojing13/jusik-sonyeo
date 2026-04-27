@@ -4470,16 +4470,16 @@ function renderMarketList() {
     var existingCard = document.getElementById('stock-card-' + k);
 
     // 💡 1. 잠긴 주식 처리
-    if (!ch.unlocked) {
-      if (!existingCard) {
-        var div = document.createElement('div'); div.className = 'stock-locked'; div.id = 'stock-card-' + k;
-        div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
-        list.appendChild(div);
-      } else {
-        if (existingCard.parentNode !== list) list.appendChild(existingCard);
-      }
-      return;
-    }
+    if (!ch.unlocked) {
+      if (!existingCard) {
+        var div = document.createElement('div'); div.className = 'stock-locked'; div.id = 'stock-card-' + k;
+        div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
+        list.appendChild(div);
+      } else {
+        list.appendChild(existingCard); // 💡 정렬 순서를 맞추기 위해 무조건 끝에 다시 붙임
+      }
+      return;
+    }
 
     var lastTick = ch.tick_history[ch.tick_history.length - 1] || 0;
     var chg = lastTick >= 0;
@@ -4557,10 +4557,10 @@ function renderMarketList() {
       }
       
       var holdEl = document.getElementById('m-hold-' + k);
-      if (holdEl) holdEl.innerHTML = holdHtml;
+      if (holdEl) holdEl.innerHTML = holdHtml;
 
-      if (existingCard.parentNode !== list) list.appendChild(existingCard);
-    }
+      list.appendChild(existingCard); // 💡 정렬 순서를 맞추기 위해 무조건 끝에 다시 붙임
+    }
   });
 
   // 클릭 이벤트 (이전 클릭 이벤트는 덮어써짐)
