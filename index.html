@@ -301,7 +301,7 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
   100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
 }
 .char-name {
-  font-size:20px; margin-top:10px; text-align:center;
+  font-size:20px; margin-top:10px; text-align:center; color:#ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 .energy-wrap { width:240px; margin-top:8px; }
 .energy-bar-bg {
@@ -942,7 +942,7 @@ body, #app {
 }
 
 /* 각 화면별 배경 이미지 위에 어두운 필터를 깔아서 글씨가 잘 보이게 합니다 */
-#screen-home { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_home.jpg') no-repeat center/cover !important; }
+#screen-home { background: linear-gradient(rgba(10, 10, 20, 0.3), rgba(10, 10, 20, 0.6)), url('imgs/bg_home.jpg') no-repeat center/cover !important; }
 #screen-portfolio { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_portfolio.jpg') no-repeat center/cover !important; }
 #screen-gacha { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_gacha.jpg') no-repeat center/cover !important; }
 #screen-market { background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), url('imgs/bg_market.jpg') no-repeat center/cover !important; }
@@ -4212,11 +4212,11 @@ function renderHome() {
     titleEl.dataset.currentIdx = String(titleIdx); // 지금 번호를 폰에 기억시켜둠
 
     // 💡 칭호가 바뀔 때 홈 화면 배경 이미지도 함께 교체해줍니다!
-    var homeScreen = document.getElementById('screen-home');
-    if (homeScreen) {
-      var newBgUrl = "url('imgs/bg_home_" + titleIdx + ".jpg')";
-      homeScreen.style.setProperty('background', 'linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.8)), ' + newBgUrl + ' no-repeat center/cover', 'important');
-    }
+    var homeScreen = document.getElementById('screen-home');
+    if (homeScreen) {
+      var newBgUrl = "url('imgs/bg_home_" + titleIdx + ".jpg')";
+      homeScreen.style.setProperty('background', 'linear-gradient(rgba(10, 10, 20, 0.3), rgba(10, 10, 20, 0.6)), ' + newBgUrl + ' no-repeat center/cover', 'important');
+    }
   }
 
   // 💡 1. 큰 글씨 (총 자산) - "총자산" 글씨 빼고 숫자만!
