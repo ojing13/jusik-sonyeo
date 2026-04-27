@@ -4435,7 +4435,7 @@ function renderMarketTabs() {
   // 💡 시황 기록 버튼을 섹터 탭 맨 끝에 추가 (디자인 차별화)
   var historyBtn = document.createElement('div');
   historyBtn.className = 'sector-tab'; // 누를 때 뿅! 들어가는 터치 애니메이션 자동 적용
-  historyBtn.innerHTML = '📜 시황 기록';
+  historyBtn.innerHTML = '시황 기록';
   // 일반 탭과 헷갈리지 않게 점선 테두리와 어두운 배경으로 디자인 변경
   historyBtn.style.cssText = 'background: rgba(30, 30, 45, 0.6); border: 1.5px dashed #777799; color: #bbbbcc; margin-left: 6px; border-radius: 8px;';
   historyBtn.addEventListener('click', openMarketHistory);
