@@ -1,7 +1,3 @@
-
-
-
-
 <!DOCTYPE html><html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -827,6 +823,8 @@ nav, .nav,
   color: var(--gold);  
   font-size: 15px; 
   text-align: center;
+  height: 24px;
+  line-height: 24px;
 }
 
 /* 💡 5. 오른쪽 칸 (디자인 유지) */
@@ -1435,7 +1433,7 @@ body, #app {
         </div>
       </div>
     </div>
-    <div class="theme-bar" id="m-theme">현재: 평화로운 장세</div>
+    <div class="theme-bar" id="m-theme" style="display:none;">현재: 평화로운 장세</div>
   </div>
   <div class="sector-tabs" id="market-tabs"></div>
   <div class="scroll-area" id="market-list"></div>
@@ -4470,7 +4468,7 @@ function renderMarketList() {
         div.innerHTML = '<div class="stock-sector-bar" style="background:' + sc + '44"></div><div><div class="locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div class="locked-rarity" style="color:#555566;font-size:11px;margin-top:3px;">캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
         list.appendChild(div);
       } else {
-        list.appendChild(existingCard); // 정렬 순서 유지를 위해 끝으로 이동
+        if (existingCard.parentNode !== list) list.appendChild(existingCard);
       }
       return;
     }
@@ -4553,8 +4551,7 @@ function renderMarketList() {
       var holdEl = document.getElementById('m-hold-' + k);
       if (holdEl) holdEl.innerHTML = holdHtml;
 
-      // DOM의 가장 끝으로 이동시켜 정렬(Sort) 순서를 완벽하게 유지시킵니다.
-      list.appendChild(existingCard);
+      if (existingCard.parentNode !== list) list.appendChild(existingCard);
     }
   });
 
@@ -4675,7 +4672,7 @@ function renderPortfolioList() {
         div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
         list.appendChild(div);
       } else {
-        list.appendChild(existingCard);
+        if (existingCard.parentNode !== list) list.appendChild(existingCard);
       }
       return;
     }
@@ -4752,7 +4749,7 @@ function renderPortfolioList() {
         btnMainEl.textContent = (GS.mainChar===k?'★ 대표중':'대표 설정');
       }
       
-      list.appendChild(existingCard); // 정렬 순서 유지
+      if (existingCard.parentNode !== list) list.appendChild(existingCard);
     }
   });
 
