@@ -975,9 +975,9 @@ body, #app {
 
 /* --- 아이폰 노치 및 안드로이드 안전 영역(Safe Area) 호환 코드 --- */
 .screen {
-  /* 💡 화면 전체를 밀지 말고 top:0으로 꽉 채웁니다! (반투명 유리가 최상단까지 덮이도록) */
+  /* 💡 화면 전체를 밀지 말고 top:0, bottom:0으로 꽉 채웁니다! (배경이 끝까지 덮이도록) */
   top: 0 !important;
-  bottom: env(safe-area-inset-bottom, 0px) !important;
+  bottom: 0 !important;
 }
 
 /* 💡 핵심: 상단 덮개(헤더)들의 위쪽 패딩만 카메라 섬 크기만큼 늘려서 글씨를 밀어냅니다 */
