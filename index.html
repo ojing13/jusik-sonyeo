@@ -4642,25 +4642,37 @@ function renderPortfolioTabs() {
 }
 
 function renderPortfolioList() {
-  var list = document.getElementById('port-list');
-  
-  // 💡 탭이 바뀌었거나 화면을 처음 그릴 때만 완전히 비웁니다.
-  if (list.dataset.currentTab !== portTab) {
-    list.innerHTML = '';
-    list.dataset.currentTab = portTab;
-  }
+  var list = document.getElementById('port-list');
+  
+  // 💡 탭이 바뀌었거나 화면을 처음 그릴 때만 완전히 비웁니다.
+  if (list.dataset.currentTab !== portTab) {
+    list.innerHTML = '';
+    list.dataset.currentTab = portTab;
+  }
 
-  var keys = Object.keys(GS.chars).filter(function(k) {
-    if (portTab === '보유') return GS.chars[k].owned > 0;
-    return GS.chars[k].sector === portTab;
-  });
+  var keys = Object.keys(GS.chars).filter(function(k) {
+    if (portTab === '보유') return GS.chars[k].owned > 0;
+    return GS.chars[k].sector === portTab;
+  });
 
-  if (portTab === '보유' && keys.length === 0) {
-    list.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:40px; font-size:14px;">현재 보유중인 주식이 없습니다.<br>거래소에서 주식을 매수해보세요!</div>';
-    return;
-  }
+  // 💡 [핵심 버그 수정] 목록에서 사라져야 할 카드(전량 매도)와 안내 문구 찌꺼기를 직접 지워줍니다.
+  Array.from(list.children).forEach(function(child) {
+    if (child.id && child.id.startsWith('port-card-')) {
+      var cardKey = child.id.replace('port-card-', '');
+      if (!keys.includes(cardKey)) {
+        child.remove(); // 팔아서 0주가 된 카드는 화면에서 강제 삭제
+      }
+    } else {
+      child.remove(); // id가 없는 '보유중인 주식이 없습니다' 텍스트 박스 삭제
+    }
+  });
 
-  var totalInvested = 0;
+  if (portTab === '보유' && keys.length === 0) {
+    list.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:40px; font-size:14px;">현재 보유중인 주식이 없습니다.<br>거래소에서 주식을 매수해보세요!</div>';
+    return;
+  }
+
+  var totalInvested = 0;
   Object.values(GS.chars).forEach(function(c) { 
     if(c.owned > 0) {
       if (typeof c.total_principal === 'undefined') c.total_principal = c.avg_price * c.owned;
