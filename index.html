@@ -5500,9 +5500,22 @@ function switchScreen(name) {
     document.getElementById('mg-over-ui').style.display = 'none';
 
   } else {
-    mg.isScreenActive = false;
-    mg.active = false;
-    if (mg.reqId) { cancelAnimationFrame(mg.reqId); mg.reqId = null; }
+    // 💡 [시간 증발 버그 수정] 미니게임을 플레이 중(mg.active)에 탭을 휙 이동했다면 밀린 시간을 먼저 꼼꼼히 정산합니다!
+    if (mg.active) {
+      var now = Date.now();
+      var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
+      var missedTicks = Math.floor(offlineMs / 5000);
+      GS.mgLeftoverMs = offlineMs % 5000;
+      if (missedTicks > 0) {
+        for (var i = 0; i < missedTicks; i++) {
+          tick(true); // 조용히 밀린 배당금과 주가를 연산
+        }
+      }
+    }
+
+    mg.isScreenActive = false;
+    mg.active = false;
+    if (mg.reqId) { cancelAnimationFrame(mg.reqId); mg.reqId = null; }
 
     // 미니게임 BGM 끄고 메인 BGM 복귀
     var mgBgm = document.getElementById('mg-bgm-player');
@@ -5512,7 +5525,7 @@ function switchScreen(name) {
     
     document.getElementById('mg-ui').style.display = 'flex';
     document.getElementById('mg-over-ui').style.display = 'none';
-  } // <--- 💡 괄호가 여기서 정상적으로 닫혀야 합니다!
+  }
 
   if (name !== 'minigame') {
     if (name === 'market') renderMarket();
