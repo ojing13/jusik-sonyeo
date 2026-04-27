@@ -4687,15 +4687,15 @@ function renderPortfolioList() {
     var existingCard = document.getElementById('port-card-' + k);
 
     if (!ch.unlocked) {
-      if (!existingCard) {
-        var div = document.createElement('div'); div.className = 'port-locked'; div.id = 'port-card-' + k;
-        div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
-        list.appendChild(div);
-      } else {
-        if (existingCard.parentNode !== list) list.appendChild(existingCard);
-      }
-      return;
-    }
+      if (!existingCard) {
+        var div = document.createElement('div'); div.className = 'port-locked'; div.id = 'port-card-' + k;
+        div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
+        list.appendChild(div);
+      } else {
+        list.appendChild(existingCard); // 💡 조건문 삭제! 잠긴 카드도 무조건 끝에 다시 붙여서 정렬 순서 보장
+      }
+      return;
+    }
     
     var holdHtml = '<div class="port-hold" style="color:#555566">미보유 | ' + fcomma(ch.price) + '원</div>';
     var vipHtml = '';
@@ -5515,14 +5515,12 @@ function switchScreen(name) {
   } // <--- 💡 괄호가 여기서 정상적으로 닫혀야 합니다!
 
   if (name !== 'minigame') {
-    setTimeout(function() {
-      if (name === 'market') renderMarket();
-      if (name === 'portfolio') renderPortfolio();
-      if (name === 'gacha') renderGacha();
-      if (name === 'mission') renderMission();
-      if (name === 'home') renderHome();
-    }, 20);
-  }
+    if (name === 'market') renderMarket();
+    if (name === 'portfolio') renderPortfolio();
+    if (name === 'gacha') renderGacha();
+    if (name === 'mission') renderMission();
+    if (name === 'home') renderHome();
+  }
 }
 
 document.querySelectorAll('.nav-btn').forEach(function(btn) { btn.addEventListener('click', function() { switchScreen(btn.dataset.screen); }); });
