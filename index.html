@@ -563,11 +563,14 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .port-card {
   margin:6px 12px; border-radius:12px;
   background:var(--bg2); border:1px solid var(--border);
-  padding:12px 12px 12px 18px; position:relative; overflow:visible;
+  padding:12px 12px 12px 18px; position:relative; overflow:hidden;
   cursor: pointer;
   transition: transform 0.05s;
+  /* 카드가 눌릴 때 모서리 색깔 띠가 튀어나오는 브라우저 렌더링 버그 수정 */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  transform: translateZ(0);
 }
-.port-card:active { transform: scale(0.98); }
+.port-card:active { transform: scale(0.98) translateZ(0); }
 .port-card.vip { border-color:rgba(255,215,0,0.5); }
 .port-sector-bar { position:absolute; left:0; top:0; bottom:0; width:4px; }
 .port-row1 { display:flex; justify-content:space-between; align-items:center; pointer-events:none; }
@@ -580,8 +583,11 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .port-locked {
   margin:6px 12px; border-radius:10px;
   background:#0d0d14; border:1px solid #1e1e28;
-  padding:10px 14px; display:flex;
-  justify-content:space-between; align-items:center;
+  padding:10px 14px 10px 18px; position:relative; overflow:hidden;
+  display:flex; justify-content:space-between; align-items:center;
+  /* 카드가 눌릴 때 모서리 색깔 띠가 튀어나오는 브라우저 렌더링 버그 수정 */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  transform: translateZ(0);
 }
 .sector-tabs {
   display:flex; overflow-x:auto; gap:6px;
@@ -4687,11 +4693,11 @@ function renderPortfolioList() {
     var existingCard = document.getElementById('port-card-' + k);
 
     if (!ch.unlocked) {
-      if (!existingCard) {
-        var div = document.createElement('div'); div.className = 'port-locked'; div.id = 'port-card-' + k;
-        div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
-        list.appendChild(div);
-      } else {
+      if (!existingCard) {
+        var div = document.createElement('div'); div.className = 'port-locked'; div.id = 'port-card-' + k;
+        div.innerHTML = '<div class="port-sector-bar" style="background:' + sc + '44"></div><div><div class="port-locked-info" style="color:#777788;font-size:13px; display:flex; align-items:center; gap:4px;">' + ch.name + '<span class="neon-badge badge-' + ch.rarity.toLowerCase() + '" style="position: relative; top: -2px;">' + ch.rarity + '</span></div><div style="font-size:11px;color:#555566;margin-top:3px;">' + ch.sector + ' | 캐릭터 영입 후 거래 가능</div></div><div style="color:#333344;font-size:16px"><img src="imgs/icon_lock.png" style="width:18px;height:18px;opacity:0.5;"></div>';
+        list.appendChild(div);
+      } else {
         list.appendChild(existingCard); // 💡 조건문 삭제! 잠긴 카드도 무조건 끝에 다시 붙여서 정렬 순서 보장
       }
       return;
