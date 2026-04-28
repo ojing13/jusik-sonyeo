@@ -1074,24 +1074,33 @@ body, #app {
 
 /* 📖 마법 도감 느낌의 버튼 전용 스타일 */
 .dict-btn {
-  background: linear-gradient(to right, #1a0f2e, #2b1845, #1a0f2e) !important; /* 양장본 느낌의 깊은 보라색 그라데이션 */
+  background: linear-gradient(to right, #1a0f2e, #2b1845, #1a0f2e) !important;
   border: 1px solid #a64dff !important;
   border-radius: 12px;
   color: #f2d9ff;
-  font-size: 15px;
+  font-size: 18px; /* 💡 글씨 크기를 15px -> 18px로 대폭 키움 */
   font-family: 'Jua', sans-serif;
   cursor: pointer;
   display: flex !important;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 0 !important;
+  gap: 10px; /* 💡 이미지와 글씨 사이 간격을 넓혀서 안 답답하게 */
+  padding: 10px 0 !important;
   width: 100%;
   box-shadow: 0 4px 12px rgba(153, 51, 255, 0.25), inset 0 2px 5px rgba(255, 255, 255, 0.1);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+}
+
+/* 도감 커스텀 이미지 아이콘 스타일 */
+.dict-icon-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(230, 179, 255, 0.9)); 
+  transform: translateY(3px);
 }
 
 /* 도감(책) 표지 느낌을 내는 안쪽 금박 점선 테두리 */
@@ -1353,7 +1362,8 @@ body, #app {
       
      <div class="gacha-right-col">
         <button class="dict-btn" onclick="playSound('click'); openDictionary('전체')">
-          <span class="dict-icon">📖</span> 캐릭터 도감
+          <img src="imgs/dict_icon.png" class="dict-icon-img" alt="도감 아이콘">
+          <span style="position: relative; top: 1px;">캐릭터 도감</span>
         </button>
         
         <div class="ticket-box" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
