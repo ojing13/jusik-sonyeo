@@ -1587,6 +1587,7 @@ body, #app {
           <li><img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">실시간 주가:</span> 주식은 5초마다 실시간으로 변동합니다.</li>
           <li><img src="imgs/icon_news.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">뉴스 알림:</span> 속보가 뜨면 20초간 상승/하락 추세가 생기고, <strong>실적 발표</strong> 시엔 주가가 크게 요동칩니다.</li>
           <li><img src="imgs/icon_tornado.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">특수 장세:</span> 섹터별 테마장, 블랙스완(대폭락), 대세 상승장 등 다양한 이벤트가 발생합니다.</li>
+          <li><img src="imgs/icon_chart_bar.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">자체 추세:</span> 특별한 이벤트가 없는 평상시에도, 각 종목은 고유의 단기 파동과 장기적인 상승/하락 추세를 타며 움직입니다.</li>
         </ul>
       </div>
 
@@ -7117,12 +7118,13 @@ document.addEventListener('touchcancel', function(e) {
 <div id="chart-tooltip" class="chart-tooltip"></div>
 
 <div id="market-history-modal" class="modal-overlay">
-  <div class="modal-content" style="max-height: 70%; display:flex; flex-direction:column; padding: 16px 20px;">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('market-history-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
-    <div style="font-size:20px; color:var(--gold); margin-top: 15px; margin-bottom:12px; text-align:center;">시황 기록</div>
+  <div class="modal-content" style="max-height: 70%; display:flex; flex-direction:column; padding: 12px 16px;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('market-history-modal').classList.remove('active')" style="top: 10px; right: 14px;">✖</div>
+    <div style="font-size:20px; color:var(--gold); margin-top: -22px; margin-bottom: 2px; text-align:center;">시황 기록</div>
     <div class="scroll-area" id="market-history-list" style="flex:1; padding-bottom:0; font-size:13px; line-height:1.6; color:#ccc;">
       기록된 시황이 없습니다.
     </div>
+    <div style="font-size:11px; color:#888; text-align:center; margin-top: 8px; word-break:keep-all;">※ 특별한 시황이 없는 평상시에도 각 종목은 고유의 자체 추세를 타며 움직입니다.</div>
   </div>
 </div>
 </body>
