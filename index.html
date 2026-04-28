@@ -1478,7 +1478,7 @@ body, #app {
     <div class="rate-row">
       <div class="rate-badge badge-ssr">SSR</div>
       <div class="rate-pct">2.0%</div>
-      <div class="rate-chars">아리스, 녹스, 에테르, 루시엘, 미오, 티아, 메르헨</div>
+      <div class="rate-chars">아리스, 에테르, 메르헨, 루시엘, 미오, 녹스, 티아</div>
     </div>
     
     <div class="rate-row">
@@ -6245,14 +6245,20 @@ function renderDictionary() {
   });
 
   var rarityOrder = { 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1 };
+  var sectorOrderMap = {};
+  SECTOR_ORDER.forEach(function(s, i) { sectorOrderMap[s] = i; });
+  var originOrderMap = {};
+  Object.keys(CHARS_DEF).forEach(function(k, i) { originOrderMap[k] = i; });
+
   var sortedKeys = totalKeys.filter(function(k) {
     return currentDictTab === '전체' || GS.chars[k].rarity === currentDictTab;
   }).sort(function(a, b) {
     var cA = GS.chars[a], cB = GS.chars[b];
     if (cA.unlocked !== cB.unlocked) return cB.unlocked ? 1 : -1;
     if (rarityOrder[cA.rarity] !== rarityOrder[cB.rarity]) return rarityOrder[cB.rarity] - rarityOrder[cA.rarity];
-    if (cA.level !== cB.level) return cB.level - cA.level;
-    return cA.name.localeCompare(cB.name);
+    if (cA.level !== cB.level) return cB.level - cA.level; // 💡 레벨순 정렬 복구! (가장 우선 적용)
+    if (sectorOrderMap[cA.sector] !== sectorOrderMap[cB.sector]) return sectorOrderMap[cA.sector] - sectorOrderMap[cB.sector];
+    return originOrderMap[a] - originOrderMap[b];
   });
 
   var fragment = document.createDocumentFragment();
@@ -6856,12 +6862,12 @@ function drawAdvancedChart(k) {
 // --- 가챠 화면 SSR 슬라이드쇼 ---
 var ssrShowcaseList = [
   { name: 'SSR 아리스', img: 'imgs/ssr_aris.png' },
-  { name: 'SSR 녹스', img: 'imgs/ssr_noxs.png' },
   { name: 'SSR 에테르', img: 'imgs/ssr_eter.png' },
+  { name: 'SSR 메르헨', img: 'imgs/ssr_merh.png' },
   { name: 'SSR 루시엘', img: 'imgs/ssr_luci.png' },
   { name: 'SSR 미오', img: 'imgs/ssr_mio.png' },
-  { name: 'SSR 티아', img: 'imgs/ssr_tia.png' },
-  { name: 'SSR 메르헨', img: 'imgs/ssr_merh.png' }
+  { name: 'SSR 녹스', img: 'imgs/ssr_noxs.png' },
+  { name: 'SSR 티아', img: 'imgs/ssr_tia.png' }
 ];
 var currentSsrIdx = 0;
 var ssrAutoTimer = null; 
