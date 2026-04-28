@@ -3821,7 +3821,7 @@ function updateTapUI() {
   fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
   fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
   
-  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭: ' + GS.tapCount + '/100';
+  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭 ' + GS.tapCount + '/100';
   
   // (그래프나 이미지 등은 건드리지 않으므로 연산량이 1/100로 줄어듭니다)
 }
@@ -4415,7 +4415,7 @@ frameEl.style.border = '1px solid rgba(255, 255, 255, 0.1)';
   var fill = document.getElementById('energy-fill');
   fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
   fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
-  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭: ' + GS.tapCount + '/100';
+  document.getElementById('energy-text').textContent = '체력 ' + ch.energy + '/' + ch.max_energy + ' | 탭 ' + GS.tapCount + '/100';
   document.getElementById('char-dialog').textContent = GS.dialogText;
   drawGraph();
 
