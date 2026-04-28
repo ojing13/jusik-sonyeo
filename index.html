@@ -1251,6 +1251,79 @@ body, #app {
 .chart-info-val {
   font-size: 14px;
 }
+/* --- 🎮 미니게임 나란히 배치 & 컴팩트 표 스타일 --- */
+.mg-info-container {
+  display: flex;
+  width: 92%;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: stretch;
+}
+.mg-desc-box {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+  color: #ccc;
+  line-height: 1.8;
+  word-break: keep-all;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.mg-reward-table {
+  flex: 1.1;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.mg-reward-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex: 1;
+}
+.mg-reward-row:last-child { border-bottom: none; }
+.mg-reward-row .rank-label { font-size: 16px; font-weight: bold; width: 20px; text-align: center;}
+.mg-reward-row .dist-req { flex: 1; font-size: 11px; color: #aaa; text-align: center; }
+.mg-reward-row .reward-val { font-size: 12px; display: flex; align-items: center; gap: 4px; width: 36px; justify-content: flex-end; }
+.rank-s { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+.rank-a { color: #cc88ff; text-shadow: 0 0 10px rgba(204, 136, 255, 0.5); }
+.rank-b { color: #4477ff; text-shadow: 0 0 10px rgba(68, 119, 255, 0.5); }
+.rank-c { color: #888888; }
+
+#mg-result-rank {
+  font-size: 100px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  animation: rankPop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;
+}
+@keyframes rankPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.mg-result-reward-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 20px;
+  border-radius: 20px;
+  margin-top: 10px;
+  font-size: 18px;
+  color: #fff;
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1488,38 +1561,65 @@ body, #app {
     <canvas id="mg-canvas" style="width:100%; height:100%; display:block; touch-action:none; transform:translateZ(0); will-change:transform;"></canvas>
     
     <div id="mg-ui" class="mg-overlay">
-    <div style="font-size:32px; color:var(--gold); margin-bottom:15px;">하락 피하기</div>
+    <div style="font-size:32px; color:var(--gold); margin-bottom:10px;">하락 피하기</div>
     
-    <div class="mg-heart-container">
+    <div class="mg-heart-container" style="margin-bottom: 15px;">
         <div class="mg-heart-row" id="mg-heart-row"></div>
         <div class="mg-heart-timer" id="mg-heart-timer">다음 충전까지 --:--</div>
     </div>
 
-    <div id="mg-best-score" style="font-size:18px; color:var(--gold); margin-bottom:15px;">최고 기록: 0m</div>
-    
-    <div style="font-size:15px; color:#ccc; margin-bottom:20px; text-align:center; line-height:1.6;">
-        화면을 터치해 점프하세요 (최대 2단 점프)<br>
-        <span style="color:var(--blue);">파란색 하락선</span>을 밟으면 즉시 게임 종료!<br>
-        1000m당 스카웃 티켓 1장 획득 (판당 최대 5장)
+    <div class="mg-info-container">
+        <div class="mg-desc-box">
+    <div>화면 터치로 점프!</div>
+    <div style="font-size:11px; color:#888;">(최대 2단 점프)</div>
+    <div style="margin-top:8px;"><span style="color:var(--blue);">파란색 하락선</span>을 밟으면 게임 종료!</div>
+</div>
+        
+        <div class="mg-reward-table">
+            <div class="mg-reward-row">
+                <span class="rank-label rank-s">S</span>
+                <span class="dist-req">3,000m 이상</span>
+                <span class="reward-val"><img src="imgs/scout_ticket_icon.png" style="width:14px; vertical-align:middle;"> 3</span>
+            </div>
+            <div class="mg-reward-row">
+                <span class="rank-label rank-a">A</span>
+                <span class="dist-req">2,000m 이상</span>
+                <span class="reward-val"><img src="imgs/scout_ticket_icon.png" style="width:14px; vertical-align:middle;"> 2</span>
+            </div>
+            <div class="mg-reward-row">
+                <span class="rank-label rank-b">B</span>
+                <span class="dist-req">1,000m 이상</span>
+                <span class="reward-val"><img src="imgs/scout_ticket_icon.png" style="width:14px; vertical-align:middle;"> 1</span>
+            </div>
+            <div class="mg-reward-row">
+                <span class="rank-label rank-c" style="font-size:14px;">C</span>
+                <span class="dist-req">1,000m 미만</span>
+                <span class="reward-val" style="color:#666;">없음</span>
+            </div>
+        </div>
     </div>
 
-    <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:16px; font-size:20px; color:white; font-family:'Jua', sans-serif;">게임 시작</button>
+    <div id="mg-best-score" style="font-size:15px; color:rgba(255,255,255,0.6); margin-bottom:15px;">최고 기록: 0m</div>
+
+    <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:14px; font-size:20px; color:white; font-family:'Jua', sans-serif;">게임 시작</button>
     <button id="mg-ad-recharge-btn" class="gacha-btn" style="width:220px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none; align-items:center; justify-content:center; gap:8px;">
         <img src="imgs/ad_icon.png" style="width:22px; height:22px; object-fit:contain; margin-bottom:-5px;"> 광고 보고 하트 +1
     </button>
 </div>
 
 <div id="mg-over-ui" class="mg-overlay" style="display:none;">
-    <div style="font-size:36px; color:var(--red); margin-bottom:10px;">게임 종료</div>
+    <div id="mg-result-rank">S</div> 
+    <div id="mg-final-score" style="font-size:18px; color:#ccc; margin-bottom:5px;">주행 거리: 0m</div>
     
-    <div class="mg-heart-row" id="mg-over-heart-row" style="margin-bottom:15px;"></div>
+    <div id="mg-result-reward-wrap"></div>
 
-    <div id="mg-final-score" style="font-size:20px; color:white; margin-bottom:20px; text-align:center; line-height:1.5;">주행 거리: 0m</div>
-    <button id="mg-restart-btn" class="gacha-btn secondary" style="width:200px; padding:14px; color:white; font-family: 'Jua', sans-serif;">다시 도전</button>
+    <div class="mg-heart-row" id="mg-over-heart-row" style="margin-top:20px; margin-bottom:15px;"></div>
+    
+    <button id="mg-restart-btn" class="gacha-btn secondary" style="width:200px; padding:14px; color:white; font-family:'Jua', sans-serif;">다시 도전</button>
     <button id="mg-over-ad-recharge-btn" class="gacha-btn" style="width:200px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none; align-items:center; justify-content:center; gap:8px;">
         <img src="imgs/ad_icon.png" style="width:22px; height:22px; object-fit:contain; margin-bottom:-5px;"> 광고 보고 하트 +1
     </button>
-        </div>
+</div>
       </div>
     </div>
 
@@ -5123,20 +5223,13 @@ function endMg() {
   mg.active = false;
   playSound('crash');
 
-  // 💡 미니게임 플레이 시간만큼 밀린 틱 한 번에 처리 (자투리 밀리초까지 완벽 보존)
   var now = Date.now();
-  
-  // 기존에 남아있던 자투리 밀리초(GS.mgLeftoverMs)까지 끌어와서 정확히 더합니다.
   var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
   var missedTicks = Math.floor(offlineMs / 5000);
-  
-  // 이번에 처리하고 남은 1~4999밀리초의 자투리 시간은 증발시키지 않고 다시 보관!
   GS.mgLeftoverMs = offlineMs % 5000;
 
   if (missedTicks > 0) {
-    for (var i = 0; i < missedTicks; i++) {
-      tick(true); // silent=true로 토스트/사운드 없이 조용히 처리
-    }
+    for (var i = 0; i < missedTicks; i++) { tick(true); }
   }
   
   var isNewBest = false;
@@ -5146,29 +5239,50 @@ function endMg() {
     isNewBest = true;
   }
 
-  // 💡 티켓 보상 로직 추가 (1,000m당 1장, 최대 5장 제한)
-  var earnedTickets = Math.floor(mg.score / 1000);
-  var isCapped = false;
-  
-  if (earnedTickets > 5) {
-    earnedTickets = 5;
-    isCapped = true; // 최대치에 도달했음을 기록
-  }
-  
-  if (earnedTickets > 0) {
-    GS.tickets += earnedTickets;
+  // --- 🏆 랭크 및 보상 판정 로직 ---
+  var rank = 'C';
+  var reward = 0;
+  var rankClass = 'rank-c';
+
+  if (mg.score >= 3000) {
+      rank = 'S';
+      reward = 3;
+      rankClass = 'rank-s';
+  } else if (mg.score >= 2000) {
+      rank = 'A';
+      reward = 2;
+      rankClass = 'rank-a';
+  } else if (mg.score >= 1000) {
+      rank = 'B';
+      reward = 1;
+      rankClass = 'rank-b';
   }
 
-  var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm<br>';
-  if (earnedTickets > 0) {
-    var capText = isCapped ? ' <span style="font-size:12px; color:#aaa; margin-left:4px;">(최대치)</span>' : '';
-    finalHtml += '<span style="color:var(--purple); font-size:16px; margin-top:6px; display:flex; justify-content:center; align-items:center; gap:4px;"> <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px;"> ' + earnedTickets + '장 획득!' + capText + '</span>';
+  if (reward > 0) {
+      GS.tickets += reward;
   }
-  finalHtml += (isNewBest ? '<span style="color:var(--gold); margin-top:8px; display:block;"> 최고 기록 경신! </span>' : '<span style="color:#aaa; font-size:14px; margin-top:8px; display:block;">최고 기록: ' + Math.floor(GS.mg_highscore) + 'm</span>');
-  
+
+  // 결과 UI 업데이트
+  var rankEl = document.getElementById('mg-result-rank');
+  rankEl.textContent = rank;
+  rankEl.className = rankClass;
+
+  var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm';
+  if (isNewBest) finalHtml += ' <span style="color:var(--gold); font-size:14px;">(최고 기록 경신!)</span>';
   document.getElementById('mg-final-score').innerHTML = finalHtml;
-  document.getElementById('mg-over-ui').style.display = 'flex';
   
+  var rewardWrap = document.getElementById('mg-result-reward-wrap');
+  if (reward > 0) {
+      rewardWrap.innerHTML = `
+          <div class="mg-result-reward-box">
+              보상: <img src="imgs/scout_ticket_icon.png" style="width:26px;"> ${reward}장
+          </div>
+      `;
+  } else {
+      rewardWrap.innerHTML = `<div style="color:#666; font-size:14px; margin-top:10px;">보상이 없습니다.</div>`;
+  }
+
+  document.getElementById('mg-over-ui').style.display = 'flex';
   save(); 
 }
 
