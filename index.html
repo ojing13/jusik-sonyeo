@@ -3397,48 +3397,51 @@ function tick(silent) {
   if (GS.currentTheme.target !== '없음') {
     if (Math.random() < 0.1) generateNews(silent);
   } else {
-        GS.noThemeTicks++;
-        if (GS.noThemeTicks >= 45 && Math.random() < 0.01) {
-        if (Math.random() < 0.5) {
-      GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 이벤트 발생! 시장 급락!';
-      if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
-      addMarketHistory('<img src="imgs/icon_lightning.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
-      Object.keys(GS.chars).forEach(function(k) {
-          var ch = GS.chars[k];
-          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
-          ch._earningApplied = false; applyPriceChange(k);
-      });
-    } else {
-      GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [상승장] 글로벌 대세 상승장 진입!';
-      if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
-      addMarketHistory('<img src="imgs/icon_chart_up.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 글로벌 대세 상승장 진입!', '#ff33aa');
-      Object.keys(GS.chars).forEach(function(k) {
-          var ch = GS.chars[k];
-          if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-          if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
-          ch._earningApplied = false; applyPriceChange(k);
-        });
+        // 💡 1. 블랙스완 & 대세 상승장 (조건 없이 순수하게 매 틱마다 0.5% 확률로 독립 실행)
+        if (Math.random() < 0.005) { 
+          if (Math.random() < 0.5) {
+            GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 이벤트 발생! 시장 급락!';
+            if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
+            addMarketHistory('<img src="imgs/icon_lightning.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
+            Object.keys(GS.chars).forEach(function(k) {
+                var ch = GS.chars[k];
+                if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+                if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
+                ch._earningApplied = false; applyPriceChange(k);
+            });
+          } else {
+            GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [상승장] 글로벌 대세 상승장 진입!';
+            if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
+            addMarketHistory('<img src="imgs/icon_chart_up.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 글로벌 대세 상승장 진입!', '#ff33aa');
+            Object.keys(GS.chars).forEach(function(k) {
+                var ch = GS.chars[k];
+                if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+                if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
+                ch._earningApplied = false; applyPriceChange(k);
+              });
+          }
+          if (!silent) playSound('event');
+          updateTotalAssets(); updateMissions(); updateDialogState();
+          if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+          return;
+        }
+
+        // 💡 2. 특수 장세가 안 터졌을 때만 섹터 테마장 로직 실행 (평균 6분 간격)
+        GS.noThemeTicks++; // 변수 자체는 다른 곳에서 쓸 수도 있으니 살려둡니다
+        var shouldTrigger = (Math.random() < (1 / 72));
+        if (shouldTrigger) {
+          GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
+          var icon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">';
+          var historyIcon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">';
+          var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
+          GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
+          if (!silent) showNewsToast(GS.currentNews, color, null);
+          addMarketHistory(historyIcon + ' 「' + GS.currentTheme.name + '」 시작', color);
+          if (!silent) playSound('event');
+        } else {
+            if (Math.random() < 0.06) generateNews(silent);
+        }
       }
-      if (!silent) playSound('event');
-      updateTotalAssets(); updateMissions(); updateDialogState();
-      if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-      return;
-    }
-    var shouldTrigger = (GS.noThemeTicks >= 45 && Math.random() < 0.05);
-  if (shouldTrigger) {
-    GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
-    var icon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">';
-    var historyIcon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">';
-    var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
-    GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
-    if (!silent) showNewsToast(GS.currentNews, color, null);
-    addMarketHistory(historyIcon + ' 「' + GS.currentTheme.name + '」 시작', color);
-    if (!silent) playSound('event');
-  } else {
-      if (Math.random() < 0.06) generateNews(silent);
-    }
-  }
 
   Object.keys(GS.chars).forEach(function(k) {
     var ch = GS.chars[k];
