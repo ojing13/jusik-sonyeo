@@ -6,12 +6,18 @@
 
 <script>
   (function() {
-    var mainCharKey = 'nflx'; 
+    var mainCharKey = 'noah'; 
+    var MIGRATION_MAP = {"aapl":"aris","nvda":"noxs","googl":"eter","msft":"merh","amzn":"luci","meta":"mio","tsla":"tia","tsm":"seri","brk":"bell","asml":"elin","avgo":"viol","jpm":"jeni","wmt":"wint","lly":"liri","v":"vivi","jnj":"cloe","ma":"wend","xom":"erna","cost":"koha","dis":"mion","nke":"nana","mcd":"mako","unh":"yuii","gs2":"glor","adbe":"amel","crm":"ceci","qcom":"quii","ko":"kare","sbux":"stel","pltr":"fion","amd":"emma","mu":"miku","arm":"juri","intc":"ilia","orcl":"ophi","ibm":"beck","csco":"char","now":"sofi","uber":"ubel","spot":"pene","shop":"shir","coin":"kohr","hd":"deli","nflx":"noah","bac":"bety","wfc":"wini","ms2":"momo","axp":"akar","schw":"celi","spgi":"este","abbv":"abig","mrk":"mary","pfe":"pipi","tmo":"sena","isrg":"irina","cvx":"sheri","cop":"koto","nee":"nene","cat":"katia","ge":"gisel","ba":"bomi","lmt":"ruby","rtx":"rita","hon":"hana","de":"dana","tgt":"tita","low":"rach","pep":"shiz","pg":"pia","pm":"miri","race":"flor","nvo":"noel","sap":"saya","app2":"haze","oxy":"orly","mco":"medi","bx":"bian","txn":"tio","amat":"alic","klac":"klar","mrvl":"mari","regn":"line","vrtx":"vero","amgn":"anna","gild":"garn","abt":"eva","ups":"yuzu","pypl":"parf","abnb":"amy","snow":"sino","f":"sara","gm":"gemm","vz":"layl","t2":"aile"};
     try {
       var savedData = localStorage.getItem('sg_v3');
       if (savedData) {
         var parsed = JSON.parse(savedData);
-        if (parsed.mainChar) mainCharKey = parsed.mainChar; 
+        if (parsed.mainChar) {
+          mainCharKey = parsed.mainChar;
+          if (MIGRATION_MAP[mainCharKey]) {
+            mainCharKey = MIGRATION_MAP[mainCharKey];
+          }
+        }
       }
     } catch(e) {} 
     var link = document.createElement('link');
@@ -21,10 +27,10 @@
     document.head.appendChild(link);
 
     var linkTitle = document.createElement('link');
-    linkTitle.rel = 'preload';
-    linkTitle.as = 'image';
-    linkTitle.href = 'imgs/title_static.jpg';
-    document.head.appendChild(linkTitle);
+    linkTitle.rel = 'preload';
+    linkTitle.as = 'image';
+    linkTitle.href = 'imgs/title_static.jpg';
+    document.head.appendChild(linkTitle);
   })();
 </script>
 <style>
@@ -1386,7 +1392,7 @@ body, #app {
       <div class="char-frame" id="char-tap">
         <div class="char-avatar" id="char-avatar">
           <div class="char-avatar-inner">
-            <div class="char-ticker-big" id="char-ticker-big">NFLX</div>
+            <div class="char-ticker-big" id="char-ticker-big">NOAH</div>
             <div class="char-sector-badge" id="char-sector-badge">IT</div>
           </div>
         </div>
@@ -1427,7 +1433,7 @@ body, #app {
       <div class="gacha-left-col">
             <div class="ssr-image-row">
               <span class="arrow-btn" id="ssr-left-arrow">&#x276E;</span> 
-              <img src="imgs/ssr_aeprin.png" id="ssr-character-image"> 
+              <img src="imgs/ssr_aris.png" id="ssr-character-image"> 
               <span class="arrow-btn" id="ssr-right-arrow">&#x276F;</span>
             </div>
             <div id="ssr-character-name" style="color: var(--gold); font-size: 15px; text-align: center;">SSR 아리스</div>
@@ -2129,102 +2135,101 @@ function playSound(type) {
   }
 }
 
-// 캐릭터 이름 수정 반영
 var CHARS_DEF = {
-aapl: {name:'아리스',ticker:'AAPL',sector:'IT',price:25960,rarity:'SSR',color:'#4a90d9',unlocked:false},
-nvda: {name:'녹스',ticker:'NVDA',sector:'반도체',price:18383,rarity:'SSR',color:'#76b900',unlocked:false},
-googl:{name:'에테르',ticker:'GOOGL',sector:'IT',price:30669,rarity:'SSR',color:'#4285f4',unlocked:false},
-msft: {name:'메르헨',ticker:'MSFT',sector:'IT',price:40296,rarity:'SSR',color:'#00a4ef',unlocked:false},
-amzn: {name:'루시엘',ticker:'AMZN',sector:'IT',price:19822,rarity:'SSR',color:'#ff9900',unlocked:false},
-meta: {name:'미오',ticker:'META',sector:'IT',price:64399,rarity:'SSR',color:'#0668e1',unlocked:false},
-tsla: {name:'티아',ticker:'TSLA',sector:'제조',price:41593,rarity:'SSR',color:'#e31937',unlocked:false},
-tsm:  {name:'세리아',ticker:'TSM',sector:'반도체',price:36794,rarity:'SR',color:'#0070ad',unlocked:false},
-brk:  {name:'벨라',ticker:'BRK.B',sector:'금융',price:49709,rarity:'SR',color:'#4a3000',unlocked:false},
-asml: {name:'엘린',ticker:'ASML',sector:'반도체',price:142639,rarity:'SR',color:'#0055a5',unlocked:false},
-avgo: {name:'비올라',ticker:'AVGO',sector:'반도체',price:32880,rarity:'SR',color:'#cc0000',unlocked:false},
-jpm:  {name:'제니스',ticker:'JPM',sector:'금융',price:30217,rarity:'SR',color:'#005587',unlocked:false},
-wmt:  {name:'윈터',ticker:'WMT',sector:'소비재',price:13250,rarity:'SR',color:'#007dc6',unlocked:false},
-lly:  {name:'리리아',ticker:'LLY',sector:'헬스케어',price:105611,rarity:'SR',color:'#cc0066',unlocked:false},
-v:    {name:'비비안',ticker:'V',sector:'금융',price:32093,rarity:'SR',color:'#1a1f71',unlocked:false},
-jnj:  {name:'클로에',ticker:'JNJ',sector:'헬스케어',price:24295,rarity:'SR',color:'#cc0000',unlocked:false},
-ma:   {name:'웬디',ticker:'MA',sector:'금융',price:52448,rarity:'SR',color:'#eb001b',unlocked:false},
-xom:  {name:'에르나',ticker:'XOM',sector:'에너지',price:14990,rarity:'SR',color:'#cc0000',unlocked:false},
-cost: {name:'코하나',ticker:'COST',sector:'소비재',price:101200,rarity:'SR',color:'#005daa',unlocked:false},
-dis:  {name:'미온',ticker:'DIS',sector:'소비재',price:11200,rarity:'R',color:'#1a78c2',unlocked:false},
-nke:  {name:'나나',ticker:'NKE',sector:'소비재',price:7850,rarity:'R',color:'#ff6b00',unlocked:false},
-mcd:  {name:'마코',ticker:'MCD',sector:'소비재',price:31200,rarity:'R',color:'#ffc72c',unlocked:false},
-unh:  {name:'유이',ticker:'UNH',sector:'헬스케어',price:48200,rarity:'R',color:'#0070cc',unlocked:false},
-gs2:  {name:'글로리아',ticker:'GS',sector:'금융',price:56800,rarity:'R',color:'#7399c6',unlocked:false},
-adbe: {name:'아멜리아',ticker:'ADBE',sector:'IT',price:38900,rarity:'R',color:'#ff0000',unlocked:false},
-crm:  {name:'세실',ticker:'CRM',sector:'IT',price:32400,rarity:'R',color:'#00a1e0',unlocked:false},
-qcom: {name:'큐이',ticker:'QCOM',sector:'반도체',price:16800,rarity:'R',color:'#3253dc',unlocked:false},
-ko:   {name:'카렌',ticker:'KO',sector:'소비재',price:7837,rarity:'R',color:'#f40009',unlocked:false},
-sbux: {name:'스텔라',ticker:'SBUX',sector:'소비재',price:8920,rarity:'R',color:'#00704a',unlocked:false},
-pltr: {name:'피오나',ticker:'PLTR',sector:'IT',price:13076,rarity:'R',color:'#4a90d9',unlocked:false},
-amd:  {name:'엠마',ticker:'AMD',sector:'반도체',price:20778,rarity:'R',color:'#ed1c24',unlocked:false},
-mu:   {name:'미쿠',ticker:'MU',sector:'반도체',price:40565,rarity:'R',color:'#0070c0',unlocked:false},
-arm:  {name:'쥬리',ticker:'ARM',sector:'반도체',price:13800,rarity:'R',color:'#0091bd',unlocked:false},
-intc: {name:'일리아',ticker:'INTC',sector:'반도체',price:2390,rarity:'R',color:'#0068b5',unlocked:false},
-orcl: {name:'오필리아',ticker:'ORCL',sector:'IT',price:15882,rarity:'R',color:'#f80000',unlocked:false},
-ibm:  {name:'베키',ticker:'IBM',sector:'IT',price:26800,rarity:'R',color:'#1f70c1',unlocked:false},
-csco: {name:'샤를',ticker:'CSCO',sector:'IT',price:6420,rarity:'R',color:'#1ba0d7',unlocked:false},
-now:  {name:'소피아',ticker:'NOW',sector:'IT',price:91500,rarity:'R',color:'#81b5a1',unlocked:false},
-uber: {name:'유벨',ticker:'UBER',sector:'IT',price:8100,rarity:'R',color:'#333333',unlocked:false},
-spot: {name:'페넬로페',ticker:'SPOT',sector:'IT',price:62000,rarity:'R',color:'#1db954',unlocked:false},
-shop: {name:'셜리',ticker:'SHOP',sector:'IT',price:10800,rarity:'R',color:'#96bf48',unlocked:false},
-coin: {name:'코하루',ticker:'COIN',sector:'금융',price:24300,rarity:'R',color:'#0052ff',unlocked:false},
-hd:   {name:'델리아',ticker:'HD',sector:'소비재',price:39003,rarity:'R',color:'#f96302',unlocked:false},
-nflx: {name:'노아',ticker:'NFLX',sector:'IT',price:76500,rarity:'N',color:'#e50914',unlocked:true},
-bac:  {name:'베티',ticker:'BAC',sector:'금융',price:5237,rarity:'N',color:'#e31837',unlocked:false},
-wfc:  {name:'위니아',ticker:'WFC',sector:'금융',price:7800,rarity:'N',color:'#d71e28',unlocked:false},
-ms2:  {name:'모모',ticker:'MS',sector:'금융',price:13200,rarity:'N',color:'#002b5c',unlocked:false},
-axp:  {name:'아카리',ticker:'AXP',sector:'금융',price:29400,rarity:'N',color:'#007bc1',unlocked:false},
-schw: {name:'셀린',ticker:'SCHW',sector:'금융',price:8900,rarity:'N',color:'#00adef',unlocked:false},
-spgi: {name:'에스텔',ticker:'SPGI',sector:'금융',price:48900,rarity:'N',color:'#ee3124',unlocked:false},
-abbv: {name:'아비게일',ticker:'ABBV',sector:'헬스케어',price:23135,rarity:'N',color:'#071d49',unlocked:false},
-mrk:  {name:'메리',ticker:'MRK',sector:'헬스케어',price:12192,rarity:'N',color:'#009a44',unlocked:false},
-pfe:  {name:'피피',ticker:'PFE',sector:'헬스케어',price:2760,rarity:'N',color:'#0093d0',unlocked:false},
-tmo:  {name:'세나',ticker:'TMO',sector:'헬스케어',price:46800,rarity:'N',color:'#3f7abf',unlocked:false},
-isrg: {name:'이리나',ticker:'ISRG',sector:'헬스케어',price:54200,rarity:'N',color:'#0066cc',unlocked:false},
-cvx:  {name:'셰리',ticker:'CVX',sector:'에너지',price:18283,rarity:'R',color:'#009bde',unlocked:false},
-cop:  {name:'코토네',ticker:'COP',sector:'에너지',price:10200,rarity:'N',color:'#cc0000',unlocked:false},
-nee:  {name:'네네',ticker:'NEE',sector:'에너지',price:6800,rarity:'N',color:'#00a0df',unlocked:false},
-cat:  {name:'카티아',ticker:'CAT',sector:'제조',price:77400,rarity:'N',color:'#ffcd11',unlocked:false},
-ge:   {name:'지젤',ticker:'GE',sector:'제조',price:32151,rarity:'N',color:'#0066cc',unlocked:false},
-ba:   {name:'보미',ticker:'BA',sector:'제조',price:17200,rarity:'N',color:'#1d4289',unlocked:false},
-lmt:  {name:'루비',ticker:'LMT',sector:'제조',price:45300,rarity:'N',color:'#1c639e',unlocked:false},
-rtx:  {name:'리타',ticker:'RTX',sector:'제조',price:12800,rarity:'N',color:'#00205b',unlocked:false},
-hon:  {name:'하나',ticker:'HON',sector:'제조',price:21600,rarity:'N',color:'#cc2031',unlocked:false},
-de:   {name:'다나',ticker:'DE',sector:'제조',price:44800,rarity:'N',color:'#367c2b',unlocked:false},
-tgt:  {name:'티타니아',ticker:'TGT',sector:'소비재',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
-low:  {name:'레이첼',ticker:'LOW',sector:'소비재',price:24600,rarity:'N',color:'#004990',unlocked:false},
-pep:  {name:'시즈쿠',ticker:'PEP',sector:'소비재',price:14700,rarity:'N',color:'#004b93',unlocked:false},
-pg:   {name:'피아',ticker:'PG',sector:'소비재',price:16055,rarity:'N',color:'#003087',unlocked:false},
-pm:   {name:'미리암',ticker:'PM',sector:'소비재',price:14500,rarity:'N',color:'#cc0000',unlocked:false},
-race: {name:'플로라',ticker:'RACE',sector:'제조',price:45600,rarity:'N',color:'#cc0000',unlocked:false},
-nvo:  {name:'노엘',ticker:'NVO',sector:'헬스케어',price:8200,rarity:'N',color:'#0099cc',unlocked:false},
-sap:  {name:'사야',ticker:'SAP',sector:'IT',price:26400,rarity:'N',color:'#008fd3',unlocked:false},
-app2: {name:'헤이즐',ticker:'APP',sector:'IT',price:32400,rarity:'N',color:'#6c3483',unlocked:false},
-oxy:  {name:'오를리',ticker:'OXY',sector:'에너지',price:4800,rarity:'N',color:'#cc0000',unlocked:false},
-mco:  {name:'미디아',ticker:'MCO',sector:'금융',price:49200,rarity:'N',color:'#0056a2',unlocked:false},
-bx:   {name:'비앙카',ticker:'BX',sector:'금융',price:17800,rarity:'N',color:'#333333',unlocked:false},
-txn:  {name:'티오',ticker:'TXN',sector:'반도체',price:18900,rarity:'N',color:'#c1121f',unlocked:false},
-amat: {name:'앨리스',ticker:'AMAT',sector:'반도체',price:18200,rarity:'N',color:'#0066cc',unlocked:false},
-klac: {name:'클라라',ticker:'KLAC',sector:'반도체',price:82700,rarity:'N',color:'#0099cc',unlocked:false},
-mrvl: {name:'마리아',ticker:'MRVL',sector:'반도체',price:8700,rarity:'N',color:'#cc0000',unlocked:false},
-regn: {name:'리네아',ticker:'REGN',sector:'헬스케어',price:62800,rarity:'N',color:'#00529b',unlocked:false},
-vrtx: {name:'베로니카',ticker:'VRTX',sector:'헬스케어',price:44600,rarity:'N',color:'#6c3483',unlocked:false},
-amgn: {name:'안나',ticker:'AMGN',sector:'헬스케어',price:29100,rarity:'N',color:'#0066cc',unlocked:false},
-gild: {name:'가넷',ticker:'GILD',sector:'헬스케어',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
-abt:  {name:'에바',ticker:'ABT',sector:'헬스케어',price:13400,rarity:'N',color:'#005eb8',unlocked:false},
-ups:  {name:'유즈',ticker:'UPS',sector:'제조',price:11900,rarity:'N',color:'#330000',unlocked:false},
-pypl: {name:'파르페',ticker:'PYPL',sector:'금융',price:8700,rarity:'N',color:'#003087',unlocked:false},
-abnb: {name:'에이미',ticker:'ABNB',sector:'IT',price:13600,rarity:'N',color:'#ff5a5f',unlocked:false},
-snow: {name:'시논',ticker:'SNOW',sector:'IT',price:19200,rarity:'N',color:'#29b5e8',unlocked:false},
-f:    {name:'사라',ticker:'F',sector:'제조',price:1000,rarity:'N',color:'#003476',unlocked:false},
-gm:   {name:'젬마',ticker:'GM',sector:'제조',price:5600,rarity:'N',color:'#0059a3',unlocked:false},
-vz:   {name:'라일라',ticker:'VZ',sector:'IT',price:4500,rarity:'N',color:'#cd040b',unlocked:false},
-t2:   {name:'에일린',ticker:'T',sector:'IT',price:2800,rarity:'N',color:'#00a8e0',unlocked:false}
+aris: {name:'아리스',ticker:'ARIS',sector:'IT',price:25960,rarity:'SSR',color:'#4a90d9',unlocked:false},
+noxs: {name:'녹스',ticker:'NOXS',sector:'반도체',price:18383,rarity:'SSR',color:'#76b900',unlocked:false},
+eter: {name:'에테르',ticker:'ETER',sector:'IT',price:30669,rarity:'SSR',color:'#4285f4',unlocked:false},
+merh: {name:'메르헨',ticker:'MERH',sector:'IT',price:40296,rarity:'SSR',color:'#00a4ef',unlocked:false},
+luci: {name:'루시엘',ticker:'LUCI',sector:'IT',price:19822,rarity:'SSR',color:'#ff9900',unlocked:false},
+mio:  {name:'미오',ticker:'MIO',sector:'IT',price:64399,rarity:'SSR',color:'#0668e1',unlocked:false},
+tia:  {name:'티아',ticker:'TIA',sector:'제조',price:41593,rarity:'SSR',color:'#e31937',unlocked:false},
+seri: {name:'세리아',ticker:'SERI',sector:'반도체',price:36794,rarity:'SR',color:'#0070ad',unlocked:false},
+bell: {name:'벨라',ticker:'BELL',sector:'금융',price:49709,rarity:'SR',color:'#4a3000',unlocked:false},
+elin: {name:'엘린',ticker:'ELIN',sector:'반도체',price:142639,rarity:'SR',color:'#0055a5',unlocked:false},
+viol: {name:'비올라',ticker:'VIOL',sector:'반도체',price:32880,rarity:'SR',color:'#cc0000',unlocked:false},
+jeni: {name:'제니스',ticker:'JENI',sector:'금융',price:30217,rarity:'SR',color:'#005587',unlocked:false},
+wint: {name:'윈터',ticker:'WINT',sector:'소비재',price:13250,rarity:'SR',color:'#007dc6',unlocked:false},
+liri: {name:'리리아',ticker:'LIRI',sector:'헬스케어',price:105611,rarity:'SR',color:'#cc0066',unlocked:false},
+vivi: {name:'비비안',ticker:'VIVI',sector:'금융',price:32093,rarity:'SR',color:'#1a1f71',unlocked:false},
+cloe: {name:'클로에',ticker:'CLOE',sector:'헬스케어',price:24295,rarity:'SR',color:'#cc0000',unlocked:false},
+wend: {name:'웬디',ticker:'WEND',sector:'금융',price:52448,rarity:'SR',color:'#eb001b',unlocked:false},
+erna: {name:'에르나',ticker:'ERNA',sector:'에너지',price:14990,rarity:'SR',color:'#cc0000',unlocked:false},
+koha: {name:'코하나',ticker:'KOHA',sector:'소비재',price:101200,rarity:'SR',color:'#005daa',unlocked:false},
+mion: {name:'미온',ticker:'MION',sector:'소비재',price:11200,rarity:'R',color:'#1a78c2',unlocked:false},
+nana: {name:'나나',ticker:'NANA',sector:'소비재',price:7850,rarity:'R',color:'#ff6b00',unlocked:false},
+mako: {name:'마코',ticker:'MAKO',sector:'소비재',price:31200,rarity:'R',color:'#ffc72c',unlocked:false},
+yuii: {name:'유이',ticker:'YUII',sector:'헬스케어',price:48200,rarity:'R',color:'#0070cc',unlocked:false},
+glor: {name:'글로리아',ticker:'GLOR',sector:'금융',price:56800,rarity:'R',color:'#7399c6',unlocked:false},
+amel: {name:'아멜리아',ticker:'AMEL',sector:'IT',price:38900,rarity:'R',color:'#ff0000',unlocked:false},
+ceci: {name:'세실',ticker:'CECI',sector:'IT',price:32400,rarity:'R',color:'#00a1e0',unlocked:false},
+quii: {name:'큐이',ticker:'QUII',sector:'반도체',price:16800,rarity:'R',color:'#3253dc',unlocked:false},
+kare: {name:'카렌',ticker:'KARE',sector:'소비재',price:7837,rarity:'R',color:'#f40009',unlocked:false},
+stel: {name:'스텔라',ticker:'STEL',sector:'소비재',price:8920,rarity:'R',color:'#00704a',unlocked:false},
+fion: {name:'피오나',ticker:'FION',sector:'IT',price:13076,rarity:'R',color:'#4a90d9',unlocked:false},
+emma: {name:'엠마',ticker:'EMMA',sector:'반도체',price:20778,rarity:'R',color:'#ed1c24',unlocked:false},
+miku: {name:'미쿠',ticker:'MIKU',sector:'반도체',price:40565,rarity:'R',color:'#0070c0',unlocked:false},
+juri: {name:'쥬리',ticker:'JURI',sector:'반도체',price:13800,rarity:'R',color:'#0091bd',unlocked:false},
+ilia: {name:'일리아',ticker:'ILIA',sector:'반도체',price:2390,rarity:'R',color:'#0068b5',unlocked:false},
+ophi: {name:'오필리아',ticker:'OPHI',sector:'IT',price:15882,rarity:'R',color:'#f80000',unlocked:false},
+beck: {name:'베키',ticker:'BECK',sector:'IT',price:26800,rarity:'R',color:'#1f70c1',unlocked:false},
+char: {name:'샤를',ticker:'CHAR',sector:'IT',price:6420,rarity:'R',color:'#1ba0d7',unlocked:false},
+sofi: {name:'소피아',ticker:'SOFI',sector:'IT',price:91500,rarity:'R',color:'#81b5a1',unlocked:false},
+ubel: {name:'유벨',ticker:'UBEL',sector:'IT',price:8100,rarity:'R',color:'#333333',unlocked:false},
+pene: {name:'페넬로페',ticker:'PENE',sector:'IT',price:62000,rarity:'R',color:'#1db954',unlocked:false},
+shir: {name:'셜리',ticker:'SHIR',sector:'IT',price:10800,rarity:'R',color:'#96bf48',unlocked:false},
+kohr: {name:'코하루',ticker:'KOHR',sector:'금융',price:24300,rarity:'R',color:'#0052ff',unlocked:false},
+deli: {name:'델리아',ticker:'DELI',sector:'소비재',price:39003,rarity:'R',color:'#f96302',unlocked:false},
+noah: {name:'노아',ticker:'NOAH',sector:'IT',price:76500,rarity:'N',color:'#e50914',unlocked:true},
+bety: {name:'베티',ticker:'BETY',sector:'금융',price:5237,rarity:'N',color:'#e31837',unlocked:false},
+wini: {name:'위니아',ticker:'WINI',sector:'금융',price:7800,rarity:'N',color:'#d71e28',unlocked:false},
+momo: {name:'모모',ticker:'MOMO',sector:'금융',price:13200,rarity:'N',color:'#002b5c',unlocked:false},
+akar: {name:'아카리',ticker:'AKAR',sector:'금융',price:29400,rarity:'N',color:'#007bc1',unlocked:false},
+celi: {name:'셀린',ticker:'CELI',sector:'금융',price:8900,rarity:'N',color:'#00adef',unlocked:false},
+este: {name:'에스텔',ticker:'ESTE',sector:'금융',price:48900,rarity:'N',color:'#ee3124',unlocked:false},
+abig: {name:'아비게일',ticker:'ABIG',sector:'헬스케어',price:23135,rarity:'N',color:'#071d49',unlocked:false},
+mary: {name:'메리',ticker:'MARY',sector:'헬스케어',price:12192,rarity:'N',color:'#009a44',unlocked:false},
+pipi: {name:'피피',ticker:'PIPI',sector:'헬스케어',price:2760,rarity:'N',color:'#0093d0',unlocked:false},
+sena: {name:'세나',ticker:'SENA',sector:'헬스케어',price:46800,rarity:'N',color:'#3f7abf',unlocked:false},
+irina:{name:'이리나',ticker:'IRINA',sector:'헬스케어',price:54200,rarity:'N',color:'#0066cc',unlocked:false},
+sheri:{name:'셰리',ticker:'SHERI',sector:'에너지',price:18283,rarity:'R',color:'#009bde',unlocked:false},
+koto: {name:'코토네',ticker:'KOTO',sector:'에너지',price:10200,rarity:'N',color:'#cc0000',unlocked:false},
+nene: {name:'네네',ticker:'NENE',sector:'에너지',price:6800,rarity:'N',color:'#00a0df',unlocked:false},
+katia:{name:'카티아',ticker:'KATIA',sector:'제조',price:77400,rarity:'N',color:'#ffcd11',unlocked:false},
+gisel:{name:'지젤',ticker:'GISEL',sector:'제조',price:32151,rarity:'N',color:'#0066cc',unlocked:false},
+bomi: {name:'보미',ticker:'BOMI',sector:'제조',price:17200,rarity:'N',color:'#1d4289',unlocked:false},
+ruby: {name:'루비',ticker:'RUBY',sector:'제조',price:45300,rarity:'N',color:'#1c639e',unlocked:false},
+rita: {name:'리타',ticker:'RITA',sector:'제조',price:12800,rarity:'N',color:'#00205b',unlocked:false},
+hana: {name:'하나',ticker:'HANA',sector:'제조',price:21600,rarity:'N',color:'#cc2031',unlocked:false},
+dana: {name:'다나',ticker:'DANA',sector:'제조',price:44800,rarity:'N',color:'#367c2b',unlocked:false},
+tita: {name:'티타니아',ticker:'TITA',sector:'소비재',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
+rach: {name:'레이첼',ticker:'RACH',sector:'소비재',price:24600,rarity:'N',color:'#004990',unlocked:false},
+shiz: {name:'시즈쿠',ticker:'SHIZ',sector:'소비재',price:14700,rarity:'N',color:'#004b93',unlocked:false},
+pia:  {name:'피아',ticker:'PIA',sector:'소비재',price:16055,rarity:'N',color:'#003087',unlocked:false},
+miri: {name:'미리암',ticker:'MIRI',sector:'소비재',price:14500,rarity:'N',color:'#cc0000',unlocked:false},
+flor: {name:'플로라',ticker:'FLOR',sector:'제조',price:45600,rarity:'N',color:'#cc0000',unlocked:false},
+noel: {name:'노엘',ticker:'NOEL',sector:'헬스케어',price:8200,rarity:'N',color:'#0099cc',unlocked:false},
+saya: {name:'사야',ticker:'SAYA',sector:'IT',price:26400,rarity:'N',color:'#008fd3',unlocked:false},
+haze: {name:'헤이즐',ticker:'HAZE',sector:'IT',price:32400,rarity:'N',color:'#6c3483',unlocked:false},
+orly: {name:'오를리',ticker:'ORLY',sector:'에너지',price:4800,rarity:'N',color:'#cc0000',unlocked:false},
+medi: {name:'미디아',ticker:'MEDI',sector:'금융',price:49200,rarity:'N',color:'#0056a2',unlocked:false},
+bian: {name:'비앙카',ticker:'BIAN',sector:'금융',price:17800,rarity:'N',color:'#333333',unlocked:false},
+tio:  {name:'티오',ticker:'TIO',sector:'반도체',price:18900,rarity:'N',color:'#c1121f',unlocked:false},
+alic: {name:'앨리스',ticker:'ALIC',sector:'반도체',price:18200,rarity:'N',color:'#0066cc',unlocked:false},
+klar: {name:'클라라',ticker:'KLAR',sector:'반도체',price:82700,rarity:'N',color:'#0099cc',unlocked:false},
+mari: {name:'마리아',ticker:'MARI',sector:'반도체',price:8700,rarity:'N',color:'#cc0000',unlocked:false},
+line: {name:'리네아',ticker:'LINE',sector:'헬스케어',price:62800,rarity:'N',color:'#00529b',unlocked:false},
+vero: {name:'베로니카',ticker:'VERO',sector:'헬스케어',price:44600,rarity:'N',color:'#6c3483',unlocked:false},
+anna: {name:'안나',ticker:'ANNA',sector:'헬스케어',price:29100,rarity:'N',color:'#0066cc',unlocked:false},
+garn: {name:'가넷',ticker:'GARN',sector:'헬스케어',price:10800,rarity:'N',color:'#cc0000',unlocked:false},
+eva:  {name:'에바',ticker:'EVA',sector:'헬스케어',price:13400,rarity:'N',color:'#005eb8',unlocked:false},
+yuzu: {name:'유즈',ticker:'YUZU',sector:'제조',price:11900,rarity:'N',color:'#330000',unlocked:false},
+parf: {name:'파르페',ticker:'PARF',sector:'금융',price:8700,rarity:'N',color:'#003087',unlocked:false},
+amy:  {name:'에이미',ticker:'AMY',sector:'IT',price:13600,rarity:'N',color:'#ff5a5f',unlocked:false},
+sino: {name:'시논',ticker:'SINO',sector:'IT',price:19200,rarity:'N',color:'#29b5e8',unlocked:false},
+sara: {name:'사라',ticker:'SARA',sector:'제조',price:1000,rarity:'N',color:'#003476',unlocked:false},
+gemm: {name:'젬마',ticker:'GEMM',sector:'제조',price:5600,rarity:'N',color:'#0059a3',unlocked:false},
+layl: {name:'라일라',ticker:'LAYL',sector:'IT',price:4500,rarity:'N',color:'#cd040b',unlocked:false},
+aile: {name:'에일린',ticker:'AILE',sector:'IT',price:2800,rarity:'N',color:'#00a8e0',unlocked:false}
 };
 
 var SECTOR_COLORS = {
@@ -2363,56 +2368,56 @@ var NEWS_EVENTS = {
 
 // --- 신규 하이브리드 대사 시스템 ---
 var UNIQUE_DIALOGS = {
-  nflx: {
+  noah: {
     normal: ["주주님은 부자가 되면 뭘 하고 싶으세요?", "오늘도 속보가 뜨면 저랑 같이 단타쳐요!", "장세 확인하셨어요? 오늘 흐름이 심상치 않더라고요!", "오늘도 양봉 가득한 하루 만들어봐요~"],
     rising: ["장세 확인하셨어요? 오늘 흐름이 심상치 않더라고요!", "방금 새로운 소식이 도착했는데 반응이 엄청나요!", "이 기세라면 뭐든 다 해낼 수 있을 것 같아요."],
     falling: ["앗… 물리셨다고요? 괜찮아요! 비자발적 장기투자의 길로 들어서면 되죠, 하하…", "다음 단계를 위해 잠시 숨을 고르는 중이니 조금만 느긋하게 기다려주세요.", "새로운 일정을 짜는 중이에요. 기대하셔도 좋답니다."],
     tired: ["어제 너무 무리했더니 눈이 뻑뻑하네요...", "할 일이 한꺼번에 몰려서 조금 정신이 없어요...", "다음 계획 검토하느라 너무 피곤해요..."],
     vip: ["오직 주주님만을 위한 세상에 단 하나뿐인 특별한 이벤트를 준비할게요."]
   },
-  aapl: {
+  aris: {
     normal: ["이 우아한 분위기 좀 보세요. 아름답지 않나요?", "완벽함은 작은 디테일에서 완성되는 법이죠.", "한 번 제 매력에 빠지면 다른 곳엔 못 갈걸요?", "주주님을 위한 최고의 감동을 준비했어요."],
     rising: ["제 새로운 모습에 다들 감탄하고 있어요!", "오늘도 분위기가 아주 우아하게 무르익고 있네요.", "모두가 제 진가를 알아주는 건 당연한 결과죠."],
     falling: ["잠깐 쉬어가는 타이밍일 뿐이에요. 우아하게 기다려봐요.", "더 완벽한 다음 스텝을 위한 준비 과정이에요.", "걱정 마세요. 저만의 특별한 매력은 변하지 않으니까요."],
     tired: ["어머, 체력이 조금 부족한 것 같아요...", "잠깐 시원한 물 한 잔만 가져다주시겠어요?", "햇빛이 너무 눈부시네요. 조금 쉬어야겠어요."],
     vip: ["주주님만을 위한 최고급 프라이빗 케어를 시작할게요.", "주주님, 외출 준비를 완벽하게 마쳤습니다."]
   },
-  nvda: {
+  noxs: {
     normal: ["초고속 스피드의 세계로 안내할게!", "어때? 내 움직임, 정말 빠르지?", "복잡한 문제도 내 머리를 거치면 순식간이야!", "화려한 퍼포먼스는 내가 전부 책임질게."],
     rising: ["의뢰가 폭발해서 멈출 수가 없어!", "저기 뚫고 올라가는 거 보여? 장난 아니지!", "내 에너지가 한계를 부수고 있어!"],
     falling: ["잠깐 바람 좀 쐬면서 땀 좀 식힐게.", "더 높이 뛰기 위한 추진력 모으기랄까?", "걱정 마! 내 체력은 아주 튼튼하니까!"],
     tired: ["으으... 너무 달렸나 봐... 열이 안 식어...", "시원한 바람 좀 쐬게 해줘... 너무 더워...", "잠깐 숨 좀 고를게..."],
     vip: ["주주님! 이 구역의 에이스는 바로 나야! 최고의 속도를 보여줄게."]
   },
-  googl: {
+  eter: {
     normal: ["궁금한 게 있으면 언제든 물어보세요.", "상황을 분석해 보니, 지금이 최적의 타이밍이네요.", "제 직감은 절대 거짓말을 하지 않죠.", "주주님의 취향, 이미 다 파악해 두었어요."],
     rising: ["목표 초과 달성! 좋은 소식들이 쏟아지고 있어요!", "우리의 가치가 엄청나게 뛰고 있네요."],
     falling: ["더 나은 해답을 찾기 위해 고민하는 중이에요. 잠깐만 기다려주세요.", "가끔은 저도 조용히 책을 읽으며 쉬어가는 시간이 필요해요."],
     tired: ["대답이 조금 늦어지고 있네요... 피곤해서 그런가 봐요...", "머릿속을 조금 비워주시겠어요? 생각이 너무 많아요...", "정보를 정리하는 데 시간이 좀 걸리네요..."],
     vip: ["주주님의 모든 소중한 기억들, 제가 안전하게 보관해 드릴게요."]
   },
-  msft: {
+  merh: {
     normal: ["안정적인 환경은 제가 책임질게요.", "저와 함께라면 어디서든 안심할 수 있죠, 멋지지 않나요?", "오늘도 주변 정리 완료했어요. 편하게 계세요.", "모든 일의 기본은 탄탄한 기초랍니다."],
     rising: ["우리를 찾는 사람들이 엄청나게 늘고 있어요!", "모두가 가장 신뢰하는 파트너, 바로 저랍니다."],
     falling: ["더 쾌적한 환경을 만들기 위해 정기적으로 청소하는 시간이에요.", "잠깐 길이 막힌 것뿐이니 너무 걱정 마세요."],
     tired: ["신경 쓸 일이 너무 많아서 살짝 지치네요...", "준비 중이에요... 절 혼자 두지 말아 주세요...", "제가 처리해야 할 일거리가 산더미처럼 쌓였어요..."],
     vip: ["주주님을 위한 최상위 맞춤 지원, 지금 바로 시작할게요."]
   },
-  amzn: {
+  luci: {
     normal: ["원하시는 건 뭐든지 찾아드릴게요!", "부탁하신 일, 초고속으로 해결해 드릴게요!", "제 활동 영역은 오늘도 무한 확장 중이에요."],
     rising: ["쉴 틈 없이 바쁘게 돌아가고 있어요!", "우리를 응원해 주시는 분들이 폭발적으로 늘고 있네요."],
     falling: ["새로운 길을 개척하느라 에너지를 조금 썼을 뿐이에요.", "새로운 곳을 탐험하다 보면 가끔 쉬어가야 할 때도 있죠."],
     tired: ["부탁받은 일이 너무 많아서 일처리가 조금 지연되고 있어요...", "가방이 꽉 차서 더 이상 들어갈 데가 없네요... 으으...", "잠깐 짐 정리 좀 할게요..."],
     vip: ["주주님을 최고 등급 VIP로 모실게요! 모든 서비스는 무료예요."]
   },
-  meta: {
+  mio: {
     normal: ["주주님과 아직 가보지 못한 곳에 놀러 가고 싶어요.", "장기 투자는 참 어려운 것 같아요.", "흥미진진한 새로운 뉴스들을 확인해 보세요.", "저만의 비밀 아지트에 오신 걸 환영해요!"],
     rising: ["함께하는 시간이 역대 최고를 찍었어요!", "분위기가 엄청나게 달아오르고 있네요."],
     falling: ["더 완벽한 이벤트를 준비하는 중이에요.", "계획을 조금 수정하고 있으니 금방 더 재미있어질 거예요."],
     tired: ["약간 어지러워요...", "너무 힘을 썼나봐요... 조금만 쉴게요...", "너무 떠들었더니 목이 아파요..."],
     vip: ["주주님만을 위한 프라이빗한 파티룸을 오픈할게요."]
   },
-  tsla: {
+  tia: {
     normal: ["미래를 향해 달려갈게요. 꽉 잡으세요!", "제 시선은 이미 저 먼 별을 향해 있어요.", "가장 짜릿하고 새로운 모험, 경험해 볼래요?"],
     rising: ["컨디션 최고치 돌파! 당장이라도 날아갈 것 같아요!", "제 앞을 가로막을 수 있는 사람은 아무도 없어요!"],
     falling: ["힘차게 달리다 가끔 만나는 방지턱일 뿐이에요.", "하늘 높이 날아오르려면 거센 바람을 뚫고 나가야 하잖아요?"],
@@ -2481,7 +2486,7 @@ var GS = {
   tradeLabel: '1주',    // 💡 추가: 저장될 거래 수량 텍스트
   money: 3000000, total_assets: 3000000, start_assets: 3000000,
   gacha_count: 0, pity_count: 0, tickets: 10,
-  chars: {}, mainChar: 'nflx',
+  chars: {}, mainChar: 'noah',
   themeTimer: 0, noThemeTicks: 0,
   currentTheme: THEMES[0], nextTheme: null,
   inCrash: false, crashTicks: 0,
@@ -2555,10 +2560,10 @@ var TUT = {
     { type: 'action', target: '.nav-btn[data-screen="market"]', action: 'switch_market', text: '이제 하단의 [거래소] 탭을 눌러 주식 시장으로 이동해봐요!' },
     { type: 'dialog', text: '가상의 주식 시장이에요. 주가는 5초마다 실시간으로 변동하며, AI 붐, 금융주 강세, 시장 대폭락 같은 테마장이 랜덤하게 발생해요.' },
     { type: 'dialog', text: '또한 하단에 뜨는 속보나 실적 발표 뉴스에 따라 주가가 크게 요동치니 뉴스를 잘 확인하세요.' },
-        { type: 'action', target: '.stock-btn.buy[data-key="nflx"]', action: 'buy_nflx', text: '그럼 거래소 목록에 있는 \'노아\'의 [매수] 버튼을 눌러 직접 1주를 사볼까요?' },
+        { type: 'action', target: '.stock-btn.buy[data-key="noah"]', action: 'buy_noah', text: '그럼 거래소 목록에 있는 \'노아\'의 [매수] 버튼을 눌러 직접 1주를 사볼까요?' },
         { type: 'action', target: '.nav-btn[data-screen="portfolio"]', action: 'switch_portfolio', text: '매수한 주식을 확인하기 위해 하단의 [포트폴리오] 탭을 눌러 이동해보세요!' },
         { type: 'dialog', text: '이곳에선 매수한 주식의 평균 단가와 수익률 등 보유 현황을 한눈에 볼 수 있어요.' },
-        { type: 'action', target: '.port-card[data-key="nflx"]', action: 'open_detail', text: '방금 매수한 \'노아\' 종목 카드를 눌러 상세 정보를 확인해 볼까요?' },
+        { type: 'action', target: '.port-card[data-key="noah"]', action: 'open_detail', text: '방금 매수한 \'노아\' 종목 카드를 눌러 상세 정보를 확인해 볼까요?' },
     { type: 'dialog', text: '한 종목을 많이 사서 목표 금액에 도달하면 경영권을 얻어요. 경영권을 따내면 그 종목의 터치 수익이 2배, 배당금이 1.5배로 영구 상승해요.' },
     { type: 'dialog', text: '배당금은 주식을 가지고만 있어도 5분마다 들어와요. 여러 섹터에 골고루 분산 투자하면 배당금을 최대 1.5배 더 받을 수 있어요.' },
     { type: 'action', target: '#stock-detail-modal .modal-close', action: 'close_detail', text: '확인하셨다면 우측 상단의 [✖ 닫기] 버튼을 눌러 창을 닫아주세요.' },
@@ -2761,14 +2766,14 @@ function handleTutAction(e) {
   else if (s.action === 'switch_market') {
     switchScreen('market'); setTimeout(advanceTut, 400);
   } 
-  else if (s.action === 'buy_nflx') {
-    tradeMode = 1; trade('nflx', true); setTimeout(advanceTut, 400);
+  else if (s.action === 'buy_noah') {
+    tradeMode = 1; trade('noah', true); setTimeout(advanceTut, 400);
   } 
   else if (s.action === 'switch_portfolio') {
     switchScreen('portfolio'); setTimeout(advanceTut, 400);
   } 
   else if (s.action === 'open_detail') {
-    playSound('click'); showStockDetail('nflx');
+    playSound('click'); showStockDetail('noah');
     // 💡 핵심 수정: 모달창이 대화창을 가리지 않도록 z-index를 99997로 설정!
     document.getElementById('stock-detail-modal').style.zIndex = '99997';
     setTimeout(advanceTut, 500);
@@ -3192,6 +3197,34 @@ function load() {
     var s = localStorage.getItem(SAVE_KEY);
     if (!s) return;
     var d = JSON.parse(s);
+
+    // --- [과거 세이브 데이터 자동 변환(마이그레이션) 시작] ---
+    var MIGRATION_MAP = {"aapl":"aris","nvda":"noxs","googl":"eter","msft":"merh","amzn":"luci","meta":"mio","tsla":"tia","tsm":"seri","brk":"bell","asml":"elin","avgo":"viol","jpm":"jeni","wmt":"wint","lly":"liri","v":"vivi","jnj":"cloe","ma":"wend","xom":"erna","cost":"koha","dis":"mion","nke":"nana","mcd":"mako","unh":"yuii","gs2":"glor","adbe":"amel","crm":"ceci","qcom":"quii","ko":"kare","sbux":"stel","pltr":"fion","amd":"emma","mu":"miku","arm":"juri","intc":"ilia","orcl":"ophi","ibm":"beck","csco":"char","now":"sofi","uber":"ubel","spot":"pene","shop":"shir","coin":"kohr","hd":"deli","nflx":"noah","bac":"bety","wfc":"wini","ms2":"momo","axp":"akar","schw":"celi","spgi":"este","abbv":"abig","mrk":"mary","pfe":"pipi","tmo":"sena","isrg":"irina","cvx":"sheri","cop":"koto","nee":"nene","cat":"katia","ge":"gisel","ba":"bomi","lmt":"ruby","rtx":"rita","hon":"hana","de":"dana","tgt":"tita","low":"rach","pep":"shiz","pg":"pia","pm":"miri","race":"flor","nvo":"noel","sap":"saya","app2":"haze","oxy":"orly","mco":"medi","bx":"bian","txn":"tio","amat":"alic","klac":"klar","mrvl":"mari","regn":"line","vrtx":"vero","amgn":"anna","gild":"garn","abt":"eva","ups":"yuzu","pypl":"parf","abnb":"amy","snow":"sino","f":"sara","gm":"gemm","vz":"layl","t2":"aile"};
+    
+    if (d.mainChar && MIGRATION_MAP[d.mainChar]) {
+        d.mainChar = MIGRATION_MAP[d.mainChar];
+    }
+    if (d.earningPending && d.earningPending.key && MIGRATION_MAP[d.earningPending.key]) {
+        d.earningPending.key = MIGRATION_MAP[d.earningPending.key];
+    }
+    if (d.newsBoost) {
+        var newNewsBoost = {};
+        Object.keys(d.newsBoost).forEach(function(k) {
+            var newK = MIGRATION_MAP[k] || k;
+            newNewsBoost[newK] = d.newsBoost[k];
+        });
+        d.newsBoost = newNewsBoost;
+    }
+    if (d.chars) {
+        var newChars = {};
+        Object.keys(d.chars).forEach(function(k) {
+            var newK = MIGRATION_MAP[k] || k;
+            newChars[newK] = d.chars[k];
+        });
+        d.chars = newChars;
+    }
+    // --- [과거 세이브 데이터 자동 변환(마이그레이션) 끝] ---
+
     GS.money = (d.money !== undefined) ? d.money : GS.money;
     GS.total_assets = (d.total_assets !== undefined) ? d.total_assets : GS.total_assets;
     GS.start_assets = (d.start_assets !== undefined) ? d.start_assets : GS.start_assets;
@@ -3201,7 +3234,7 @@ function load() {
     GS.tickets = (d.tickets !== undefined) ? d.tickets : 10;
     GS.mg_hearts = (d.mg_hearts !== undefined) ? d.mg_hearts : 4;
     GS.mg_last_heart_time = d.mg_last_heart_time || Date.now();
-    GS.mainChar = d.mainChar || 'nflx';
+    GS.mainChar = d.mainChar || 'noah';
     if (d.tapCount) GS.tapCount = d.tapCount;
     if (d.totalTaps) GS.totalTaps = d.totalTaps;
     if (d.mainCharChangedAt) GS.mainCharChangedAt = d.mainCharChangedAt;
@@ -5752,7 +5785,7 @@ function devResetStep() {
     // 2. 모든 내부 변수 초기 상태로 롤백
     GS.money = 3000000; GS.total_assets = 3000000; GS.start_assets = 3000000;
     GS.gacha_count = 0; GS.pity_count = 0; GS.tickets = 10;
-    GS.mainChar = 'nflx'; GS.themeTimer = 0; GS.noThemeTicks = 0;
+    GS.mainChar = 'noah'; GS.themeTimer = 0; GS.noThemeTicks = 0;
     GS.currentTheme = THEMES[0]; GS.inCrash = false; GS.crashTicks = 0; GS.inBull = false; GS.bullTicks = 0;
     GS.currentNews = '월스트리트가 열렸습니다!'; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.actionMsg = ''; GS.tradeMsg = '';
     GS.tapCombo = 0; GS.tapCount = 0; GS.totalTaps = 0;
@@ -6822,13 +6855,13 @@ function drawAdvancedChart(k) {
 
 // --- 가챠 화면 SSR 슬라이드쇼 ---
 var ssrShowcaseList = [
-  { name: 'SSR 아리스', img: 'imgs/ssr_aeprin.png' },
-  { name: 'SSR 녹스', img: 'imgs/ssr_envia.png' },
-  { name: 'SSR 에테르', img: 'imgs/ssr_googri.png' },
-  { name: 'SSR 루시엘', img: 'imgs/ssr_amazone.png' },
-  { name: 'SSR 미오', img: 'imgs/ssr_metaling.png' },
-  { name: 'SSR 티아', img: 'imgs/ssr_tesrina.png' },
-  { name: 'SSR 메르헨', img: 'imgs/ssr_myso.png' }
+  { name: 'SSR 아리스', img: 'imgs/ssr_aris.png' },
+  { name: 'SSR 녹스', img: 'imgs/ssr_noxs.png' },
+  { name: 'SSR 에테르', img: 'imgs/ssr_eter.png' },
+  { name: 'SSR 루시엘', img: 'imgs/ssr_luci.png' },
+  { name: 'SSR 미오', img: 'imgs/ssr_mio.png' },
+  { name: 'SSR 티아', img: 'imgs/ssr_tia.png' },
+  { name: 'SSR 메르헨', img: 'imgs/ssr_merh.png' }
 ];
 var currentSsrIdx = 0;
 var ssrAutoTimer = null; 
