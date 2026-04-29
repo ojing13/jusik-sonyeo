@@ -25,7 +25,6 @@
   const db = firebase.firestore();
 
   // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
-  // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
   auth.onAuthStateChanged(function(user) {
     if (user) {
       console.log("파이어베이스 로그인 성공! ID:", user.uid);
@@ -40,28 +39,37 @@
         var localRaw = localStorage.getItem('sg_v3');
         var localData = localRaw ? JSON.parse(localRaw) : null;
         
+        // 💡 [방어막] 만약 방금 복구 버튼을 눌러서 새로고침된 상태라면?
+        // 서버와 비교하지 않고 로컬(복구된 데이터)을 즉시 서버에 박아버립니다.
+        var isRecovering = sessionStorage.getItem('sg_recovery_flag');
+        if (isRecovering === 'true') {
+          sessionStorage.removeItem('sg_recovery_flag');
+          if (localData) {
+            console.log("🚀 복구 모드 작동: 로컬 데이터를 서버에 강제 동기화합니다.");
+            userRef.set(localData);
+            load();
+            if (typeof renderAll === 'function') renderAll();
+            return; // 여기서 로직 종료
+          }
+        }
+
         if (doc.exists) {
           var serverData = doc.data();
-          
-          // 💡 [개선된 판별 로직] 
-          // 1. 서버에 데이터가 있고 + 폰에도 데이터가 있을 때만 비교를 시작합니다.
-          // 2. 폰 데이터의 시간이 서버 시간보다 크거나, 혹은 서버 데이터에 시간 정보가 아예 없다면(옛날 유저) 폰 데이터를 우선합니다.
           var serverTime = serverData.lastSaveTime || 0;
           var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
 
           if (localData && localTime >= serverTime) {
-            console.log("폰 데이터가 더 최신이거나 서버가 비어있음 -> 서버 갱신");
+            console.log("폰 데이터가 더 최신입니다. 서버를 갱신합니다.");
             userRef.set(localData); 
             load(); 
           } else {
-            console.log("서버 데이터가 더 최신임 -> 폰 갱신");
+            console.log("서버 데이터가 더 최신입니다. 폰을 갱신합니다.");
             localStorage.setItem('sg_v3', JSON.stringify(serverData));
             load();
           }
         } else {
-          // 서버에 아예 데이터가 없는 경우
           if (localData) {
-            console.log("최초 접속 유저: 서버에 데이터 등록");
+            console.log("신규 유저 서버 등록");
             userRef.set(localData);
             load();
           }
@@ -2093,7 +2101,7 @@ function copyRecoveryCode() {
   });
 }
 
-// 💡 무한 대기 방지 및 에러 로그가 강화된 계정 복구 기능
+// 💡 강제 우선권이 부여된 계정 복구 기능
 function restoreAccount() {
   var oldUid = document.getElementById('input-recovery-code').value.trim();
   if (!oldUid) {
@@ -2103,68 +2111,60 @@ function restoreAccount() {
   
   var currentUser = firebase.auth().currentUser;
   if (!currentUser) {
-      showToast("로그인이 아직 완료되지 않았습니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
+      showToast("로그인 대기 중입니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
       return;
   }
 
   if (oldUid === currentUser.uid) {
-      showToast("현재 이미 사용 중인 계정 코드입니다.", "#ffcc44", null, 3000, false, true);
+      showToast("현재 이미 사용 중인 계정입니다.", "#ffcc44", null, 3000, false, true);
       return;
   }
 
   playSound('click');
-  showToast("서버 금고 접속 중...", "#aaaaaa", null, 10000, false, true);
-  console.log("🚀 복구 시작 - 대상 UID:", oldUid);
+  showToast("데이터를 강제로 불러오는 중...", "#aaaaaa", null, 5000, false, true);
 
-  // 💡 [핵심 수정] get() 호출 시 타임아웃을 감지하기 위해 작업 시작을 알림
-  var isCompleted = false;
-  
-  // 5초 뒤에도 반응이 없으면 안내 메시지 출력
-  setTimeout(function() {
-    if (!isCompleted) {
-      showToast("인터넷 연결이 불안정하여 응답이 늦어지고 있습니다...", "#ffcc44", null, 5000, false, true);
-      console.warn("⚠️ 파이어베이스 응답 지연 중... 인터넷 상태나 보안 규칙을 확인하세요.");
-    }
-  }, 5000);
+  // 💡 [핵심] 복구 시작 전, 기존 앱의 자동 저장/틱 루프를 완전히 멈춰버립니다.
+  if (window._tickInterval) clearInterval(window._tickInterval);
+  mg.active = false; // 미니게임 중이라면 강제 종료
 
-  // 서버에서 데이터 가져오기 시도
   db.collection('users').doc(oldUid).get().then(function(doc) {
-      isCompleted = true;
       if (doc.exists) {
-          console.log("✅ 데이터 발견 성공!");
           var serverData = doc.data();
           
-          // 데이터 유효성 검사 (데이터가 비어있는지 확인)
-          if (!serverData || Object.keys(serverData).length === 0) {
-            showToast("금고가 비어있습니다. (데이터 없음)", "#ff4444", null, 3000, false, true);
+          // 데이터가 깨졌는지 확인
+          if (!serverData || !serverData.money) {
+            showToast("복구하려는 데이터가 비어있거나 올바르지 않습니다.", "#ff4444", null, 3000, false, true);
             return;
           }
 
-          // 저장 시간 강제 주입
+          // 💡 [핵심] 불러온 데이터의 시간을 '지금'으로 만들어 무조건 이기게 만듭니다.
           serverData.lastSaveTime = Date.now();
 
-          // 현재 계정에 덮어쓰기
+          // 💡 [핵심] '복구 모드' 깃발을 꽂습니다. 새로고침 후 상단 코드가 이걸 보고 반응합니다.
+          sessionStorage.setItem('sg_recovery_flag', 'true');
+
+          // 1. 내 폰(로컬)에 먼저 저장 (이게 제일 빠름)
+          localStorage.setItem('sg_v3', JSON.stringify(serverData));
+
+          // 2. 현재 내 파이어베이스 계정에도 즉시 저장
           db.collection('users').doc(currentUser.uid).set(serverData).then(function() {
-              console.log("✅ 데이터 덮어쓰기 완료");
-              localStorage.setItem('sg_v3', JSON.stringify(serverData));
-              showToast("복구 성공! 곧 게임을 재시작합니다.", "#66ff88", null, 3000, false, true);
+              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
               
+              // 3. 잠시 후 새로고침하여 바뀐 데이터를 강제 로드
               setTimeout(function() {
                   location.reload();
-              }, 1500);
-          }).catch(function(err) {
-              console.error("❌ 데이터 쓰기 에러:", err);
-              showToast("데이터 이전 중 쓰기 오류 발생: " + err.message, "#ff4444", null, 5000, false, true);
+              }, 1200);
+          }).catch(function(e) {
+              console.error("서버 쓰기 오류:", e);
+              // 서버 쓰기에 실패하더라도 로컬에는 저장했으니 강제로 진행
+              location.reload();
           });
       } else {
-          console.error("❌ 데이터 찾기 실패: 해당 UID가 서버에 없음");
-          showToast("유효하지 않은 복구 코드입니다. (서버에 없음)", "#ff4444", null, 5000, false, true);
+          showToast("잘못된 복구 코드입니다. 다시 확인해주세요.", "#ff4444", null, 5000, false, true);
       }
   }).catch(function(error) {
-      isCompleted = true;
-      console.error("❌ 서버 통신 에러:", error);
-      // 에러 메시지를 더 구체적으로 보여줌
-      showToast("서버 접속 에러: " + error.message, "#ff4444", null, 5000, false, true);
+      console.error("복구 서버 에러:", error);
+      showToast("서버 연결 실패: " + error.message, "#ff4444", null, 5000, false, true);
   });
 }
 
