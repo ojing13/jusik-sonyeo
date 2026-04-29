@@ -2101,7 +2101,7 @@ function copyRecoveryCode() {
   });
 }
 
-// 💡 강제 우선권이 부여된 계정 복구 기능
+// 💡 안전이 강화된 계정 복구 기능
 function restoreAccount() {
   var oldUid = document.getElementById('input-recovery-code').value.trim();
   if (!oldUid) {
@@ -2116,55 +2116,52 @@ function restoreAccount() {
   }
 
   if (oldUid === currentUser.uid) {
-      showToast("현재 이미 사용 중인 계정입니다.", "#ffcc44", null, 3000, false, true);
+      showToast("현재 이미 사용 중인 계정 코드입니다.", "#ffcc44", null, 3000, false, true);
       return;
   }
 
   playSound('click');
-  showToast("데이터를 강제로 불러오는 중...", "#aaaaaa", null, 5000, false, true);
+  showToast("데이터 확인 중...", "#aaaaaa", null, 3000, false, true);
 
-  // 💡 [핵심] 복구 시작 전, 기존 앱의 자동 저장/틱 루프를 완전히 멈춰버립니다.
-  if (window._tickInterval) clearInterval(window._tickInterval);
-  mg.active = false; // 미니게임 중이라면 강제 종료
-
+  // 💡 [핵심 변경] 아직 게임 루프(Tick)를 멈추지 않습니다!
   db.collection('users').doc(oldUid).get().then(function(doc) {
       if (doc.exists) {
           var serverData = doc.data();
           
-          // 데이터가 깨졌는지 확인
           if (!serverData || !serverData.money) {
-            showToast("복구하려는 데이터가 비어있거나 올바르지 않습니다.", "#ff4444", null, 3000, false, true);
+            showToast("복구하려는 데이터가 올바르지 않습니다.", "#ff4444", null, 3000, false, true);
             return;
           }
 
-          // 💡 [핵심] 불러온 데이터의 시간을 '지금'으로 만들어 무조건 이기게 만듭니다.
+          // ✅ 데이터를 정상적으로 찾았을 때만 기존 게임 루프를 중단합니다.
+          if (window._tickInterval) clearInterval(window._tickInterval);
+          mg.active = false; 
+
+          // 복구 모드 활성화 및 데이터 저장 시간 갱신
           serverData.lastSaveTime = Date.now();
-
-          // 💡 [핵심] '복구 모드' 깃발을 꽂습니다. 새로고침 후 상단 코드가 이걸 보고 반응합니다.
           sessionStorage.setItem('sg_recovery_flag', 'true');
-
-          // 1. 내 폰(로컬)에 먼저 저장 (이게 제일 빠름)
+          
+          // 내 폰에 먼저 저장
           localStorage.setItem('sg_v3', JSON.stringify(serverData));
 
-          // 2. 현재 내 파이어베이스 계정에도 즉시 저장
+          // 현재 내 계정에도 저장
           db.collection('users').doc(currentUser.uid).set(serverData).then(function() {
-              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
-              
-              // 3. 잠시 후 새로고침하여 바뀐 데이터를 강제 로드
+              showToast("복구 성공! 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
               setTimeout(function() {
                   location.reload();
               }, 1200);
-          }).catch(function(e) {
-              console.error("서버 쓰기 오류:", e);
-              // 서버 쓰기에 실패하더라도 로컬에는 저장했으니 강제로 진행
+          }).catch(function() {
+              // 서버 저장에 실패해도 로컬엔 저장됐으니 새로고침 진행
               location.reload();
           });
       } else {
-          showToast("잘못된 복구 코드입니다. 다시 확인해주세요.", "#ff4444", null, 5000, false, true);
+          // ❌ 코드가 틀렸을 때는 아무것도 멈추지 않고 경고 알림만 띄웁니다.
+          // 게임(Tick)은 뒤에서 계속 정상적으로 돌아갑니다.
+          showToast("유효하지 않은 복구 코드입니다.", "#ff4444", null, 3000, false, true);
       }
   }).catch(function(error) {
-      console.error("복구 서버 에러:", error);
-      showToast("서버 연결 실패: " + error.message, "#ff4444", null, 5000, false, true);
+      console.error("복구 에러:", error);
+      showToast("서버 연결 실패: " + error.message, "#ff4444", null, 3000, false, true);
   });
 }
 
@@ -6589,7 +6586,8 @@ function initializeGame() {
   updateMissions(); updateTotalAssets(); updateDialogState(true); renderAll();
   if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
 
-  setInterval(tick, 5000);
+  // 💡 나중에 복구 시 멈출 수 있도록 이름표(window._tickInterval)를 붙여줍니다.
+  window._tickInterval = setInterval(tick, 5000);
 }
 // --- 📖 도감(컬렉션) 시스템 ---
 var currentDictTab = '전체';
