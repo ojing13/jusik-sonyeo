@@ -3,6 +3,72 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>주식소녀</title>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // 스크린샷에서 발급받은 우리 게임만의 고유 열쇠
+  const firebaseConfig = {
+    apiKey: "AIzaSyCNMFsmYfll62U6Blay8LBPasn6xbKfBfc",
+    authDomain: "jusik-sonyeo.firebaseapp.com",
+    projectId: "jusik-sonyeo",
+    storageBucket: "jusik-sonyeo.firebasestorage.app",
+    messagingSenderId: "51450164735",
+    appId: "1:51450164735:web:e142be60687de95f0f63ca",
+    measurementId: "G-SP062HJMBG"
+  };
+
+  // 파이어베이스 금고 문 열기
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      console.log("파이어베이스 로그인 성공! ID:", user.uid);
+      window.userUid = user.uid;
+    
+      // 👇 파이어베이스 로그인이 성공하는 즉시 설정창의 텍스트를 강제로 바꿔줍니다!
+      var recoveryInput = document.getElementById('my-recovery-code');
+      if (recoveryInput) recoveryInput.value = user.uid;
+      
+      const userRef = db.collection('users').doc(user.uid);
+      
+      userRef.get().then(function(doc) {
+        if (doc.exists) {
+          // 1. 서버에 데이터가 이미 있는 경우: 서버 데이터를 내려받음
+          console.log("서버 장부를 확인했습니다. 데이터를 동기화합니다.");
+          var serverData = doc.data();
+          localStorage.setItem('sg_v3', JSON.stringify(serverData));
+          load();
+          if (typeof renderAll === 'function') renderAll();
+        } else {
+          // 2. 서버에 데이터가 없는 경우 (기존 유저의 첫 접속): 로컬 데이터를 서버로 업로드!
+          console.log("새로운 유저(또는 기존 유저의 첫 동기화)입니다. 데이터를 서버에 등록합니다.");
+          var localData = localStorage.getItem('sg_v3');
+          if (localData) {
+            // 폰에 데이터가 있다면 서버로 즉시 복사
+            userRef.set(JSON.parse(localData)).then(function() {
+              console.log("기존 로컬 데이터를 서버 금고로 안전하게 이전했습니다!");
+            });
+            load(); // 기존 데이터로 게임 시작
+          } else {
+            // 아예 처음 하는 유저라면 기본 데이터로 시작
+            console.log("신규 유저입니다.");
+            if (typeof renderAll === 'function') renderAll();
+          }
+        }
+      }).catch(function(error) {
+        console.error("데이터 동기화 중 에러 발생:", error);
+      });
+
+    } else {
+      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
+    }
+  });
+</script>
 
 <script>
   (function() {
@@ -1865,7 +1931,29 @@ body, #app {
     </div>
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.4.0</div>
+      <div style="font-size:15px; color:var(--gold); margin-bottom:10px; text-align:center;">기기 변경 / 계정 복구</div>
+      
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
+          <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">내 복구 코드 (앱 삭제 전 복사해두세요)</div>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="my-recovery-code" readonly style="flex:1; padding:6px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px;" value="로딩중...">
+            <button onclick="copyRecoveryCode()" style="padding:6px 10px; background:#4477ff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-family:'Jua',sans-serif;">복사</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
+          <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">기존 데이터 불러오기</div>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="input-recovery-code" placeholder="복구 코드 입력" style="flex:1; padding:6px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px;">
+            <button onclick="restoreAccount()" style="padding:6px 10px; background:var(--red); color:#fff; border:none; border-radius:4px; cursor:pointer; font-family:'Jua',sans-serif;">복구</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
+      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.4.1</div>
       <div style="display:flex; gap:6px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
         <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
@@ -1909,6 +1997,57 @@ function updateSettingsUI() {
     notiBtn.textContent = GS.notiOn ? 'ON' : 'OFF';
     notiBtn.style.background = GS.notiOn ? 'var(--green)' : '#555566';
   }
+
+  // 💡 설정창이 열릴 때 내 고유 복구 코드를 띄워줍니다.
+  var recoveryInput = document.getElementById('my-recovery-code');
+  if (recoveryInput && window.userUid) {
+      recoveryInput.value = window.userUid;
+  }
+}
+
+// 💡 복구 코드 복사 기능
+function copyRecoveryCode() {
+  var code = document.getElementById('my-recovery-code').value;
+  if (!code || code === '로딩중...') return;
+  navigator.clipboard.writeText(code).then(function() {
+      showToast("복구 코드가 복사되었습니다!", "#66ff88", null, 3000, false, true);
+  });
+}
+
+// 💡 계정 복구(이어하기) 핵심 기능
+function restoreAccount() {
+  var oldUid = document.getElementById('input-recovery-code').value.trim();
+  if (!oldUid) {
+      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
+      return;
+  }
+  if (oldUid === window.userUid) {
+      showToast("현재 사용 중인 코드입니다.", "#ffcc44", null, 3000, false, true);
+      return;
+  }
+
+  playSound('click');
+  showToast("데이터를 찾는 중...", "#aaaaaa", null, 2000, false, true);
+
+  db.collection('users').doc(oldUid).get().then(function(doc) {
+      if (doc.exists) {
+          var serverData = doc.data();
+          // 1. 가져온 옛날 데이터를 내 새로운 서버 장부로 덮어쓰기!
+          db.collection('users').doc(window.userUid).set(serverData).then(function() {
+              // 2. 폰(로컬) 데이터도 덮어쓰고 게임 재시작
+              localStorage.setItem('sg_v3', JSON.stringify(serverData));
+              showToast("복구 성공! 게임을 재시작합니다.", "#66ff88", null, 3000, false, true);
+              setTimeout(function() {
+                  location.reload(); // 완벽한 데이터 적용을 위해 강제 새로고침
+              }, 1500);
+          });
+      } else {
+          showToast("잘못된 코드이거나 데이터가 없습니다.", "#ff4444", null, 3000, false, true);
+      }
+  }).catch(function(error) {
+      console.error(error);
+      showToast("복구 중 에러가 발생했습니다.", "#ff4444", null, 3000, false, true);
+  });
 }
 
 function toggleBGM() {
@@ -3131,26 +3270,25 @@ function fshare(v) {
 }
 
 function save() {
-  if (GS.isTutorial) return; 
-  
-  try {
-    GS.mg_highscore = GS.mg_highscore || 0;
-    var outChars = {};
-    Object.keys(GS.chars).forEach(function(k) {
-      var c = GS.chars[k];
-      outChars[k] = { 
-        owned: c.owned, avg_price: c.avg_price, level: c.level, 
-        energy: c.energy, max_energy: c.max_energy, is_vip: c.is_vip, 
-        unlocked: c.unlocked, price: c.price,
-        momentumTimer: c.momentumTimer,
-        biasTimer: c.biasTimer,
-        momentum: c.momentum, 
-        bias: c.bias,         
-        ref_price: c.ref_price,
-        latest_event: c.latest_event,
-        total_principal: c.total_principal,
-        // 👇 그동안 누락되어 새로고침 시 차트와 뉴스를 리셋시키던 주범들 완벽 복구! 👇
-        events: c.events ? c.events.slice() : [],
+  if (GS.isTutorial) return; 
+  
+  try {
+    GS.mg_highscore = GS.mg_highscore || 0;
+    var outChars = {};
+    Object.keys(GS.chars).forEach(function(k) {
+      var c = GS.chars[k];
+      outChars[k] = { 
+        owned: c.owned, avg_price: c.avg_price, level: c.level, 
+        energy: c.energy, max_energy: c.max_energy, is_vip: c.is_vip, 
+        unlocked: c.unlocked, price: c.price,
+        momentumTimer: c.momentumTimer,
+        biasTimer: c.biasTimer,
+        momentum: c.momentum, 
+        bias: c.bias,         
+        ref_price: c.ref_price,
+        latest_event: c.latest_event,
+        total_principal: c.total_principal,
+        events: c.events ? c.events.slice() : [],
         chart_1m: c.chart_1m || [],
         chart_10m: c.chart_10m || [],
         chart_1h: c.chart_1h || [],
@@ -3166,38 +3304,53 @@ function save() {
           return hist;
         })()
       };
-    });
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      mg_hearts: GS.mg_hearts, 
-      mg_last_heart_time: GS.mg_last_heart_time,
-      total_game_ticks: GS.total_game_ticks, // 👇 누락되어 시간을 0으로 되돌리던 마스터 시계 복구! 👇
-      money: GS.money, total_assets: GS.total_assets, start_assets: GS.start_assets,
-      gacha_count: GS.gacha_count, pity_count: GS.pity_count, tickets: GS.tickets,
-      mainChar: GS.mainChar, tapCount: GS.tapCount, totalTaps: GS.totalTaps,
-      mainCharChangedAt: GS.mainCharChangedAt, themeTimer: GS.themeTimer, noThemeTicks: GS.noThemeTicks,
-      currentThemeName: GS.currentTheme.name, missions: GS.missions,
-      inBull: GS.inBull, bullTicks: GS.bullTicks,
-      inCrash: GS.inCrash, crashTicks: GS.crashTicks, 
-      earningSeasonTicks: GS.earningSeasonTicks,     
-      earningPending: GS.earningPending,             
-      newsBoost: GS.newsBoost,                       
-      dividendTimer: GS.dividendTimer,
-      earningTimer: GS.earningTimer,
-      momentumTimer: GS.momentumTimer, 
-      biasTimer: GS.biasTimer, 
-      mg_highscore: GS.mg_highscore,
-      tradeMode: GS.tradeMode, 
-      tradeLabel: GS.tradeLabel, 
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
-      virtual_time: GS.virtual_time || Date.now(), // 💡 가상 시계 저장
-      adTicketUses: GS.adTicketUses, 
+    });
+
+    // 💡 1. 저장할 데이터를 하나의 덩어리(saveData)로 깔끔하게 묶어줍니다.
+    var saveData = {
+      mg_hearts: GS.mg_hearts, 
+      mg_last_heart_time: GS.mg_last_heart_time,
+      total_game_ticks: GS.total_game_ticks,
+      money: GS.money, total_assets: GS.total_assets, start_assets: GS.start_assets,
+      gacha_count: GS.gacha_count, pity_count: GS.pity_count, tickets: GS.tickets,
+      mainChar: GS.mainChar, tapCount: GS.tapCount, totalTaps: GS.totalTaps,
+      mainCharChangedAt: GS.mainCharChangedAt, themeTimer: GS.themeTimer, noThemeTicks: GS.noThemeTicks,
+      currentThemeName: GS.currentTheme.name, missions: GS.missions,
+      inBull: GS.inBull, bullTicks: GS.bullTicks,
+      inCrash: GS.inCrash, crashTicks: GS.crashTicks, 
+      earningSeasonTicks: GS.earningSeasonTicks,     
+      earningPending: GS.earningPending,             
+      newsBoost: GS.newsBoost,                       
+      dividendTimer: GS.dividendTimer,
+      earningTimer: GS.earningTimer,
+      momentumTimer: GS.momentumTimer, 
+      biasTimer: GS.biasTimer, 
+      mg_highscore: GS.mg_highscore,
+      tradeMode: GS.tradeMode, 
+      tradeLabel: GS.tradeLabel, 
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
+      virtual_time: GS.virtual_time || Date.now(),
+      adTicketUses: GS.adTicketUses, 
       adHeartUses: GS.adHeartUses, 
       adPumpUses: GS.adPumpUses,
-      lastAdDate: GS.lastAdDate,  
-      marketHistory: GS.marketHistory,
-      chars: outChars    
-    }));
-  } catch(e) {}
+      lastAdDate: GS.lastAdDate,  
+      marketHistory: GS.marketHistory,
+      chars: outChars    
+    };
+      
+    // 💡 2. 기존처럼 내 폰(로컬)에 저장
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+
+    // 💡 3. 파이어베이스 서버(금고)에도 똑같이 복사해서 안전하게 저장!
+    if (window.userUid && typeof db !== 'undefined') {
+      db.collection('users').doc(window.userUid).set(saveData).catch(function(error) {
+        console.error("서버 저장 실패:", error);
+      });
+    }
+
+  } catch(e) {
+    console.error("Save Error: ", e);
+  }
 }
 
 function load() {
