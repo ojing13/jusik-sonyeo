@@ -2093,8 +2093,7 @@ function copyRecoveryCode() {
   });
 }
 
-// 💡 계정 복구(이어하기) 핵심 기능
-// 💡 계정 복구(이어하기) 핵심 기능
+// 💡 무한 대기 방지 및 에러 로그가 강화된 계정 복구 기능
 function restoreAccount() {
   var oldUid = document.getElementById('input-recovery-code').value.trim();
   if (!oldUid) {
@@ -2104,7 +2103,7 @@ function restoreAccount() {
   
   var currentUser = firebase.auth().currentUser;
   if (!currentUser) {
-      showToast("로그인 세션이 불안정합니다. 새로고침 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
+      showToast("로그인이 아직 완료되지 않았습니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
       return;
   }
 
@@ -2114,36 +2113,58 @@ function restoreAccount() {
   }
 
   playSound('click');
-  showToast("서버 금고에서 데이터를 가져오는 중...", "#aaaaaa", null, 5000, false, true);
+  showToast("서버 금고 접속 중...", "#aaaaaa", null, 10000, false, true);
+  console.log("🚀 복구 시작 - 대상 UID:", oldUid);
 
+  // 💡 [핵심 수정] get() 호출 시 타임아웃을 감지하기 위해 작업 시작을 알림
+  var isCompleted = false;
+  
+  // 5초 뒤에도 반응이 없으면 안내 메시지 출력
+  setTimeout(function() {
+    if (!isCompleted) {
+      showToast("인터넷 연결이 불안정하여 응답이 늦어지고 있습니다...", "#ffcc44", null, 5000, false, true);
+      console.warn("⚠️ 파이어베이스 응답 지연 중... 인터넷 상태나 보안 규칙을 확인하세요.");
+    }
+  }, 5000);
+
+  // 서버에서 데이터 가져오기 시도
   db.collection('users').doc(oldUid).get().then(function(doc) {
+      isCompleted = true;
       if (doc.exists) {
+          console.log("✅ 데이터 발견 성공!");
           var serverData = doc.data();
           
-          // 💡 [핵심] 옛날 데이터라도 현재 폰에서 '최신'으로 인식하도록 저장 시간을 지금으로 강제 업데이트합니다.
+          // 데이터 유효성 검사 (데이터가 비어있는지 확인)
+          if (!serverData || Object.keys(serverData).length === 0) {
+            showToast("금고가 비어있습니다. (데이터 없음)", "#ff4444", null, 3000, false, true);
+            return;
+          }
+
+          // 저장 시간 강제 주입
           serverData.lastSaveTime = Date.now();
 
-          // 현재 내 계정(UID)에 가져온 데이터를 덮어씌웁니다.
+          // 현재 계정에 덮어쓰기
           db.collection('users').doc(currentUser.uid).set(serverData).then(function() {
-              // 폰(로컬)에도 즉시 저장
+              console.log("✅ 데이터 덮어쓰기 완료");
               localStorage.setItem('sg_v3', JSON.stringify(serverData));
+              showToast("복구 성공! 곧 게임을 재시작합니다.", "#66ff88", null, 3000, false, true);
               
-              showToast("복구 성공! 데이터를 불러왔습니다.", "#66ff88", null, 3000, false, true);
-              
-              // 1.5초 뒤 페이지를 새로고침하여 바뀐 데이터를 적용합니다.
               setTimeout(function() {
                   location.reload();
               }, 1500);
           }).catch(function(err) {
-              console.error("데이터 쓰기 오류:", err);
-              showToast("서버에 데이터를 쓰는 중 오류가 발생했습니다.", "#ff4444", null, 3000, false, true);
+              console.error("❌ 데이터 쓰기 에러:", err);
+              showToast("데이터 이전 중 쓰기 오류 발생: " + err.message, "#ff4444", null, 5000, false, true);
           });
       } else {
-          showToast("유효하지 않은 복구 코드입니다.", "#ff4444", null, 3000, false, true);
+          console.error("❌ 데이터 찾기 실패: 해당 UID가 서버에 없음");
+          showToast("유효하지 않은 복구 코드입니다. (서버에 없음)", "#ff4444", null, 5000, false, true);
       }
   }).catch(function(error) {
-      console.error("복구 서버 에러:", error);
-      showToast("서버 연결에 실패했습니다. 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
+      isCompleted = true;
+      console.error("❌ 서버 통신 에러:", error);
+      // 에러 메시지를 더 구체적으로 보여줌
+      showToast("서버 접속 에러: " + error.message, "#ff4444", null, 5000, false, true);
   });
 }
 
