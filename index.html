@@ -25,49 +25,53 @@
   const db = firebase.firestore();
 
   // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      console.log("파이어베이스 로그인 성공! ID:", user.uid);
-      window.userUid = user.uid;
-    
-      // 👇 파이어베이스 로그인이 성공하는 즉시 설정창의 텍스트를 강제로 바꿔줍니다!
-      var recoveryInput = document.getElementById('my-recovery-code');
-      if (recoveryInput) recoveryInput.value = user.uid;
-      
-      const userRef = db.collection('users').doc(user.uid);
-      
-      userRef.get().then(function(doc) {
-        if (doc.exists) {
-          // 1. 서버에 데이터가 이미 있는 경우: 서버 데이터를 내려받음
-          console.log("서버 장부를 확인했습니다. 데이터를 동기화합니다.");
-          var serverData = doc.data();
-          localStorage.setItem('sg_v3', JSON.stringify(serverData));
-          load();
-          if (typeof renderAll === 'function') renderAll();
-        } else {
-          // 2. 서버에 데이터가 없는 경우 (기존 유저의 첫 접속): 로컬 데이터를 서버로 업로드!
-          console.log("새로운 유저(또는 기존 유저의 첫 동기화)입니다. 데이터를 서버에 등록합니다.");
-          var localData = localStorage.getItem('sg_v3');
-          if (localData) {
-            // 폰에 데이터가 있다면 서버로 즉시 복사
-            userRef.set(JSON.parse(localData)).then(function() {
-              console.log("기존 로컬 데이터를 서버 금고로 안전하게 이전했습니다!");
-            });
-            load(); // 기존 데이터로 게임 시작
-          } else {
-            // 아예 처음 하는 유저라면 기본 데이터로 시작
-            console.log("신규 유저입니다.");
-            if (typeof renderAll === 'function') renderAll();
-          }
-        }
-      }).catch(function(error) {
-        console.error("데이터 동기화 중 에러 발생:", error);
-      });
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      console.log("파이어베이스 로그인 성공! ID:", user.uid);
+      window.userUid = user.uid;
+    
+      // 👇 파이어베이스 로그인이 성공하는 즉시 설정창의 텍스트를 강제로 바꿔줍니다!
+      var recoveryInput = document.getElementById('my-recovery-code');
+      if (recoveryInput) recoveryInput.value = user.uid;
+      
+      const userRef = db.collection('users').doc(user.uid);
+      
+      userRef.get().then(function(doc) {
+        var localRaw = localStorage.getItem('sg_v3');
+        var localData = localRaw ? JSON.parse(localRaw) : null;
+        
+        if (doc.exists) {
+          var serverData = doc.data();
+          
+          // 💡 [핵심] 시간 비교: 로컬 데이터가 존재하고 서버보다 더 최신(시간 숫자가 더 큼)이라면?
+          if (localData && localData.lastSaveTime > (serverData.lastSaveTime || 0)) {
+            console.log("로컬에 더 최신 데이터가 있습니다. 서버에 다시 업로드합니다.");
+            userRef.set(localData); // 서버에 최신 데이터 덮어쓰기 요청
+            load(); // 현재 로컬 데이터로 게임 시작
+          } else {
+            // 서버가 더 최신이거나 로컬이 비어있다면 서버 데이터를 따름
+            console.log("서버 데이터를 동기화합니다.");
+            localStorage.setItem('sg_v3', JSON.stringify(serverData));
+            load();
+          }
+          if (typeof renderAll === 'function') renderAll();
+        } else {
+          // 서버에 데이터가 아예 없는 신규 유저인 경우
+          console.log("신규 유저(또는 동기화 전)입니다.");
+          if (localData) {
+            userRef.set(localData);
+            load();
+          }
+          if (typeof renderAll === 'function') renderAll();
+        }
+      }).catch(function(error) {
+        console.error("데이터 동기화 중 에러 발생:", error);
+      });
 
-    } else {
-      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
-    }
-  });
+    } else {
+      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
+    }
+  });
 </script>
 
 <script>
@@ -1549,7 +1553,7 @@ body, #app {
           <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
             <div class="ticket-count" id="g-ticket-count" style="font-size: 19px; color: white; line-height: 1; margin: 0;">0장</div>
             
-            <button onclick="playSound('click'); openStore()" style="background: linear-gradient(135deg, #ff33aa, #cc0088) !important; color: white !important; border: none !important; border-bottom: 2px solid #880055 !important; outline: none; border-radius: 50%; width: 22px; height: 22px; min-width: 22px; min-height: 22px; max-width: 22px; max-height: 22px; padding: 0; margin: 0; font-size: 15px; font-family: 'Jua', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(255, 51, 170, 0.5), inset 0 1px 0 rgba(255,255,255,0.3); flex-shrink: 0;">+</button>
+            <div onclick="playSound('click'); openStore()" style="background: linear-gradient(135deg, #ff33aa, #cc0088) !important; color: white !important; border: none !important; outline: none; border-radius: 50%; width: 20px; height: 20px; min-width: 20px; min-height: 20px; max-width: 20px; max-height: 20px; padding: 0; margin: 0; font-size: 14px; line-height: 0; font-family: 'Jua', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(255, 51, 170, 0.5), inset 0 -2px 0 #880055, inset 0 1px 0 rgba(255, 255, 255, 0.3); flex-shrink: 0; box-sizing: border-box; -webkit-appearance: none;">+</div>
           </div>
         </div>
 
@@ -3400,8 +3404,9 @@ function save() {
       mg_highscore: GS.mg_highscore,
       tradeMode: GS.tradeMode, 
       tradeLabel: GS.tradeLabel, 
-      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, lastSaveTime: Date.now(),
-      virtual_time: GS.virtual_time || Date.now(),
+      bgmOn: GS.bgmOn, sfxOn: GS.sfxOn, notiOn: GS.notiOn, leftoverMs: GS.leftoverMs || 0, 
+      lastSaveTime: Date.now(), // 💡 저장하는 순간의 정확한 시간을 기록
+      virtual_time: GS.virtual_time || Date.now(),
       adTicketUses: GS.adTicketUses, 
       adHeartUses: GS.adHeartUses, 
       adPumpUses: GS.adPumpUses,
@@ -4073,12 +4078,13 @@ function tap(e) {
     }
 
     var charEl = document.getElementById('char-tap');
-    if (charEl) {
-        charEl.style.transform = 'scale(0.92)'; // 0.92배로 푹 누름
-        setTimeout(function() {
-            charEl.style.transform = 'scale(1)'; // 0.08초 뒤에 원래 크기(1배)로 복구
-        }, 80); 
-    }
+    if (charEl) {
+        if (window.tapTimeout) clearTimeout(window.tapTimeout); // 이전 타이머 취소
+        charEl.style.transform = 'scale(0.92)'; // 0.92배로 푹 누름
+        window.tapTimeout = setTimeout(function() {
+            charEl.style.transform = ''; // 스케일 리셋
+        }, 80); 
+    }
 
   // 💡 터치 이벤트면 '방금 닿은 손가락들(changedTouches)'을 가져오고, 마우스면 그냥 e를 배열로 만듭니다!
   var touches = (e && e.type === 'touchstart') ? e.changedTouches : [e];
@@ -6676,41 +6682,41 @@ function setChartTab(tab) {
 }
 
 function getChartTimeLabel(tab, ticksAgo) {
-  var now = GS.virtual_time || Date.now();
-  
-  // 1. 각 탭별 캔들 하나가 차지하는 '틱(5초)' 개수를 정확히 정의합니다.
-  var ticksPerCandle = 1;
-  if (tab === '1m') ticksPerCandle = 18;      // 1시간 탭 (캔들당 1.5분)
-  else if (tab === '1d') ticksPerCandle = 216;   // 12시간 탭 (캔들당 18분)
-  else if (tab === '10m') ticksPerCandle = 432;  // 1일 탭 (캔들당 36분)
-  else if (tab === '1h') ticksPerCandle = 3024; // 1주 탭 (캔들당 약 4.2시간)
-  
-  var intervalMs = ticksPerCandle * 5000;
-  
-  // 2. [핵심] 현재 시간을 해당 인터벌 단위로 '스냅(고정)' 처리합니다.
-  // 이렇게 하면 현재 시간이 16:05분이라도 18분 단위 캔들이라면 16:00 혹은 15:42 등 정규 시작점에 고정됩니다.
-  var snappedTime = Math.floor(now / intervalMs) * intervalMs;
-  
-  // 3. 고정된 시점으로부터 과거로 거슬러 올라간 시간을 계산합니다.
-  var d = new Date(snappedTime - (ticksAgo * 5000));
-  
-  var h = d.getHours();
-  var m = d.getMinutes();
-  var s = d.getSeconds();
-  var day = d.getDate();
-  var month = d.getMonth() + 1;
+  // 💡 가상 시계를 버리고 실제 기기의 현재 시간(Date.now)을 무조건 사용합니다!
+  var now = Date.now();
+  
+  // 1. 각 탭별 캔들 하나가 차지하는 '틱(5초)' 개수를 정확히 정의합니다.
+  var ticksPerCandle = 1;
+  if (tab === '1m') ticksPerCandle = 18;      // 1시간 탭 (캔들당 1.5분)
+  else if (tab === '1d') ticksPerCandle = 216;   // 12시간 탭 (캔들당 18분)
+  else if (tab === '10m') ticksPerCandle = 432;  // 1일 탭 (캔들당 36분)
+  else if (tab === '1h') ticksPerCandle = 3024; // 1주 탭 (캔들당 약 4.2시간)
+  
+  var intervalMs = ticksPerCandle * 5000;
+  
+  // 2. [핵심] 현재 시간을 해당 인터벌 단위로 '스냅(고정)' 처리합니다.
+  var snappedTime = Math.floor(now / intervalMs) * intervalMs;
+  
+  // 3. 고정된 시점으로부터 과거로 거슬러 올라간 시간을 계산합니다.
+  var d = new Date(snappedTime - (ticksAgo * 5000));
+  
+  var h = d.getHours();
+  var m = d.getMinutes();
+  var s = d.getSeconds();
+  var day = d.getDate();
+  var month = d.getMonth() + 1;
 
-  var hh = (h < 10 ? '0' : '') + h;
-  var mm = (m < 10 ? '0' : '') + m;
-  var ss = (s < 10 ? '0' : '') + s;
+  var hh = (h < 10 ? '0' : '') + h;
+  var mm = (m < 10 ? '0' : '') + m;
+  var ss = (s < 10 ? '0' : '') + s;
 
-  if (tab === '1h') { 
-    return month + '/' + day; 
-  } else if (tab === '10m' || tab === '1d' || tab === '1m') { 
-    return hh + ':' + mm; 
-  } else { 
-    return hh + ':' + mm + ':' + ss;
-  }
+  if (tab === '1h') { 
+    return month + '/' + day; 
+  } else if (tab === '10m' || tab === '1d' || tab === '1m') { 
+    return hh + ':' + mm; 
+  } else { 
+    return hh + ':' + mm + ':' + ss;
+  }
 }
 
 function showChartModal(k) {
