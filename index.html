@@ -7460,65 +7460,39 @@ document.addEventListener('DOMContentLoaded', function() {
 // --- [만능 버튼 반응속도 부스터] ---
 // 화면의 모든 버튼을 감지해서 스크롤 눈치 보지 않고 즉시 눌리게 만듭니다.
 var _touchStartBtn = null;
-var _touchStartX = 0;
-var _touchStartY = 0;
-var _touchMoved = false;
 
 document.addEventListener('touchstart', function(e) {
   var btn = e.target.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn');
   _touchStartBtn = btn;
-  _touchMoved = false;
   if (btn) {
-    _touchStartX = e.touches[0].clientX;
-    _touchStartY = e.touches[0].clientY;
     btn.style.transform = 'scale(0.95)';
     btn.style.transition = 'transform 0.05s ease';
   }
 }, {passive: true});
 
-document.addEventListener('touchmove', function(e) {
-  if (!_touchStartBtn) return;
-  var dx = Math.abs(e.touches[0].clientX - _touchStartX);
-  var dy = Math.abs(e.touches[0].clientY - _touchStartY);
-  if (dx > 10 || dy > 10) {
-    _touchMoved = true;
-    _touchStartBtn.style.transform = '';
-  }
-}, {passive: true});
-
 document.addEventListener('touchend', function(e) {
-  if (_touchStartBtn) {
-    setTimeout(function() {
-      if (_touchStartBtn) _touchStartBtn.style.transform = '';
-    }, 80);
-  }
+  if (!_touchStartBtn) return;
 
-  if (_touchMoved) {
-    // 손가락을 뗀 위치가 시작 버튼 안인지 확인
-    var endTarget = document.elementFromPoint(
-      e.changedTouches[0].clientX,
-      e.changedTouches[0].clientY
-    );
-    var endBtn = endTarget ? endTarget.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn') : null;
+  _touchStartBtn.style.transform = '';
 
-    // 시작 버튼과 끝 버튼이 다르면 차단
-    if (endBtn !== _touchStartBtn) {
-      e.preventDefault && e.preventDefault();
-      if (endBtn) endBtn.style.transform = '';
-      _touchStartBtn = null;
-      _touchMoved = false;
-      return;
-    }
+  // 손가락 뗀 위치 확인
+  var endTarget = document.elementFromPoint(
+    e.changedTouches[0].clientX,
+    e.changedTouches[0].clientY
+  );
+  var endBtn = endTarget ? endTarget.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn') : null;
+
+  // 시작 버튼과 끝 버튼이 다르면 차단
+  if (endBtn !== _touchStartBtn) {
+    e.preventDefault();
   }
 
   _touchStartBtn = null;
-  _touchMoved = false;
 }, {passive: false});
 
 document.addEventListener('touchcancel', function(e) {
   if (_touchStartBtn) _touchStartBtn.style.transform = '';
   _touchStartBtn = null;
-  _touchMoved = false;
 }, {passive: true});
 // -----------------------------------
 
