@@ -1422,6 +1422,10 @@ body, #app {
   position: absolute; top: 12px; right: 12px;
   font-size: 20px; color: var(--text2); cursor: pointer;
 }
+.nav-btn img, .nav-btn .icon img {
+  -webkit-touch-callout: none;
+  pointer-events: none;
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -7455,30 +7459,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- [만능 버튼 반응속도 부스터] ---
 // 화면의 모든 버튼을 감지해서 스크롤 눈치 보지 않고 즉시 눌리게 만듭니다.
+var _touchStartBtn = null;
+var _touchStartX = 0;
+var _touchStartY = 0;
+var _touchMoved = false;
+
 document.addEventListener('touchstart', function(e) {
-  // 게임 내에서 눌리는 효과가 필요한 버튼들의 클래스 목록
   var btn = e.target.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn');
+  _touchStartBtn = btn;
+  _touchMoved = false;
   if (btn) {
-    btn.style.transform = 'scale(0.95)'; // 터치 즉시 0.95배로 푹 누름
+    _touchStartX = e.touches[0].clientX;
+    _touchStartY = e.touches[0].clientY;
+    btn.style.transform = 'scale(0.95)';
     btn.style.transition = 'transform 0.05s ease';
   }
 }, {passive: true});
 
-document.addEventListener('touchend', function(e) {
-  var btn = e.target.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn');
-  if (btn) {
-    setTimeout(function() {
-      btn.style.transform = ''; // 손을 떼면 0.08초 뒤에 튕겨 올라오듯 원상복구
-    }, 80); 
+document.addEventListener('touchmove', function(e) {
+  if (!_touchStartBtn) return;
+  var dx = Math.abs(e.touches[0].clientX - _touchStartX);
+  var dy = Math.abs(e.touches[0].clientY - _touchStartY);
+  if (dx > 10 || dy > 10) {
+    _touchMoved = true;
+    _touchStartBtn.style.transform = '';
   }
 }, {passive: true});
 
-// 스크롤을 하거나 화면 밖으로 손가락이 나갔을 때(터치 취소) 원래대로 복구
-document.addEventListener('touchcancel', function(e) {
-  var btn = e.target.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn');
-  if (btn) {
-    btn.style.transform = '';
+document.addEventListener('touchend', function(e) {
+  if (_touchStartBtn) {
+    setTimeout(function() {
+      if (_touchStartBtn) _touchStartBtn.style.transform = '';
+    }, 80);
   }
+
+  if (_touchMoved) {
+    // 손가락을 뗀 위치가 시작 버튼 안인지 확인
+    var endTarget = document.elementFromPoint(
+      e.changedTouches[0].clientX,
+      e.changedTouches[0].clientY
+    );
+    var endBtn = endTarget ? endTarget.closest('.nav-btn, .gacha-btn, .stock-btn, .port-card, .dict-btn, .dict-card, .sector-tab, .qty-btn') : null;
+
+    // 시작 버튼과 끝 버튼이 다르면 차단
+    if (endBtn !== _touchStartBtn) {
+      e.preventDefault && e.preventDefault();
+      if (endBtn) endBtn.style.transform = '';
+      _touchStartBtn = null;
+      _touchMoved = false;
+      return;
+    }
+  }
+
+  _touchStartBtn = null;
+  _touchMoved = false;
+}, {passive: false});
+
+document.addEventListener('touchcancel', function(e) {
+  if (_touchStartBtn) _touchStartBtn.style.transform = '';
+  _touchStartBtn = null;
+  _touchMoved = false;
 }, {passive: true});
 // -----------------------------------
 
