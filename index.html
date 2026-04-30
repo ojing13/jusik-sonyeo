@@ -6,6 +6,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 
 <script>
   // 스크린샷에서 발급받은 우리 게임만의 고유 열쇠
@@ -25,67 +26,77 @@
   const db = firebase.firestore();
 
   // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      console.log("파이어베이스 로그인 성공! ID:", user.uid);
-      window.userUid = user.uid;
-    
-      var recoveryInput = document.getElementById('my-recovery-code');
-      if (recoveryInput) recoveryInput.value = user.uid;
-      
-      const userRef = db.collection('users').doc(user.uid);
-      
-      // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
-      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
-      if (isRecovering === 'true') {
-        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
-        var localRaw = localStorage.getItem('sg_v3');
-        if (localRaw) {
-          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
-          var localData = JSON.parse(localRaw);
-          userRef.set(localData); // 서버에 강제 덮어쓰기
-          load(); // 폰 데이터로 게임 시작
-          if (typeof renderAll === 'function') renderAll();
-          return; // 이후 서버 비교 로직 실행 안 함
-        }
-      }
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      console.log("파이어베이스 로그인 성공! ID:", user.uid);
+      window.userUid = user.uid;
+    
+      var recoveryInput = document.getElementById('my-recovery-code');
+      if (recoveryInput) recoveryInput.value = user.uid;
+      
+      const userRef = db.collection('users').doc(user.uid);
+      
+      // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
+      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
+      if (isRecovering === 'true') {
+        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
+        var localRaw = localStorage.getItem('sg_v3');
+        if (localRaw) {
+          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
+          var compressedRaw = LZString.compressToUTF16(localRaw);
+          userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 압축해서 저장!
+          load(); // 폰 데이터로 게임 시작
+          if (typeof renderAll === 'function') renderAll();
+          return; // 이후 서버 비교 로직 실행 안 함
+        }
+      }
 
-      // 💡 2. 일반 로드 로직
-      userRef.get().then(function(doc) {
-        var localRaw = localStorage.getItem('sg_v3');
-        var localData = localRaw ? JSON.parse(localRaw) : null;
-        
-        if (doc.exists) {
-          var serverData = doc.data();
-          var serverTime = serverData.lastSaveTime || 0;
-          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
+      // 💡 2. 일반 로드 로직
+      userRef.get().then(function(doc) {
+        var localRaw = localStorage.getItem('sg_v3');
+        var localData = localRaw ? JSON.parse(localRaw) : null;
+        
+        if (doc.exists) {
+          var serverData = doc.data();
+          // 💡 압축된 데이터면 풀어서 사용하고, 구버전 데이터면 그대로 사용!
+          if (serverData.is_compressed && serverData.saved_data) {
+            var decompressed = LZString.decompressFromUTF16(serverData.saved_data);
+            serverData = JSON.parse(decompressed);
+          } else if (serverData.saved_data) {
+            serverData = JSON.parse(serverData.saved_data);
+          }
 
-          // 폰 데이터가 더 최신이거나 서버 데이터에 시간 정보가 없으면 폰 데이터 사용
-          if (localData && localTime >= serverTime) {
-            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
-            userRef.set(localData);
-            load();
-          } else {
-            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
-            localStorage.setItem('sg_v3', JSON.stringify(serverData));
-            load();
-          }
-        } else {
-          if (localData) {
-            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
-            userRef.set(localData);
-            load();
-          }
-        }
-        if (typeof renderAll === 'function') renderAll();
-      }).catch(function(error) {
-        console.error("데이터 동기화 중 에러 발생:", error);
-      });
+          var serverTime = serverData.lastSaveTime || 0;
+          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
 
-    } else {
-      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
-    }
-  });
+          // 폰 데이터가 더 최신이거나 서버 데이터에 시간 정보가 없으면 폰 데이터 사용
+          if (localData && localTime >= serverTime) {
+            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
+            var compressedRaw = LZString.compressToUTF16(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 압축해서 덮어쓰기
+            load();
+          } else {
+            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
+            localStorage.setItem('sg_v3', JSON.stringify(serverData));
+            load();
+          }
+        } else {
+          if (localData) {
+            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
+            var compressedRaw = LZString.compressToUTF16(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 압축해서 생성
+            load();
+          }
+        }
+        if (typeof renderAll === 'function') renderAll();
+      }).catch(function(error) {
+        console.error("데이터 동기화 중 에러 발생:", error);
+      });
+
+    } else {
+      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
+    }
+  });
 </script>
 
 <script>
@@ -1985,15 +1996,15 @@ body, #app {
 
 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
       <div style="font-size:15px; color:var(--gold); margin-bottom:10px; text-align:center;">기기 변경 / 계정 복구</div>
-      
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
-          <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">내 복구 코드 (앱 삭제 전 복사해두세요)</div>
-          <div style="display:flex; gap:6px;">
-            <input type="text" id="my-recovery-code" readonly style="flex:1; padding:6px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px;" value="로딩중...">
-            <button onclick="copyRecoveryCode()" style="padding:6px 10px; background:#4477ff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-family:'Jua',sans-serif;">복사</button>
-          </div>
-        </div>
+      
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
+          <button onclick="backupAndCopyCode()" style="width:100%; padding:10px; background:var(--green); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:15px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">백업 및 복구 코드 발급</button>
+          <div id="recovery-code-container" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #444;">
+            <div style="font-size:11px; color:#ffcc44; margin-bottom:4px; text-align:center;">※ 코드가 유실되었을 경우 아래 텍스트를 직접 복사하세요.</div>
+            <input type="text" id="my-recovery-code" readonly onclick="this.select()" style="width:100%; padding:6px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px; text-align:center;" value="로딩중...">
+          </div>
+        </div>
 
         <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
           <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">기존 데이터 불러오기</div>
@@ -2095,80 +2106,137 @@ function updateSettingsUI() {
   }
 }
 
-// 💡 복구 코드 복사 기능
-function copyRecoveryCode() {
-  var code = document.getElementById('my-recovery-code').value;
-  if (!code || code === '로딩중...') return;
-  navigator.clipboard.writeText(code).then(function() {
-      showToast("복구 코드가 복사되었습니다!", "#66ff88", null, 3000, false, true);
-  });
+// 💡 클라우드 백업 및 복구 코드 복사 통합 기능
+function backupAndCopyCode() {
+  playSound('click');
+  if (!window.userUid || typeof db === 'undefined') {
+    showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
+    return;
+  }
+
+  var code = window.userUid;
+  var codeInput = document.getElementById('my-recovery-code');
+  var codeContainer = document.getElementById('recovery-code-container');
+  if (codeInput) codeInput.value = code;
+
+  showToast("서버에 백업하는 중...", "#aaaaaa", null, 2000, false, true);
+
+  try {
+    var localRaw = localStorage.getItem('sg_v3');
+    if (!localRaw) {
+      showToast("저장된 로컬 데이터가 없습니다.", "#ff4444", null, 3000, false, true);
+      return;
+    }
+
+    // undefined 에러 방지를 위해 JSON 파싱 후, 
+    // 파이어베이스 1MB 용량 제한을 피하기 위해 LZString으로 텍스트 압축!
+    var cleanData = JSON.parse(localRaw);
+    cleanData.lastSaveTime = Date.now(); 
+    var payloadStr = JSON.stringify(cleanData);
+    var compressedStr = LZString.compressToUTF16(payloadStr);
+
+    db.collection('users').doc(code).set({ saved_data: compressedStr, is_compressed: true }).then(function() {
+      if (codeContainer) codeContainer.style.display = 'block';
+      
+      // 💡 file:// 환경이거나 보안 정책에 막혔을 때를 대비한 구형 복사 방식 (Fallback)
+      var doFallbackCopy = function() {
+        if (codeInput) {
+          codeInput.focus();
+          codeInput.select();
+          try {
+            document.execCommand('copy');
+            showToast("백업 완료! 코드가 복사되었습니다. 메모장 등에 저장해두고 새 기기에서 붙여넣으세요.", "#66ff88", null, 5000, false, true);
+          } catch (err) {
+            showToast("백업은 성공했으나 자동 복사에 실패했습니다. 아래 코드를 직접 복사해주세요.", "#ffcc44", null, 5000, false, true);
+          }
+        }
+      };
+
+      // 1. 최신 클립보드 API 먼저 시도
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(code).then(function() {
+          showToast("백업 완료! 코드가 복사되었습니다. 메모장 등에 저장해두고 새 기기에서 붙여넣으세요.", "#66ff88", null, 5000, false, true);
+        }).catch(function() {
+          doFallbackCopy(); // 실패 시 구형 방식으로 재시도
+        });
+      } else {
+        doFallbackCopy(); // file:// 환경이면 바로 구형 방식 사용
+      }
+    }).catch(function(error) {
+      console.error("서버 백업 실패:", error);
+      showToast("백업 실패: " + error.message, "#ff4444", null, 4000, false, true);
+    });
+  } catch (e) {
+    console.error("백업 데이터 처리 오류:", e);
+    showToast("백업 데이터 처리 중 오류가 발생했습니다.", "#ff4444", null, 3000, false, true);
+  }
 }
 
 // 💡 올바른 코드일 때만 게임을 중단하는 스마트 복구 기능
 function restoreAccount() {
-  var oldUid = document.getElementById('input-recovery-code').value.trim();
-  if (!oldUid) {
-      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
-      return;
-  }
-  
-  var currentUser = firebase.auth().currentUser;
-  if (!currentUser) {
-      showToast("로그인 대기 중입니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
-      return;
-  }
+  var oldUid = document.getElementById('input-recovery-code').value.trim();
+  if (!oldUid) {
+      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
+      return;
+  }
+  
+  var currentUser = firebase.auth().currentUser;
+  if (!currentUser) {
+      showToast("로그인 대기 중입니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
+      return;
+  }
 
-  if (oldUid === currentUser.uid) {
-      showToast("현재 이미 사용 중인 계정입니다.", "#ffcc44", null, 3000, false, true);
-      return;
-  }
+  if (oldUid === currentUser.uid) {
+      showToast("현재 이미 사용 중인 계정입니다.", "#ffcc44", null, 3000, false, true);
+      return;
+  }
 
-  playSound('click');
-  showToast("서버 금고 확인 중...", "#aaaaaa", null, 5000, false, true);
+  playSound('click');
+  showToast("서버 금고 확인 중...", "#aaaaaa", null, 5000, false, true);
 
-  // 💡 아직 아무것도 멈추지 않습니다. 뒤에서 주가는 계속 움직입니다.
+  db.collection('users').doc(oldUid).get().then(function(doc) {
+      if (doc.exists) {
+          var serverData = doc.data();
+          
+          // 💡 압축된 데이터면 풀어서 사용하고, 구버전 데이터면 그대로 사용!
+          if (serverData.is_compressed && serverData.saved_data) {
+             var decompressed = LZString.decompressFromUTF16(serverData.saved_data);
+             serverData = JSON.parse(decompressed);
+          } else if (serverData.saved_data) {
+            serverData = JSON.parse(serverData.saved_data);
+          }
+          
+          if (!serverData || typeof serverData.money === 'undefined') {
+            showToast("금고에 데이터가 비어있습니다.", "#ff4444", null, 3000, false, true);
+            return;
+          }
 
-  db.collection('users').doc(oldUid).get().then(function(doc) {
-      if (doc.exists) {
-          var serverData = doc.data();
-          
-          if (!serverData || !serverData.money) {
-            showToast("금고에 데이터가 비어있습니다.", "#ff4444", null, 3000, false, true);
-            return;
-          }
+          console.log("🚀 복구 데이터 확인 성공! 엔진을 일시 정지하고 새로고침합니다.");
+          if (window._tickInterval) clearInterval(window._tickInterval);
+          mg.active = false; 
 
-          // ✅ [여기서부터 성공 시점] 이제 게임을 멈춥니다.
-          console.log("🚀 복구 데이터 확인 성공! 엔진을 일시 정지하고 새로고침합니다.");
-          if (window._tickInterval) clearInterval(window._tickInterval);
-          mg.active = false; 
+          sessionStorage.setItem('sg_recovery_flag', 'true');
+          
+          serverData.lastSaveTime = Date.now();
+          localStorage.setItem('sg_v3', JSON.stringify(serverData));
 
-          // 깃발 세우기 (새로고침 후 서버 덮어쓰기 방지용)
-          sessionStorage.setItem('sg_recovery_flag', 'true');
-          
-          // 데이터 최신 시간 주입 및 로컬 저장
-          serverData.lastSaveTime = Date.now();
-          localStorage.setItem('sg_v3', JSON.stringify(serverData));
-
-          // 내 현재 서버 장부에도 즉시 박아버림
-          db.collection('users').doc(currentUser.uid).set(serverData).then(function() {
-              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
-              setTimeout(function() {
-                  location.reload();
-              }, 1200);
-          }).catch(function(e) {
-              console.error("서버 갱신 중 오류:", e);
-              location.reload(); // 서버 쓰기 실패해도 로컬은 저장됐으니 강행
-          });
-      } else {
-          // ❌ 코드가 틀렸을 때
-          // 아무것도 멈추지 않았으므로 게임은 그대로 계속 돌아갑니다.
-          showToast("유효하지 않은 복구 코드입니다.", "#ff4444", null, 5000, false, true);
-      }
-  }).catch(function(error) {
-      // ❌ 네트워크 에러 시에도 게임은 멈추지 않습니다.
-      console.error("복구 서버 에러:", error);
-      showToast("서버 연결 실패: " + error.message, "#ff4444", null, 5000, false, true);
-  });
+          var compressedNew = LZString.compressToUTF16(JSON.stringify(serverData));
+          db.collection('users').doc(currentUser.uid).set({ saved_data: compressedNew, is_compressed: true }).then(function() {
+              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
+              setTimeout(function() {
+                  location.reload();
+              }, 1200);
+          }).catch(function(e) {
+              console.error("서버 갱신 중 오류:", e);
+              location.reload(); 
+          });
+      } else {
+          showToast("유효하지 않은 복구 코드입니다.", "#ff4444", null, 5000, false, true);
+      }
+  }).catch(function(error) {
+      console.error("복구 서버 에러:", error);
+      showToast("서버 연결 실패: " + error.message, "#ff4444", null, 5000, false, true);
+  });
 }
 
 function toggleBGM() {
@@ -3461,16 +3529,9 @@ function save() {
     };
       
     // 💡 2. 기존처럼 내 폰(로컬)에 저장
-    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
 
-    // 💡 3. 파이어베이스 서버(금고)에도 똑같이 복사해서 안전하게 저장!
-    if (window.userUid && typeof db !== 'undefined') {
-      db.collection('users').doc(window.userUid).set(saveData).catch(function(error) {
-        console.error("서버 저장 실패:", error);
-      });
-    }
-
-  } catch(e) {
+  } catch(e) {
     console.error("Save Error: ", e);
   }
 }
