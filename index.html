@@ -2109,6 +2109,8 @@ function updateSettingsUI() {
 // 💡 클라우드 백업 및 복구 코드 복사 통합 기능
 function backupAndCopyCode() {
   playSound('click');
+  save(); // 💡 백업 직전에, 방금 탭해서 번 돈이나 진행 상황을 로컬에 무조건 강제 저장!
+
   if (!window.userUid || typeof db === 'undefined') {
     showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
     return;
@@ -2118,18 +2120,17 @@ function backupAndCopyCode() {
   var codeInput = document.getElementById('my-recovery-code');
   var codeContainer = document.getElementById('recovery-code-container');
   if (codeInput) codeInput.value = code;
-  if (codeContainer) codeContainer.style.display = 'block'; // 💡 안전망 즉시 노출
+  if (codeContainer) codeContainer.style.display = 'block';
 
-  // 💡 [핵심 수정] 파이어베이스 서버 연결(비동기) 전에 버튼을 누른 즉시 복사부터 실행!
   var isCopied = false;
   try {
     var tempTextArea = document.createElement("textarea");
     tempTextArea.value = code;
-    tempTextArea.style.position = "fixed";  // 화면 흔들림 방지
+    tempTextArea.style.position = "fixed";
     tempTextArea.style.left = "-9999px";
     document.body.appendChild(tempTextArea);
     tempTextArea.select();
-    tempTextArea.setSelectionRange(0, 99999); // 모바일 호환성
+    tempTextArea.setSelectionRange(0, 99999);
     isCopied = document.execCommand('copy');
     document.body.removeChild(tempTextArea);
   } catch (err) {
@@ -2145,7 +2146,6 @@ function backupAndCopyCode() {
       return;
     }
 
-    // 파이어베이스 안전 규격인 Base64로 압축!
     var cleanData = JSON.parse(localRaw);
     cleanData.lastSaveTime = Date.now(); 
     var payloadStr = JSON.stringify(cleanData);
@@ -2193,11 +2193,10 @@ function restoreAccount() {
       if (doc.exists) {
           var serverData = doc.data();
           
-          // 💡 안전한 Base64 압축 해제
           if (serverData.is_compressed && serverData.saved_data) {
              var decompressed = LZString.decompressFromBase64(serverData.saved_data);
              if (decompressed) serverData = JSON.parse(decompressed);
-             else serverData = null; // 독사과(UTF16) 데이터면 무시
+             else serverData = null; 
           } else if (serverData.saved_data) {
             serverData = JSON.parse(serverData.saved_data);
           }
@@ -2208,6 +2207,8 @@ function restoreAccount() {
           }
 
           console.log("🚀 복구 데이터 확인 성공! 엔진을 일시 정지하고 새로고침합니다.");
+          window.isRestoring = true; // 💡 락다운 발동! 기다리는 1.2초 동안 그 어떤 자동 저장도 차단!
+
           if (window._tickInterval) clearInterval(window._tickInterval);
           mg.active = false; 
 
@@ -3455,9 +3456,10 @@ function fshare(v) {
 }
 
 function save() {
-  if (GS.isTutorial) return; 
-  
-  try {
+  if (GS.isTutorial) return; 
+  if (window.isRestoring) return; // 💡 락다운 발동: 복구가 진행되는 동안에는 로컬 덮어쓰기를 절대 금지!
+  
+  try {
     GS.mg_highscore = GS.mg_highscore || 0;
     var outChars = {};
     Object.keys(GS.chars).forEach(function(k) {
