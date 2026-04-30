@@ -36,6 +36,16 @@
       
       const userRef = db.collection('users').doc(user.uid);
       
+      // 🚨 실시간 계정 이전 감지 (Kill Switch)
+      userRef.onSnapshot(function(doc) {
+        if (doc.exists && doc.data().isTransferred) {
+          alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 초기화되며 새 계정으로 시작합니다.");
+          localStorage.removeItem('sg_v3');
+          localStorage.removeItem('sg_tutorial_done');
+          auth.signOut().then(function() { location.reload(); });
+        }
+      });
+
       // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
       var isRecovering = sessionStorage.getItem('sg_recovery_flag');
       if (isRecovering === 'true') {
@@ -2219,6 +2229,10 @@ function restoreAccount() {
 
           var compressedNew = LZString.compressToBase64(JSON.stringify(serverData));
           db.collection('users').doc(currentUser.uid).set({ saved_data: compressedNew, is_compressed: true }).then(function() {
+              // 🚨 방어막 3 (완벽한 계정 이전): 기존 기기의 서버 장부에 '이전 완료' 도장을 쾅 찍어서 
+              // 기존 기기(A)의 킬 스위치를 실시간으로 발동시키고, 해당 코드의 재사용을 완벽히 차단함!
+              db.collection('users').doc(oldUid).set({ isTransferred: true });
+
               showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
               setTimeout(function() {
                   location.reload();
