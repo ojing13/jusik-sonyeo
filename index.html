@@ -43,8 +43,8 @@
         var localRaw = localStorage.getItem('sg_v3');
         if (localRaw) {
           console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
-          var compressedRaw = LZString.compressToUTF16(localRaw);
-          userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 압축해서 저장!
+          var compressedRaw = LZString.compressToBase64(localRaw);
+          userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 Base64로 압축해서 저장!
           load(); // 폰 데이터로 게임 시작
           if (typeof renderAll === 'function') renderAll();
           return; // 이후 서버 비교 로직 실행 안 함
@@ -58,10 +58,10 @@
         
         if (doc.exists) {
           var serverData = doc.data();
-          // 💡 압축된 데이터면 풀어서 사용하고, 구버전 데이터면 그대로 사용!
+          // 💡 안전한 Base64 압축 해제
           if (serverData.is_compressed && serverData.saved_data) {
-            var decompressed = LZString.decompressFromUTF16(serverData.saved_data);
-            serverData = JSON.parse(decompressed);
+            var decompressed = LZString.decompressFromBase64(serverData.saved_data);
+            if (decompressed) serverData = JSON.parse(decompressed);
           } else if (serverData.saved_data) {
             serverData = JSON.parse(serverData.saved_data);
           }
@@ -72,8 +72,8 @@
           // 폰 데이터가 더 최신이거나 서버 데이터에 시간 정보가 없으면 폰 데이터 사용
           if (localData && localTime >= serverTime) {
             console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
-            var compressedRaw = LZString.compressToUTF16(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 압축해서 덮어쓰기
+            var compressedRaw = LZString.compressToBase64(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true });
             load();
           } else {
             console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
@@ -83,8 +83,8 @@
         } else {
           if (localData) {
             console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
-            var compressedRaw = LZString.compressToUTF16(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 압축해서 생성
+            var compressedRaw = LZString.compressToBase64(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true });
             load();
           }
         }
@@ -2128,12 +2128,11 @@ function backupAndCopyCode() {
       return;
     }
 
-    // undefined 에러 방지를 위해 JSON 파싱 후, 
-    // 파이어베이스 1MB 용량 제한을 피하기 위해 LZString으로 텍스트 압축!
+    // 파이어베이스 안전 규격인 Base64로 압축!
     var cleanData = JSON.parse(localRaw);
     cleanData.lastSaveTime = Date.now(); 
     var payloadStr = JSON.stringify(cleanData);
-    var compressedStr = LZString.compressToUTF16(payloadStr);
+    var compressedStr = LZString.compressToBase64(payloadStr);
 
     db.collection('users').doc(code).set({ saved_data: compressedStr, is_compressed: true }).then(function() {
       if (codeContainer) codeContainer.style.display = 'block';
@@ -2198,16 +2197,17 @@ function restoreAccount() {
       if (doc.exists) {
           var serverData = doc.data();
           
-          // 💡 압축된 데이터면 풀어서 사용하고, 구버전 데이터면 그대로 사용!
+          // 💡 안전한 Base64 압축 해제
           if (serverData.is_compressed && serverData.saved_data) {
-             var decompressed = LZString.decompressFromUTF16(serverData.saved_data);
-             serverData = JSON.parse(decompressed);
+             var decompressed = LZString.decompressFromBase64(serverData.saved_data);
+             if (decompressed) serverData = JSON.parse(decompressed);
+             else serverData = null; // 독사과(UTF16) 데이터면 무시
           } else if (serverData.saved_data) {
             serverData = JSON.parse(serverData.saved_data);
           }
           
           if (!serverData || typeof serverData.money === 'undefined') {
-            showToast("금고에 데이터가 비어있습니다.", "#ff4444", null, 3000, false, true);
+            showToast("금고에 데이터가 비어있습니다. 이전 기기에서 백업 버튼을 다시 눌러주세요.", "#ff4444", null, 4000, false, true);
             return;
           }
 
@@ -2220,7 +2220,7 @@ function restoreAccount() {
           serverData.lastSaveTime = Date.now();
           localStorage.setItem('sg_v3', JSON.stringify(serverData));
 
-          var compressedNew = LZString.compressToUTF16(JSON.stringify(serverData));
+          var compressedNew = LZString.compressToBase64(JSON.stringify(serverData));
           db.collection('users').doc(currentUser.uid).set({ saved_data: compressedNew, is_compressed: true }).then(function() {
               showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
               setTimeout(function() {
@@ -2238,7 +2238,6 @@ function restoreAccount() {
       showToast("서버 연결 실패: " + error.message, "#ff4444", null, 5000, false, true);
   });
 }
-
 function toggleBGM() {
   playSound('click');
   GS.bgmOn = !GS.bgmOn;
