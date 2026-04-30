@@ -2118,6 +2118,23 @@ function backupAndCopyCode() {
   var codeInput = document.getElementById('my-recovery-code');
   var codeContainer = document.getElementById('recovery-code-container');
   if (codeInput) codeInput.value = code;
+  if (codeContainer) codeContainer.style.display = 'block'; // 💡 안전망 즉시 노출
+
+  // 💡 [핵심 수정] 파이어베이스 서버 연결(비동기) 전에 버튼을 누른 즉시 복사부터 실행!
+  var isCopied = false;
+  try {
+    var tempTextArea = document.createElement("textarea");
+    tempTextArea.value = code;
+    tempTextArea.style.position = "fixed";  // 화면 흔들림 방지
+    tempTextArea.style.left = "-9999px";
+    document.body.appendChild(tempTextArea);
+    tempTextArea.select();
+    tempTextArea.setSelectionRange(0, 99999); // 모바일 호환성
+    isCopied = document.execCommand('copy');
+    document.body.removeChild(tempTextArea);
+  } catch (err) {
+    isCopied = false;
+  }
 
   showToast("서버에 백업하는 중...", "#aaaaaa", null, 2000, false, true);
 
@@ -2135,31 +2152,10 @@ function backupAndCopyCode() {
     var compressedStr = LZString.compressToBase64(payloadStr);
 
     db.collection('users').doc(code).set({ saved_data: compressedStr, is_compressed: true }).then(function() {
-      if (codeContainer) codeContainer.style.display = 'block';
-      
-      // 💡 file:// 환경이거나 보안 정책에 막혔을 때를 대비한 구형 복사 방식 (Fallback)
-      var doFallbackCopy = function() {
-        if (codeInput) {
-          codeInput.focus();
-          codeInput.select();
-          try {
-            document.execCommand('copy');
-            showToast("백업 완료! 코드가 복사되었습니다. 메모장 등에 저장해두고 새 기기에서 붙여넣으세요.", "#66ff88", null, 5000, false, true);
-          } catch (err) {
-            showToast("백업은 성공했으나 자동 복사에 실패했습니다. 아래 코드를 직접 복사해주세요.", "#ffcc44", null, 5000, false, true);
-          }
-        }
-      };
-
-      // 1. 최신 클립보드 API 먼저 시도
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(code).then(function() {
-          showToast("백업 완료! 코드가 복사되었습니다. 메모장 등에 저장해두고 새 기기에서 붙여넣으세요.", "#66ff88", null, 5000, false, true);
-        }).catch(function() {
-          doFallbackCopy(); // 실패 시 구형 방식으로 재시도
-        });
+      if (isCopied) {
+        showToast("백업 완료! 코드가 복사되었습니다. 메모장 등에 저장해두고 새 기기에서 붙여넣으세요.", "#66ff88", null, 5000, false, true);
       } else {
-        doFallbackCopy(); // file:// 환경이면 바로 구형 방식 사용
+        showToast("백업은 성공했으나 자동 복사에 실패했습니다. 아래 코드를 직접 꾹 눌러 복사해주세요.", "#ffcc44", null, 5000, false, true);
       }
     }).catch(function(error) {
       console.error("서버 백업 실패:", error);
@@ -2238,6 +2234,7 @@ function restoreAccount() {
       showToast("서버 연결 실패: " + error.message, "#ff4444", null, 5000, false, true);
   });
 }
+
 function toggleBGM() {
   playSound('click');
   GS.bgmOn = !GS.bgmOn;
