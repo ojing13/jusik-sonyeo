@@ -1605,10 +1605,8 @@ body, #app {
           </div>
           
           <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <div class="ticket-count" id="g-ticket-count" style="font-size: 19px; color: white; line-height: 1; margin: 0;">0장</div>
-            
-            <div onclick="playSound('click'); openStore()" style="background: linear-gradient(135deg, #ff33aa, #cc0088) !important; color: white !important; border: none !important; outline: none; border-radius: 50%; width: 20px; height: 20px; min-width: 20px; min-height: 20px; max-width: 20px; max-height: 20px; padding: 0; margin: 0; font-size: 14px; line-height: 0; font-family: 'Jua', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(255, 51, 170, 0.5), inset 0 -2px 0 #880055, inset 0 1px 0 rgba(255, 255, 255, 0.3); flex-shrink: 0; box-sizing: border-box; -webkit-appearance: none;">+</div>
-          </div>
+            <div class="ticket-count" id="g-ticket-count" style="font-size: 19px; color: white; line-height: 1; margin: 0;">0장</div>
+          </div>
         </div>
 
         <div class="gacha-info" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
@@ -2057,42 +2055,6 @@ body, #app {
     <div style="text-align:center; margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:center;">
       <div onclick="window.open('https://policies.google.com/privacy', '_blank')" style="font-size:10px; color:#888899; cursor:pointer; text-decoration:underline; user-select:none;">이용약관 및 개인정보처리방침</div>
       <div id="dev-reset-btn" onclick="playSound('click'); devResetStep()" style="font-size:10px; color:#444466; cursor:pointer; text-decoration:underline; user-select:none;">데이터 초기화</div>
-    </div>
-  </div>
-</div>
-
-<div id="store-modal" class="modal-overlay">
-  <div class="modal-content" style="max-width:320px; padding: 24px 20px;">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('store-modal').classList.remove('active')">✖</div>
-    <div style="font-size:22px; color:var(--gold); margin-bottom:5px; text-align:center;">티켓 충전소</div>
-    <div style="font-size:12px; color:var(--text2); margin-bottom:20px; text-align:center;">특별한 소녀를 영입할 기회!</div>
-    
-    <div style="display:flex; flex-direction:column; gap:12px;">
-      <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px; object-fit:contain;">
-          <div style="font-size:18px; color:white;">티켓 1장</div>
-        </div>
-        <button onclick="buyTicket(1, '500')" style="background:#4477ff; color:white; border:none; border-radius:8px; padding:8px 16px; font-size:16px; font-family:'Jua',sans-serif; cursor:pointer;">₩500</button>
-      </div>
-      
-      <div style="background:var(--bg3); border:1px solid var(--purple); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:0; left:0; background:var(--purple); color:white; font-size:9px; padding:2px 6px; border-bottom-right-radius:8px; font-weight:bold;">인기</div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px; object-fit:contain;">
-          <div style="font-size:18px; color:white;">티켓 10장</div>
-        </div>
-        <button onclick="buyTicket(10, '4900')" style="background:#4477ff; color:white; border:none; border-radius:8px; padding:8px 16px; font-size:16px; font-family:'Jua',sans-serif; cursor:pointer;">₩4,900</button>
-      </div>
-
-      <div style="background:var(--bg3); border:1px solid var(--gold); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:0; left:0; background:var(--gold); color:#000; font-size:9px; padding:2px 6px; border-bottom-right-radius:8px; font-weight:bold;">대폭 할인!</div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <img src="imgs/scout_ticket_icon.png" style="width:30px; height:30px; object-fit:contain;">
-          <div style="font-size:18px; color:white;">티켓 100장</div>
-        </div>
-        <button onclick="buyTicket(100, '45000')" style="background:#4477ff; color:white; border:none; border-radius:8px; padding:8px 16px; font-size:16px; font-family:'Jua',sans-serif; cursor:pointer;">₩45,000</button>
-      </div>
     </div>
   </div>
 </div>
@@ -6991,34 +6953,6 @@ function showChartModal(k) {
 
 function closeChartModal() {
   document.getElementById('chart-modal').classList.remove('active');
-}
-
-// 🛒 상점 열기 함수
-function openStore() {
-  document.getElementById('store-modal').classList.add('active');
-}
-
-// 🛒 결제 처리 (현재는 웹 기반 테스트 버전)
-function buyTicket(amount, priceString) {
-  playSound('click');
-  
-  // 💡 정식 앱으로 포장할 때 이곳에 진짜 스토어 결제 코드가 들어갑니다.
-  // 지금은 결제 테스트를 위해 확인 창만 띄웁니다!
-  var confirmBuy = confirm("결제 테스트 모드입니다.\n" + priceString + "원을 결제하시겠습니까?");
-  
-  if (confirmBuy) {
-    GS.tickets += amount; // 티켓을 올려줌
-    
-    showToast("결제가 완료되었습니다! 티켓 " + amount + "장 지급", "#66ff88", null, 3000, false, true);
-    playSound('event');
-    
-    // 화면의 티켓 숫자 업데이트 및 서버(파이어베이스)에 즉시 저장!
-    renderGacha();
-    updateTotalAssets(); 
-    save(); 
-    
-    document.getElementById('store-modal').classList.remove('active');
-  }
 }
 
 // 💡 이벤트 마커를 끄고 켜는 기능
