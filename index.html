@@ -2036,7 +2036,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.3</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.4</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -4362,7 +4362,7 @@ var gachaResults = [];
 var revealIdx = 0;
 
 function doGacha(count) {
-  // 🚨 [꼼수 방지 1] 오프라인 상태에서는 가챠 진행 불가 (비행기 모드 꼼수 차단)
+  // 🚨 [꼼수 방어 1] 인터넷이 끊겨있으면 아예 시작도 못 하게 차단
   if (!navigator.onLine) {
     document.getElementById('g-action').textContent = '네트워크 연결이 필요합니다.';
     showToast("가챠(스카웃)는 온라인 상태에서만 가능합니다.", "#ff4444", null, 3000, false, true);
@@ -4373,6 +4373,18 @@ function doGacha(count) {
     document.getElementById('g-action').textContent = '티켓 부족! (보유: ' + GS.tickets + '장)';
     return;
   }
+
+  var btn1 = document.getElementById('g-btn1');
+  var btn10 = document.getElementById('g-btn10');
+  
+  // 🚨 [꼼수 방어 2] 서버 통신 중에 여러 번 누르는 광클/매크로 차단
+  if (btn1.style.opacity === '0.5' || btn10.style.opacity === '0.5') return;
+  
+  btn1.style.opacity = '0.5';
+  btn10.style.opacity = '0.5';
+  showToast("서버와 동기화 중...", "#aaaaaa", null, 2000, false, true);
+
+  // 1. 티켓 소모 및 결과 굴리기
   GS.tickets -= count;
   GS.gacha_count += count;
   if (GS.missions['first_gacha']) GS.missions['first_gacha'].progress = 1;
@@ -4390,7 +4402,6 @@ function doGacha(count) {
     else picked = n[Math.floor(Math.random() * n.length)];
     var ch = GS.chars[picked];
     var isNew = false;
-
     var alreadyMax = false;
 
     if (!ch.unlocked) {
@@ -4409,22 +4420,46 @@ function doGacha(count) {
     gachaResults.push({ key: picked, isNew: isNew, alreadyMax: alreadyMax });
   }
 
-  playSound('gacha');
+  // 2. 먼저 내 폰(로컬)에 결과를 저장해버림
   updateTotalAssets(); updateMissions(); save();
 
-  // 🚨 [꼼수 방지 2] 가챠 결과를 뽑자마자 클라우드(서버) 장부도 강제로 덮어씌움 (롤백 원천 차단)
+  // 🚨 [꼼수 방어 3] 폰에 저장된 데이터를 서버로 보낸 뒤, '성공' 대답을 받아야만 화면을 띄움
   if (window.userUid && typeof db !== 'undefined') {
     var localRaw = localStorage.getItem('sg_v3');
-    if (localRaw) {
-      var compressedRaw = LZString.compressToBase64(localRaw);
-      // merge: true 옵션으로 기존 데이터를 안전하게 최신화
-      db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).catch(function(e){ console.log("서버 자동 저장 실패", e); });
-    }
-  }
+    var compressedRaw = LZString.compressToBase64(localRaw);
+    
+    // 무한 대기 방지용 7초 타임아웃 폭탄
+    var timeoutPromise = new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error("timeout")); }, 7000);
+    });
+    
+    var savePromise = db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true });
 
-  GS.skipGachaReveal = (count >= 10);
-  revealIdx = 0;
-  showOverlay();
+    Promise.race([savePromise, timeoutPromise]).then(function() {
+      // ✅ 서버 저장 완벽하게 성공! 이제 안심하고 결과를 보여줌
+      btn1.style.opacity = '1';
+      btn10.style.opacity = '1';
+      playSound('gacha');
+      GS.skipGachaReveal = (count >= 10);
+      revealIdx = 0;
+      showOverlay();
+    }).catch(function(error) {
+      // ❌ 비행기 모드를 켰거나 강제로 통신을 끊은 경우
+      console.error("서버 동기화 실패:", error);
+      showToast("서버 동기화 실패! 비정상적인 조작을 방지하기 위해 게임을 새로고침합니다.", "#ff4444", null, 4000, false, true);
+      // 티켓은 이미 소모됐지만, 결과 화면은 띄워주지 않고 앱을 리부팅시킴 (꼼수 유저에게 벌칙)
+      setTimeout(function() { location.reload(); }, 1500);
+    });
+
+  } else {
+    // 서버에 연결 안 된 비로그인(익명) 상태일 때는 그냥 띄워줌
+    btn1.style.opacity = '1';
+    btn10.style.opacity = '1';
+    playSound('gacha');
+    GS.skipGachaReveal = (count >= 10);
+    revealIdx = 0;
+    showOverlay();
+  }
 }
 
 function showOverlay() {
