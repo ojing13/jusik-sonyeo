@@ -55,77 +55,85 @@
       });
 
       // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
-      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
-      if (isRecovering === 'true') {
-        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
-        var localRaw = localStorage.getItem('sg_v3');
-        if (localRaw) {
-          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
-          var compressedRaw = LZString.compressToBase64(localRaw);
-          userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 Base64로 압축해서 저장!
-          load(); // 폰 데이터로 게임 시작
-          if (typeof renderAll === 'function') renderAll();
-          return; // 이후 서버 비교 로직 실행 안 함
-        }
-      }
+      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
+      if (isRecovering === 'true') {
+        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
+        var localRaw = localStorage.getItem('sg_v3');
+        if (localRaw) {
+          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
+          var compressedRaw = LZString.compressToBase64(localRaw);
+          userRef.set({ saved_data: compressedRaw, is_compressed: true }); 
+          
+          window.isFirebaseLoaded = true;
+          if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
+          return; 
+        }
+      }
 
-      // 💡 2. 일반 로드 로직
-      userRef.get().then(function(doc) {
-        var localRaw = localStorage.getItem('sg_v3');
-        var localData = localRaw ? JSON.parse(localRaw) : null;
-        
-        if (doc.exists) {
-          var serverData = doc.data();
+      // 💡 2. 일반 로드 로직
+      userRef.get().then(function(doc) {
+        var localRaw = localStorage.getItem('sg_v3');
+        var localData = localRaw ? JSON.parse(localRaw) : null;
+        
+        if (doc.exists) {
+          var serverData = doc.data();
 
-          // 🚨 [핵심 방어막] 일반 로드 중에 '이전 완료' 도장을 발견하면 즉시 파기!
-          if (serverData.kill_switch === true || serverData.isTransferred === true) {
-            console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단하고 즉시 파기합니다.");
-            window.isRestoring = true; 
-            if (window._tickInterval) clearInterval(window._tickInterval);
-            localStorage.clear();
-            auth.signOut().then(function() { location.reload(); }).catch(function() { location.reload(); });
-            return;
-          }
+          if (serverData.kill_switch === true || serverData.isTransferred === true) {
+            console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단하고 즉시 파기합니다.");
+            window.isRestoring = true; 
+            if (window._tickInterval) clearInterval(window._tickInterval);
+            localStorage.clear();
+            auth.signOut().then(function() { location.reload(); }).catch(function() { location.reload(); });
+            return;
+          }
 
-          // 💡 안전한 Base64 압축 해제
-          if (serverData.is_compressed && serverData.saved_data) {
-            var decompressed = LZString.decompressFromBase64(serverData.saved_data);
-            if (decompressed) serverData = JSON.parse(decompressed);
-          } else if (serverData.saved_data) {
-            serverData = JSON.parse(serverData.saved_data);
-          }
+          if (serverData.is_compressed && serverData.saved_data) {
+            var decompressed = LZString.decompressFromBase64(serverData.saved_data);
+            if (decompressed) serverData = JSON.parse(decompressed);
+          } else if (serverData.saved_data) {
+            serverData = JSON.parse(serverData.saved_data);
+          }
 
-          var serverTime = serverData.lastSaveTime || 0;
-          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
+          var serverTime = serverData.lastSaveTime || 0;
+          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
 
-          // 폰 데이터가 더 최신이거나 서버 데이터에 시간 정보가 없으면 폰 데이터 사용
-          if (localData && localTime >= serverTime) {
-            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
-            var compressedRaw = LZString.compressToBase64(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true });
-            load();
-          } else {
-            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
-            localStorage.setItem('sg_v3', JSON.stringify(serverData));
-            load();
-          }
-        } else {
-          if (localData) {
-            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
-            var compressedRaw = LZString.compressToBase64(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true });
-            load();
-          }
-        }
-        if (typeof renderAll === 'function') renderAll();
-      }).catch(function(error) {
-        console.error("데이터 동기화 중 에러 발생:", error);
-      });
+          if (localData && localTime >= serverTime) {
+            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
+            var compressedRaw = LZString.compressToBase64(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true });
+          } else {
+            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
+            localStorage.setItem('sg_v3', JSON.stringify(serverData));
+          }
+        } else {
+          if (localData) {
+            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
+            var compressedRaw = LZString.compressToBase64(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true });
+          }
+        }
+        
+        // 💡 파이어베이스 확인 끝! 로딩 검사기로 신호 보냄
+        window.isFirebaseLoaded = true;
+        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
+        
+      }).catch(function(error) {
+        console.error("데이터 동기화 중 에러 발생:", error);
+        window.isFirebaseLoaded = true; 
+        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
+      });
 
-    } else {
-      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
-    }
-  });
+    } else {
+      auth.signInAnonymously().then(function() {
+        window.isFirebaseLoaded = true;
+        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
+      }).catch(function(e) { 
+        console.error("익명 로그인 실패:", e); 
+        window.isFirebaseLoaded = true;
+        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
+      });
+    }
+  });
 </script>
 
 <script>
@@ -6729,16 +6737,10 @@ function preloadAllAssets() {
   requestAnimationFrame(animateProgressBar);
 
   function finishLoading() {
-    if (window.isLoadComplete) return;
-    window.isLoadComplete = true; // 터치 잠금 해제!
+    if (window.isAssetsLoaded) return;
+    window.isAssetsLoaded = true; // 이미지 로딩 완료 신호!
     
-    if (loadingBar) loadingBar.style.width = '100%';
-    if (loadingText) loadingText.textContent = '게임 준비 완료!';
-    
-    setTimeout(function() {
-      if (loadingUI) loadingUI.style.display = 'none';
-      if (blinkText) blinkText.style.display = 'block';
-    }, 400); // 💡 게이지가 100% 다 찬 모습을 유저가 볼 수 있도록 0.4초 딜레이!
+    if (typeof checkLoadingComplete === 'function') checkLoadingComplete(); // 💡 게이트키퍼 호출
   }
 
   function updateProgress() {
@@ -7588,7 +7590,34 @@ document.getElementById('ssr-right-arrow').addEventListener('click', function() 
 // 처음 게임을 켰을 때 시계 켜기!
 startSsrAutoTimer();
 // ------------------------------
-initializeGame();
+
+// 💡 [핵심] 파이어베이스와 이미지가 모두 준비되어야만 통과시키는 게이트키퍼
+window.isAssetsLoaded = false;
+window.isFirebaseLoaded = false;
+
+function checkLoadingComplete() {
+  if (window.isAssetsLoaded && window.isFirebaseLoaded) {
+    if (window.isLoadComplete) return;
+    window.isLoadComplete = true; // 터치 잠금 해제!
+    
+    // 💡 완벽한 타이밍에 단 한 번만 게임 초기화 및 오프라인 연산 실행!
+    initializeGame();
+
+    var loadingBar = document.getElementById('loading-bar');
+    var loadingText = document.getElementById('loading-text');
+    var loadingUI = document.getElementById('loading-ui');
+    var blinkText = document.getElementById('title-blink-text');
+
+    if (loadingBar) loadingBar.style.width = '100%';
+    if (loadingText) loadingText.textContent = '게임 준비 완료!';
+    
+    setTimeout(function() {
+      if (loadingUI) loadingUI.style.display = 'none';
+      if (blinkText) blinkText.style.display = 'block';
+    }, 400);
+  }
+}
+
 // 화면 OFF→ON 시 밀린 시간 완벽 동기화 및 BGM 제어
 var _mgHiddenAt = null;
 
