@@ -26,87 +26,95 @@
   const db = firebase.firestore();
 
   // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      console.log("파이어베이스 로그인 성공! ID:", user.uid);
-      window.userUid = user.uid;
-    
-      var recoveryInput = document.getElementById('my-recovery-code');
-      if (recoveryInput) recoveryInput.value = user.uid;
-      
-      const userRef = db.collection('users').doc(user.uid);
-      
-      // 🚨 실시간 계정 이전 감지 (Kill Switch)
-      userRef.onSnapshot(function(doc) {
-        if (doc.exists && doc.data().isTransferred) {
-          alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 초기화되며 새 계정으로 시작합니다.");
-          localStorage.removeItem('sg_v3');
-          localStorage.removeItem('sg_tutorial_done');
-          auth.signOut().then(function() { location.reload(); });
-        }
-      });
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      console.log("파이어베이스 로그인 성공! ID:", user.uid);
+      window.userUid = user.uid;
+      
+      var recoveryInput = document.getElementById('my-recovery-code');
+      if (recoveryInput) recoveryInput.value = user.uid;
+      
+      const userRef = db.collection('users').doc(user.uid);
+      
+      // 🚨 실시간 계정 이전 감지 (Kill Switch)
+      userRef.onSnapshot(function(doc) {
+        if (doc.exists && doc.data().isTransferred) {
+          alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 초기화되며 새 계정으로 시작합니다.");
+          localStorage.removeItem('sg_v3');
+          localStorage.removeItem('sg_tutorial_done');
+          auth.signOut().then(function() { location.reload(); });
+        }
+      });
 
-      // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
-      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
-      if (isRecovering === 'true') {
-        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
-        var localRaw = localStorage.getItem('sg_v3');
-        if (localRaw) {
-          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
-          var compressedRaw = LZString.compressToBase64(localRaw);
-          userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 Base64로 압축해서 저장!
-          load(); // 폰 데이터로 게임 시작
-          if (typeof renderAll === 'function') renderAll();
-          return; // 이후 서버 비교 로직 실행 안 함
-        }
-      }
+      // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
+      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
+      if (isRecovering === 'true') {
+        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
+        var localRaw = localStorage.getItem('sg_v3');
+        if (localRaw) {
+          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
+          var compressedRaw = LZString.compressToBase64(localRaw);
+          userRef.set({ saved_data: compressedRaw, is_compressed: true }); // 💡 Base64로 압축해서 저장!
+          load(); // 폰 데이터로 게임 시작
+          if (typeof renderAll === 'function') renderAll();
+          return; // 이후 서버 비교 로직 실행 안 함
+        }
+      }
 
-      // 💡 2. 일반 로드 로직
-      userRef.get().then(function(doc) {
-        var localRaw = localStorage.getItem('sg_v3');
-        var localData = localRaw ? JSON.parse(localRaw) : null;
-        
-        if (doc.exists) {
-          var serverData = doc.data();
-          // 💡 안전한 Base64 압축 해제
-          if (serverData.is_compressed && serverData.saved_data) {
-            var decompressed = LZString.decompressFromBase64(serverData.saved_data);
-            if (decompressed) serverData = JSON.parse(decompressed);
-          } else if (serverData.saved_data) {
-            serverData = JSON.parse(serverData.saved_data);
-          }
+      // 💡 2. 일반 로드 로직
+      userRef.get().then(function(doc) {
+        var localRaw = localStorage.getItem('sg_v3');
+        var localData = localRaw ? JSON.parse(localRaw) : null;
+        
+        if (doc.exists) {
+          var serverData = doc.data();
 
-          var serverTime = serverData.lastSaveTime || 0;
-          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
+          // 🚨 [핵심 방어막] 서버 장부에 이미 '이전 완료' 도장이 찍혀있다면?
+          // 내 폰의 데이터가 최신이든 아니든 무조건 동기화를 차단하고 얌전히 킬 스위치를 기다립니다.
+          if (serverData.isTransferred) {
+            console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단합니다.");
+            return;
+          }
 
-          // 폰 데이터가 더 최신이거나 서버 데이터에 시간 정보가 없으면 폰 데이터 사용
-          if (localData && localTime >= serverTime) {
-            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
-            var compressedRaw = LZString.compressToBase64(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true });
-            load();
-          } else {
-            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
-            localStorage.setItem('sg_v3', JSON.stringify(serverData));
-            load();
-          }
-        } else {
-          if (localData) {
-            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
-            var compressedRaw = LZString.compressToBase64(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true });
-            load();
-          }
-        }
-        if (typeof renderAll === 'function') renderAll();
-      }).catch(function(error) {
-        console.error("데이터 동기화 중 에러 발생:", error);
-      });
+          // 💡 안전한 Base64 압축 해제
+          if (serverData.is_compressed && serverData.saved_data) {
+            var decompressed = LZString.decompressFromBase64(serverData.saved_data);
+            if (decompressed) serverData = JSON.parse(decompressed);
+          } else if (serverData.saved_data) {
+            serverData = JSON.parse(serverData.saved_data);
+          }
 
-    } else {
-      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
-    }
-  });
+          var serverTime = serverData.lastSaveTime || 0;
+          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
+
+          // 폰 데이터가 더 최신이거나 서버 데이터에 시간 정보가 없으면 폰 데이터 사용
+          if (localData && localTime >= serverTime) {
+            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
+            var compressedRaw = LZString.compressToBase64(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true });
+            load();
+          } else {
+            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
+            localStorage.setItem('sg_v3', JSON.stringify(serverData));
+            load();
+          }
+        } else {
+          if (localData) {
+            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
+            var compressedRaw = LZString.compressToBase64(localRaw);
+            userRef.set({ saved_data: compressedRaw, is_compressed: true });
+            load();
+          }
+        }
+        if (typeof renderAll === 'function') renderAll();
+      }).catch(function(error) {
+        console.error("데이터 동기화 중 에러 발생:", error);
+      });
+
+    } else {
+      auth.signInAnonymously().catch(function(e) { console.error("익명 로그인 실패:", e); });
+    }
+  });
 </script>
 
 <script>
@@ -733,16 +741,16 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .modal-close { position:absolute; top:15px; right:15px; font-size:24px; color:#aaa; cursor:pointer; }
 
 .guide-section {
-  background:var(--bg3); padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);
+  background:var(--bg3); padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid var(--border);
 }
 .guide-h4 {
-  color:var(--accent); margin:0 0 8px 0; font-size:18px;
+  color:var(--accent); margin:0 0 6px 0; font-size:16px;
 }
 .guide-list {
-  margin-left: 16px; padding-left: 0; color: #ccc; font-size:15px;
+  margin-left: 16px; padding-left: 0; color: #ccc; font-size:13px; line-height:1.5;
 }
 .guide-list li {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .guide-highlight {
   color: white;
@@ -1815,11 +1823,11 @@ body, #app {
 </div>
 
 <div id="guide-modal" class="modal-overlay">
-  <div class="modal-content" style="display:flex; flex-direction:column; padding: 16px 20px; overflow: hidden;">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')" style="top: 14px; right: 16px;">✖</div>
-    <div style="font-size:22px; color:var(--gold); margin-top: -30px; margin-bottom:20px; text-align:center;">주식소녀 플레이 가이드</div>
+  <div class="modal-content" style="display:flex; flex-direction:column; padding: 16px 14px; overflow: hidden;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('guide-modal').classList.remove('active')" style="top: 12px; right: 14px;">✖</div>
+    <div style="font-size:20px; color:var(--gold); margin-top: 0px; margin-bottom:14px; text-align:center;">주식소녀 플레이 가이드</div>
 
-    <div class="scroll-area" style="flex:1; padding-bottom:0; font-size:15px; line-height:1.7; color:#ccc;">
+    <div class="scroll-area" style="flex:1; padding-bottom:0; font-size:13px; line-height:1.5; color:#ccc;">
       
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#ffcc44;">[1] 자본금 & 티켓 모으기</h4>
@@ -1832,7 +1840,7 @@ body, #app {
       <div class="guide-section">
         <h4 class="guide-h4" style="color:#4477ff;">[2] 캐릭터 영입과 성장</h4>
         <ul class="guide-list">
-          <li><img src="imgs/icon_unlock.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">주식 해금:</span> 티켓으로 새 캐릭터를 영입해야 거래소에서 해당 주식을 살 수 있습니다.</li>
+          <li><img src="imgs/icon_unlock.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">주식 해금:</span> 티켓으로 새 캐릭터 영입해야 거래소에서 해당 주식을 살 수 있습니다.</li>
           <li><img src="imgs/icon_star.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">레벨업 (최대 Lv.10):</span> 중복 영입 시 레벨이 오르며, <strong>최대 체력(+10)</strong>과 <strong>터치 수익 배율</strong>이 크게 증가합니다.</li>
         </ul>
       </div>
@@ -1856,24 +1864,24 @@ body, #app {
           <li><img src="imgs/icon_sleep.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">오프라인 수익:</span> 게임을 꺼두어도 배당금은 쌓이지만, <strong>최대 24시간까지만 누적</strong>됩니다.</li>
         </ul>
 
-        <div style="margin-top:10px; background:#0d0d18; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
-          <div style="padding:6px 12px; font-size:12px; color:var(--text2); background:#13131f; text-align:center;">💡 레벨별 배당 배율 (기본 배당 × 배율)</div>
-          <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:center;">
+        <div style="margin-top:8px; background:#0d0d18; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+          <div style="padding:6px 12px; font-size:11px; color:var(--text2); background:#13131f; text-align:center;">💡 레벨별 배당 배율 (기본 배당 × 배율)</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:center;">
             <thead>
               <tr style="background:#1a1a2a;">
-                <th style="padding:6px 4px; color:var(--text2); border-bottom:1px solid var(--border);">레벨</th>
-                <th style="padding:6px 4px; color:#ffd700; border-bottom:1px solid var(--border);">SSR (+8%)</th>
-                <th style="padding:6px 4px; color:#b44fe8; border-bottom:1px solid var(--border);">SR (+6%)</th>
-                <th style="padding:6px 4px; color:#4a90d9; border-bottom:1px solid var(--border);">R (+4%)</th>
-                <th style="padding:6px 4px; color:#666677; border-bottom:1px solid var(--border);">N (+3%)</th>
+                <th style="padding:4px 2px; color:var(--text2); border-bottom:1px solid var(--border);">레벨</th>
+                <th style="padding:4px 2px; color:#ffd700; border-bottom:1px solid var(--border);">SSR (+8%)</th>
+                <th style="padding:4px 2px; color:#b44fe8; border-bottom:1px solid var(--border);">SR (+6%)</th>
+                <th style="padding:4px 2px; color:#4a90d9; border-bottom:1px solid var(--border);">R (+4%)</th>
+                <th style="padding:4px 2px; color:#666677; border-bottom:1px solid var(--border);">N (+3%)</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td style="padding:5px 4px; color:var(--text2);">Lv.1</td><td style="color:#ffd700;">×1.00</td><td style="color:#b44fe8;">×1.00</td><td style="color:#4a90d9;">×1.00</td><td style="color:#888;">×1.00</td></tr>
-              <tr style="background:#0d0d18;"><td style="padding:5px 4px; color:var(--text2);">Lv.3</td><td style="color:#ffd700;">×1.17</td><td style="color:#b44fe8;">×1.12</td><td style="color:#4a90d9;">×1.08</td><td style="color:#888;">×1.06</td></tr>
-              <tr><td style="padding:5px 4px; color:var(--text2);">Lv.5</td><td style="color:#ffd700;">×1.36</td><td style="color:#b44fe8;">×1.26</td><td style="color:#4a90d9;">×1.17</td><td style="color:#888;">×1.13</td></tr>
-              <tr style="background:#0d0d18;"><td style="padding:5px 4px; color:var(--text2);">Lv.7</td><td style="color:#ffd700;">×1.59</td><td style="color:#b44fe8;">×1.42</td><td style="color:#4a90d9;">×1.27</td><td style="color:#888;">×1.19</td></tr>
-              <tr><td style="padding:5px 4px; color:var(--text2); font-weight:bold;">MAX</td><td style="color:#ffd700; font-weight:bold;">×2.00</td><td style="color:#b44fe8; font-weight:bold;">×1.69</td><td style="color:#4a90d9; font-weight:bold;">×1.42</td><td style="color:#888; font-weight:bold;">×1.30</td></tr>
+              <tr><td style="padding:4px 2px; color:var(--text2);">Lv.1</td><td style="color:#ffd700;">×1.00</td><td style="color:#b44fe8;">×1.00</td><td style="color:#4a90d9;">×1.00</td><td style="color:#888;">×1.00</td></tr>
+              <tr style="background:#0d0d18;"><td style="padding:4px 2px; color:var(--text2);">Lv.3</td><td style="color:#ffd700;">×1.17</td><td style="color:#b44fe8;">×1.12</td><td style="color:#4a90d9;">×1.08</td><td style="color:#888;">×1.06</td></tr>
+              <tr><td style="padding:4px 2px; color:var(--text2);">Lv.5</td><td style="color:#ffd700;">×1.36</td><td style="color:#b44fe8;">×1.26</td><td style="color:#4a90d9;">×1.17</td><td style="color:#888;">×1.13</td></tr>
+              <tr style="background:#0d0d18;"><td style="padding:4px 2px; color:var(--text2);">Lv.7</td><td style="color:#ffd700;">×1.59</td><td style="color:#b44fe8;">×1.42</td><td style="color:#4a90d9;">×1.27</td><td style="color:#888;">×1.19</td></tr>
+              <tr><td style="padding:4px 2px; color:var(--text2); font-weight:bold;">MAX</td><td style="color:#ffd700; font-weight:bold;">×2.00</td><td style="color:#b44fe8; font-weight:bold;">×1.69</td><td style="color:#4a90d9; font-weight:bold;">×1.42</td><td style="color:#888; font-weight:bold;">×1.30</td></tr>
             </tbody>
           </table>
         </div>
@@ -1891,7 +1899,7 @@ body, #app {
         <h4 class="guide-h4" style="color:#ff4455;">[6] 액면분할 및 병합</h4>
         <ul class="guide-list">
           <li><img src="imgs/icon_scissors.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> <span style="color:white; font-weight:bold;">자동 조절 시스템:</span> 주가가 너무 비싸지거나 싸지면 거래하기 편하게 비율이 자동 조절됩니다. <strong>(총 자산 가치는 1원도 변하지 않으니 안심하세요!)</strong></li>
-          <li style="font-size: 13px;">- 분할: 100만 원 이상 시 주가 1/10, 주식 수 10배<br>- 병합: 1,000원 미만 시 주가 10배, 주식 수 1/10</li>
+          <li style="font-size: 11px;">- 분할: 100만 원 이상 시 주가 1/10, 주식 수 10배<br>- 병합: 1,000원 미만 시 주가 10배, 주식 수 1/10</li>
         </ul>
       </div>
 
@@ -1979,66 +1987,68 @@ body, #app {
 <audio id="mg-bgm-player" src="mg_bgm.mp3" loop preload="auto"></audio>
 
 <div id="settings-modal" class="modal-overlay">
-  <div class="modal-content" style="max-width:320px; padding: 24px 20px;">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('settings-modal').classList.remove('active')">✖</div>
-    <div style="font-size:22px; color:var(--gold); margin-bottom:20px; text-align:center;">환경 설정</div>
+  <div class="modal-content" style="max-width:320px; padding: 16px 14px;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('settings-modal').classList.remove('active')" style="top:10px; right:14px;">✖</div>
+    <div style="font-size:20px; color:var(--gold); margin-bottom:10px; text-align:center;">환경 설정</div>
     
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
-      <span style="font-size:16px; color:#ddddee; display:flex; align-items:center; gap:6px;">
-  <img src="imgs/bgm_icon.png" style="width:30px; height:30px; object-fit:contain;"> 배경음악 (BGM)
-</span>
-      <button id="toggle-bgm-btn" onclick="toggleBGM()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer; width:60px;">ON</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:8px 10px; background:var(--bg3); border-radius:8px; border:1px solid var(--border);">
+      <span style="font-size:15px; color:#ddddee; display:flex; align-items:center; gap:6px;">
+        <img src="imgs/bgm_icon.png" style="width:24px; height:24px; object-fit:contain;"> 배경음악 (BGM)
+      </span>
+      <button id="toggle-bgm-btn" onclick="toggleBGM()" style="padding:6px 14px; border-radius:6px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:14px; cursor:pointer; width:55px;">ON</button>
     </div>
     
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
-      <span style="font-size:16px; color:#ddddee; display:flex; align-items:center; gap:6px;">
-  <img src="imgs/sfx_icon.png" style="width:30px; height:30px; object-fit:contain;"> 효과음 (SFX)
-</span>
-      <button id="toggle-sfx-btn" onclick="toggleSFX()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer; width:60px;">ON</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:8px 10px; background:var(--bg3); border-radius:8px; border:1px solid var(--border);">
+      <span style="font-size:15px; color:#ddddee; display:flex; align-items:center; gap:6px;">
+        <img src="imgs/sfx_icon.png" style="width:24px; height:24px; object-fit:contain;"> 효과음 (SFX)
+      </span>
+      <button id="toggle-sfx-btn" onclick="toggleSFX()" style="padding:6px 14px; border-radius:6px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:14px; cursor:pointer; width:55px;">ON</button>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
-      <span style="font-size:16px; color:#ddddee; display:flex; align-items:center; gap:6px;">
-  <img src="imgs/noti_icon.png" style="width:30px; height:30px; object-fit:contain;"> 게임 알림 (뉴스 등)
-</span>
-      <button id="toggle-noti-btn" onclick="toggleNoti()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer; width:60px;">ON</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:8px 10px; background:var(--bg3); border-radius:8px; border:1px solid var(--border);">
+      <span style="font-size:15px; color:#ddddee; display:flex; align-items:center; gap:6px;">
+        <img src="imgs/noti_icon.png" style="width:24px; height:24px; object-fit:contain;"> 게임 알림 (뉴스 등)
+      </span>
+      <button id="toggle-noti-btn" onclick="toggleNoti()" style="padding:6px 14px; border-radius:6px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:14px; cursor:pointer; width:55px;">ON</button>
     </div>
 
-<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:15px; color:var(--gold); margin-bottom:10px; text-align:center;">기기 변경 / 계정 복구</div>
-      
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
-          <button onclick="backupAndCopyCode()" style="width:100%; padding:10px; background:var(--green); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:15px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">백업 및 복구 코드 발급</button>
-          <div id="recovery-code-container" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #444;">
-            <div style="font-size:11px; color:#ffcc44; margin-bottom:4px; text-align:center;">※ 코드가 유실되었을 경우 아래 텍스트를 직접 복사하세요.</div>
-            <input type="text" id="my-recovery-code" readonly onclick="this.select()" style="width:100%; padding:6px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px; text-align:center;" value="로딩중...">
-          </div>
-        </div>
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
+      <div style="font-size:14px; color:var(--gold); margin-bottom:6px; text-align:center;">기기 변경 / 계정 복구</div>
+      
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:8px;">
+          <button onclick="backupAndCopyCode()" style="width:100%; height:36px; background:var(--green); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">백업 및 복구 코드 발급</button>
+          <div id="recovery-code-container" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed #444;">
+            <div style="font-size:10px; color:#ffcc44; margin-bottom:4px; text-align:center;">※ 코드가 유실되었을 경우 아래 텍스트를 직접 복사하세요.</div>
+            <input type="text" id="my-recovery-code" readonly onclick="this.select()" style="width:100%; height:28px; padding:0 8px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px; text-align:center; outline:none; box-sizing:border-box;" value="로딩중...">
+          </div>
+        </div>
 
-        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:10px;">
-          <div style="font-size:12px; color:var(--text2); margin-bottom:4px;">기존 데이터 불러오기</div>
-          <div style="display:flex; gap:6px;">
-            <input type="text" id="input-recovery-code" placeholder="복구 코드 입력" style="flex:1; padding:6px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px;">
-            <button onclick="restoreAccount()" style="padding:6px 10px; background:var(--red); color:#fff; border:none; border-radius:4px; cursor:pointer; font-family:'Jua',sans-serif;">복구</button>
+        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:8px;">
+          <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">기존 데이터 불러오기</div>
+          <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
+          <div style="display:flex; align-items:center; gap:6px; height:30px;">
+            <input type="text" id="input-recovery-code" placeholder="복구 코드 입력" style="width:100%; height:100%; padding:0 8px; background:#000; border:1px solid #444; color:#fff; border-radius:6px; font-size:11px; outline:none; box-sizing:border-box;">
+            <button onclick="restoreAccount()" style="flex-shrink:0; height:100%; padding:0 14px; background:var(--red); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:13px; box-sizing:border-box;">복구</button>
           </div>
         </div>
       </div>
     </div>
 
-<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #444455;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:8px; text-align:center;">🛠️ 개발자 콘솔 v1.4.1</div>
-      <div style="display:flex; gap:6px;">
-        <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="flex:1; min-width:0; padding:8px 12px; background:#0d0d18; border:1px solid var(--border); border-radius:8px; color:white; font-family:'Jua',sans-serif; font-size:14px; outline:none;">
-        <button onclick="applyCheat()" style="flex-shrink:0; white-space:nowrap; padding:8px 16px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:8px; font-family:'Jua',sans-serif; cursor:pointer;">적용</button>
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.1</div>
+      <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
+      <div style="display:flex; align-items:center; gap:6px; height:30px;">
+        <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
+        <button onclick="applyCheat()" style="flex-shrink:0; height:100%; padding:0 14px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:6px; font-family:'Jua',sans-serif; font-size:13px; cursor:pointer; box-sizing:border-box;">적용</button>
       </div>
     </div>
 
-    <div style="text-align:center; margin-top:20px; display:flex; flex-direction:column; gap:10px; align-items:center;">
-            <div onclick="window.open('https://policies.google.com/privacy', '_blank')" style="font-size:11px; color:#888899; cursor:pointer; text-decoration:underline; user-select:none;">이용약관 및 개인정보처리방침</div>
-      <div id="dev-reset-btn" onclick="playSound('click'); devResetStep()" style="font-size:11px; color:#444466; cursor:pointer; text-decoration:underline; user-select:none;">데이터 초기화</div>
-    </div>
-  </div>
+    <div style="text-align:center; margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:center;">
+      <div onclick="window.open('https://policies.google.com/privacy', '_blank')" style="font-size:10px; color:#888899; cursor:pointer; text-decoration:underline; user-select:none;">이용약관 및 개인정보처리방침</div>
+      <div id="dev-reset-btn" onclick="playSound('click'); devResetStep()" style="font-size:10px; color:#444466; cursor:pointer; text-decoration:underline; user-select:none;">데이터 초기화</div>
+    </div>
+  </div>
 </div>
 
 <div id="store-modal" class="modal-overlay">
@@ -7781,14 +7791,14 @@ document.addEventListener('touchcancel', function(e) {
 <div id="chart-tooltip" class="chart-tooltip"></div>
 
 <div id="market-history-modal" class="modal-overlay">
-  <div class="modal-content" style="max-height: 70%; display:flex; flex-direction:column; padding: 12px 16px;">
-    <div class="modal-close" onclick="playSound('click'); document.getElementById('market-history-modal').classList.remove('active')" style="top: 10px; right: 14px;">✖</div>
-    <div style="font-size:20px; color:var(--gold); margin-top: -22px; margin-bottom: 2px; text-align:center;">시황 기록</div>
-    <div class="scroll-area" id="market-history-list" style="flex:1; padding-bottom:0; font-size:13px; line-height:1.6; color:#ccc;">
-      기록된 시황이 없습니다.
-    </div>
-    <div style="font-size:11px; color:#888; text-align:center; margin-top: 8px; word-break:keep-all;">※ 특별한 시황이 없는 평상시에도 각 종목은 고유의 자체 추세를 타며 움직입니다.</div>
-  </div>
+  <div class="modal-content" style="max-height: 70%; display:flex; flex-direction:column; padding: 16px 14px;">
+    <div class="modal-close" onclick="playSound('click'); document.getElementById('market-history-modal').classList.remove('active')" style="top: 10px; right: 14px;">✖</div>
+    <div style="font-size:18px; color:var(--gold); margin-top: 0px; margin-bottom: 10px; text-align:center;">시황 기록</div>
+    <div class="scroll-area" id="market-history-list" style="flex:1; padding-bottom:0; font-size:12px; line-height:1.5; color:#ccc;">
+      기록된 시황이 없습니다.
+    </div>
+    <div style="font-size:10px; color:#888; text-align:center; margin-top: 6px; word-break:keep-all;">※ 특별한 시황이 없는 평상시에도 각 종목은 고유의 자체 추세를 타며 움직입니다.</div>
+  </div>
 </div>
 </body>
 </html>
