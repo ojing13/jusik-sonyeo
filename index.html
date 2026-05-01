@@ -36,22 +36,20 @@
       
       const userRef = db.collection('users').doc(user.uid);
       
-      // 🚨 실시간 계정 이전 감지 (Kill Switch)
+      // 🚨 실시간 계정 이전 감지 (Kill Switch) - 좀비 부활 완벽 차단 로직
       userRef.onSnapshot(function(doc) {
         if (doc.exists && doc.data().isTransferred) {
           console.log("💀 킬 스위치 발동! 기존 데이터를 완전히 파기합니다.");
           
-          // 🚨 [좀비 부활 완벽 차단 1] 게임 엔진 강제 정지 및 로컬 저장(save) 영구 차단
           window.isRestoring = true; 
           if (window._tickInterval) clearInterval(window._tickInterval);
           
-          // 🚨 [좀비 부활 완벽 차단 2] 알림창이 뜨기 전에 로컬 데이터부터 흔적 없이 폭파
-          localStorage.removeItem('sg_v3');
-          localStorage.removeItem('sg_tutorial_done');
+          // 단순 삭제가 아니라 더미 데이터로 덮어씌워 완전히 오염시킴
+          localStorage.setItem('sg_v3', JSON.stringify({ zombie: true }));
+          localStorage.setItem('sg_tutorial_done', 'false');
           
           alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 초기화되며 새 계정으로 시작합니다.");
           
-          // 🚨 [좀비 부활 완벽 차단 3] 강제 로그아웃 (비동기 대기 중 꼼수 방지용 catch 추가)
           auth.signOut().then(function() { 
             location.reload(); 
           }).catch(function() { 
@@ -78,7 +76,8 @@
       // 💡 2. 일반 로드 로직
       userRef.get().then(function(doc) {
         var localRaw = localStorage.getItem('sg_v3');
-        var localData = localRaw ? JSON.parse(localRaw) : null;
+        // 좀비 데이터가 남아있으면 신규 유저로 취급
+        var localData = (localRaw && !localRaw.includes('zombie')) ? JSON.parse(localRaw) : null;
         
         if (doc.exists) {
           var serverData = doc.data();
@@ -88,8 +87,8 @@
             console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단하고 즉시 파기합니다.");
             window.isRestoring = true; 
             if (window._tickInterval) clearInterval(window._tickInterval);
-            localStorage.removeItem('sg_v3');
-            localStorage.removeItem('sg_tutorial_done');
+            localStorage.setItem('sg_v3', JSON.stringify({ zombie: true }));
+            localStorage.setItem('sg_tutorial_done', 'false');
             auth.signOut().then(function() { location.reload(); }).catch(function() { location.reload(); });
             return;
           }
@@ -2053,7 +2052,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.5</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.6</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -4399,7 +4398,6 @@ function doGacha(count) {
   
   btn1.style.opacity = '0.5';
   btn10.style.opacity = '0.5';
-  showToast("서버와 동기화 중...", "#aaaaaa", null, 2000, false, true);
 
   // 1. 티켓 소모 및 결과 굴리기
   GS.tickets -= count;
@@ -4440,20 +4438,18 @@ function doGacha(count) {
   // 2. 먼저 내 폰(로컬)에 결과를 저장해버림
   updateTotalAssets(); updateMissions(); save();
 
-  // 🚨 [꼼수 방어 3] 폰에 저장된 데이터를 서버로 보낸 뒤, '성공' 대답을 받아야만 화면을 띄움
+  // 🚨 [꼼수 방어 3] 핵심: 서버의 백업본을 날려버려서 예전 코드로 롤백하는 행위를 원천 차단
   if (window.userUid && typeof db !== 'undefined') {
-    var localRaw = localStorage.getItem('sg_v3');
-    var compressedRaw = LZString.compressToBase64(localRaw);
-    
     // 무한 대기 방지용 7초 타임아웃 폭탄
     var timeoutPromise = new Promise(function(_, reject) {
       setTimeout(function() { reject(new Error("timeout")); }, 7000);
     });
     
-    var savePromise = db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true });
+    // 서버 데이터를 업데이트하는 대신 아예 삭제해버립니다. (나중에 유저가 수동 백업해야 함)
+    var deletePromise = db.collection('users').doc(window.userUid).delete();
 
-    Promise.race([savePromise, timeoutPromise]).then(function() {
-      // ✅ 서버 저장 완벽하게 성공! 이제 안심하고 결과를 보여줌
+    Promise.race([deletePromise, timeoutPromise]).then(function() {
+      // ✅ 백업본 파기 성공! 이제 안심하고 결과를 보여줌
       btn1.style.opacity = '1';
       btn10.style.opacity = '1';
       playSound('gacha');
@@ -4462,9 +4458,8 @@ function doGacha(count) {
       showOverlay();
     }).catch(function(error) {
       // ❌ 비행기 모드를 켰거나 강제로 통신을 끊은 경우
-      console.error("서버 동기화 실패:", error);
-      showToast("서버 동기화 실패! 비정상적인 조작을 방지하기 위해 게임을 새로고침합니다.", "#ff4444", null, 4000, false, true);
-      // 티켓은 이미 소모됐지만, 결과 화면은 띄워주지 않고 앱을 리부팅시킴 (꼼수 유저에게 벌칙)
+      console.error("백업본 파기 실패:", error);
+      showToast("비정상적인 통신이 감지되어 게임을 새로고침합니다.", "#ff4444", null, 4000, false, true);
       setTimeout(function() { location.reload(); }, 1500);
     });
 
