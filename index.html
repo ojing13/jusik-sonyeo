@@ -2046,7 +2046,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.7</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.8</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -2135,165 +2135,158 @@ function updateSettingsUI() {
     recoveryInput.value = lastCode ? lastCode : "버튼을 눌러 발급";
   }
 }
-// 💡 클라우드 백업 및 복구 코드 복사 통합 기능
+// 💡 클라우드 백업 및 복구 코드 발급 (Live Pointer 방식)
 function backupAndCopyCode() {
-  playSound('click');
-  save(); // 백업 직전에 데이터 로컬 강제 저장
+  playSound('click');
+  save(); 
 
-  if (!window.userUid || typeof db === 'undefined') {
-    showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
-    return;
-  }
+  if (!window.userUid || typeof db === 'undefined') {
+    showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
+    return;
+  }
 
-  // 1회용 8자리 난수 코드 생성 (대문자+숫자)
-  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  var newCode = '';
-  for (var i = 0; i < 8; i++) {
-    newCode += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자 제외
+  var newCode = '';
+  for (var i = 0; i < 8; i++) {
+    newCode += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
 
-  var codeInput = document.getElementById('my-recovery-code');
-  var codeContainer = document.getElementById('recovery-code-container');
-  if (codeInput) codeInput.value = newCode;
-  if (codeContainer) codeContainer.style.display = 'block';
+  var codeInput = document.getElementById('my-recovery-code');
+  var codeContainer = document.getElementById('recovery-code-container');
+  if (codeInput) codeInput.value = newCode;
+  if (codeContainer) codeContainer.style.display = 'block';
 
-  var isCopied = false;
-  try {
-    var tempTextArea = document.createElement("textarea");
-    tempTextArea.value = newCode;
-    tempTextArea.style.position = "fixed";
-    tempTextArea.style.left = "-9999px";
-    document.body.appendChild(tempTextArea);
-    tempTextArea.select();
-    tempTextArea.setSelectionRange(0, 99999);
-    isCopied = document.execCommand('copy');
-    document.body.removeChild(tempTextArea);
-  } catch (err) {
-    isCopied = false;
-  }
+  var isCopied = false;
+  try {
+    var tempTextArea = document.createElement("textarea");
+    tempTextArea.value = newCode;
+    tempTextArea.style.position = "fixed";
+    tempTextArea.style.left = "-9999px";
+    document.body.appendChild(tempTextArea);
+    tempTextArea.select();
+    tempTextArea.setSelectionRange(0, 99999);
+    isCopied = document.execCommand('copy');
+    document.body.removeChild(tempTextArea);
+  } catch (err) {
+    isCopied = false;
+  }
 
-  showToast("서버에 백업하는 중...", "#aaaaaa", null, 2000, false, true);
+  showToast("서버에 연동하는 중...", "#aaaaaa", null, 2000, false, true);
 
-  try {
-    var localRaw = localStorage.getItem('sg_v3');
-    if (!localRaw) {
-      showToast("저장된 로컬 데이터가 없습니다.", "#ff4444", null, 3000, false, true);
-      return;
-    }
+  var localRaw = localStorage.getItem('sg_v3');
+  var compressedRaw = LZString.compressToBase64(localRaw);
 
-    var cleanData = JSON.parse(localRaw);
-    cleanData.lastSaveTime = Date.now(); 
-    var payloadStr = JSON.stringify(cleanData);
-    var compressedStr = LZString.compressToBase64(payloadStr);
+  // 1. 내 장부(users)에 최신 상태를 강제 업로드
+  db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).then(function() {
+    
+    // 2. 1회용 금고(transfers)에는 '내 UID'를 가리키는 이정표만 저장
+    return db.collection('transfers').doc(newCode).set({ 
+      targetUid: window.userUid, 
+      createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+    });
 
-    // transfers 컬렉션에 1회용 코드로 저장 (기존 uid 포함)
-    db.collection('transfers').doc(newCode).set({ 
-      originalUid: window.userUid,
-      saved_data: compressedStr, 
-      is_compressed: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function() {
-      // 발급받은 코드를 로컬에 기억시킴 (가챠 꼼수 방지용)
-      localStorage.setItem('sg_last_transfer_code', newCode);
+  }).then(function() {
+    localStorage.setItem('sg_last_transfer_code', newCode);
+    localStorage.setItem('sg_cloud_sync', 'true'); // 💡 꼼수 방지용 라이브 동기화 모드 켜기!
 
-      if (isCopied) {
-        showToast("백업 완료! 복구 코드가 복사되었습니다. (" + newCode + ")", "#66ff88", null, 5000, false, true);
-      } else {
-        showToast("백업 완료! 아래 일회용 코드를 직접 복사해주세요. (" + newCode + ")", "#ffcc44", null, 5000, false, true);
-      }
-    }).catch(function(error) {
-      console.error("서버 백업 실패:", error);
-      showToast("백업 실패: " + error.message, "#ff4444", null, 4000, false, true);
-    });
-  } catch (e) {
-    console.error("백업 데이터 처리 오류:", e);
-    showToast("백업 데이터 처리 중 오류가 발생했습니다.", "#ff4444", null, 3000, false, true);
-  }
+    if (isCopied) {
+      showToast("백업 완료! 복구 코드가 복사되었습니다. (" + newCode + ")", "#66ff88", null, 5000, false, true);
+    } else {
+      showToast("백업 완료! 아래 일회용 코드를 직접 복사해주세요. (" + newCode + ")", "#ffcc44", null, 5000, false, true);
+    }
+  }).catch(function(error) {
+    console.error("서버 백업 실패:", error);
+    showToast("백업 실패: " + error.message, "#ff4444", null, 4000, false, true);
+  });
 }
 
-// 💡 올바른 코드일 때만 게임을 중단하는 스마트 복구 기능
+// 💡 이정표를 따라가서 실시간 데이터를 가져오는 스마트 복구 기능
 function restoreAccount() {
-  var transferCode = document.getElementById('input-recovery-code').value.trim().toUpperCase(); // 대문자 변환
-  if (!transferCode) {
-      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
-      return;
-  }
-  
-  var currentUser = firebase.auth().currentUser;
-  if (!currentUser) {
-      showToast("로그인 대기 중입니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
-      return;
-  }
+  var transferCode = document.getElementById('input-recovery-code').value.trim().toUpperCase(); 
+  if (!transferCode) {
+      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
+      return;
+  }
+  
+  var currentUser = firebase.auth().currentUser;
+  if (!currentUser) {
+      showToast("로그인 대기 중입니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
+      return;
+  }
 
-  playSound('click');
-  showToast("서버 금고 확인 중...", "#aaaaaa", null, 5000, false, true);
+  playSound('click');
+  showToast("서버 금고 확인 중...", "#aaaaaa", null, 5000, false, true);
 
-  var timeoutPromise = new Promise(function(_, reject) {
-    setTimeout(function() { reject(new Error("timeout")); }, 7000);
-  });
+  var timeoutPromise = new Promise(function(_, reject) {
+    setTimeout(function() { reject(new Error("timeout")); }, 7000);
+  });
 
-  // transfers 컬렉션에서 1회용 코드를 찾음
-  var fetchPromise = db.collection('transfers').doc(transferCode).get({ source: 'server' });
+  var fetchTransfer = db.collection('transfers').doc(transferCode).get({ source: 'server' });
 
-  Promise.race([fetchPromise, timeoutPromise]).then(function(doc) {
-      if (doc.exists) {
-          var serverData = doc.data();
-          var originalUid = serverData.originalUid;
+  Promise.race([fetchTransfer, timeoutPromise]).then(function(transferDoc) {
+      if (!transferDoc.exists) {
+          showToast("존재하지 않거나 이미 파기된 복구 코드입니다.", "#ff4444", null, 5000, false, true);
+          return;
+      }
+      
+      var targetUid = transferDoc.data().targetUid;
+      if (targetUid === currentUser.uid) {
+          showToast("현재 이미 사용 중인 계정입니다.", "#ffcc44", null, 3000, false, true);
+          return;
+      }
 
-          if (serverData.is_compressed && serverData.saved_data) {
-             var decompressed = LZString.decompressFromBase64(serverData.saved_data);
-             if (decompressed) serverData = JSON.parse(decompressed);
-             else serverData = null; 
-          } else if (serverData.saved_data) {
-            serverData = JSON.parse(serverData.saved_data);
-          }
-          
-          if (!serverData || typeof serverData.money === 'undefined') {
-            showToast("금고에 데이터가 비어있습니다. 이전 기기에서 다시 백업해주세요.", "#ff4444", null, 4000, false, true);
-            return;
-          }
+      // 💡 포인터를 따라가서 '진짜 원본 최신 데이터'를 가져옴
+      return db.collection('users').doc(targetUid).get({ source: 'server' }).then(function(userDoc) {
+          if (!userDoc.exists || userDoc.data().kill_switch) {
+              showToast("원본 데이터가 존재하지 않거나 파기되었습니다.", "#ff4444", null, 5000, false, true);
+              return;
+          }
 
-          console.log("🚀 복구 데이터 확인 성공! 엔진을 일시 정지하고 새로고침합니다.");
-          window.isRestoring = true; 
+          var serverData = userDoc.data();
+          if (serverData.is_compressed && serverData.saved_data) {
+             var decompressed = LZString.decompressFromBase64(serverData.saved_data);
+             if (decompressed) serverData = JSON.parse(decompressed);
+             else serverData = null; 
+          } else if (serverData.saved_data) {
+            serverData = JSON.parse(serverData.saved_data);
+          }
+          
+          if (!serverData || typeof serverData.money === 'undefined') {
+            showToast("데이터를 읽을 수 없습니다.", "#ff4444", null, 4000, false, true);
+            return;
+          }
 
-          if (window._tickInterval) clearInterval(window._tickInterval);
-          if (typeof mg !== 'undefined') mg.active = false; 
+          console.log("🚀 실시간 복구 데이터 확인 성공!");
+          window.isRestoring = true; 
 
-          sessionStorage.setItem('sg_recovery_flag', 'true');
-          
-          serverData.lastSaveTime = Date.now();
-          localStorage.setItem('sg_v3', JSON.stringify(serverData));
+          if (window._tickInterval) clearInterval(window._tickInterval);
+          if (typeof mg !== 'undefined') mg.active = false; 
 
-          var compressedNew = LZString.compressToBase64(JSON.stringify(serverData));
-          
-          // 현재 내 계정에 데이터를 덮어씀
-          db.collection('users').doc(currentUser.uid).set({ saved_data: compressedNew, is_compressed: true }).then(function() {
-              // 🚨 방어막: 원본 UID 기기에 킬 스위치 발동 & 1회용 코드 즉시 파기 (Cut & Paste)
-              if (originalUid && originalUid !== currentUser.uid) {
-                  db.collection('users').doc(originalUid).set({ kill_switch: true });
-              }
-              // 일회용 코드는 무조건 삭제!
-              db.collection('transfers').doc(transferCode).delete();
+          sessionStorage.setItem('sg_recovery_flag', 'true');
+          serverData.lastSaveTime = Date.now();
+          localStorage.setItem('sg_v3', JSON.stringify(serverData));
 
-              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
-              setTimeout(function() {
-                  location.reload();
-              }, 1200);
-          }).catch(function(e) {
-              console.error("서버 갱신 중 오류:", e);
-              location.reload(); 
-          });
-      } else {
-          showToast("존재하지 않거나 이미 사용 및 파기된 복구 코드입니다.", "#ff4444", null, 5000, false, true);
-      }
-  }).catch(function(error) {
-      console.error("복구 서버 에러:", error);
-      if (error.message === "timeout") {
-          showToast("서버 응답 지연: 네트워크 상태를 확인하고 다시 시도해주세요.", "#ff4444", null, 5000, false, true);
-      } else {
-          showToast("서버 연결 실패: 불안정한 네트워크 상태입니다.", "#ff4444", null, 5000, false, true);
-      }
-  });
+          var compressedNew = LZString.compressToBase64(JSON.stringify(serverData));
+          
+          // 내 새 기기에 덮어쓰고, 구형 기기는 킬 스위치, 코드는 삭제!
+          db.collection('users').doc(currentUser.uid).set({ saved_data: compressedNew, is_compressed: true }).then(function() {
+              if (targetUid) {
+                  db.collection('users').doc(targetUid).set({ kill_switch: true });
+              }
+              db.collection('transfers').doc(transferCode).delete();
+
+              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
+              setTimeout(function() { location.reload(); }, 1200);
+          }).catch(function(e) {
+              console.error("서버 갱신 중 오류:", e);
+              location.reload(); 
+          });
+      });
+  }).catch(function(error) {
+      console.error("복구 서버 에러:", error);
+      if (error.message === "timeout") showToast("서버 응답 지연: 네트워크 상태를 확인해주세요.", "#ff4444", null, 5000, false, true);
+      else showToast("서버 연결 실패.", "#ff4444", null, 5000, false, true);
+  });
 }
 
 function toggleBGM() {
@@ -3594,6 +3587,21 @@ function save() {
   }
 }
 
+// 💡 실시간 꼼수 차단용: 중요 이벤트 발생 시 서버에 즉시 현재 상태를 업로드 (1.5초 딜레이로 통신비용 절약)
+var _cloudSyncTimeout = null;
+function cloudSync() {
+  if (localStorage.getItem('sg_cloud_sync') === 'true' && window.userUid && typeof db !== 'undefined') {
+    if (_cloudSyncTimeout) clearTimeout(_cloudSyncTimeout);
+    _cloudSyncTimeout = setTimeout(function() {
+      var localRaw = localStorage.getItem('sg_v3');
+      if (localRaw) {
+        var compressedRaw = LZString.compressToBase64(localRaw);
+        db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).catch(function(e){});
+      }
+    }, 1500);
+  }
+}
+
 function load() {
   try {
     var s = localStorage.getItem(SAVE_KEY);
@@ -3946,33 +3954,36 @@ function tick(silent) {
     if (Math.random() < 0.1) generateNews(silent);
   } else {
         // 💡 1. 블랙스완 & 대세 상승장 (조건 없이 순수하게 매 틱마다 0.5% 확률로 독립 실행)
-        if (Math.random() < 0.005) { 
-          if (Math.random() < 0.5) {
-            GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 이벤트 발생! 시장 급락!';
-            if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
-            addMarketHistory('<img src="imgs/icon_lightning.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
-            Object.keys(GS.chars).forEach(function(k) {
-                var ch = GS.chars[k];
-                if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-                if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
-                ch._earningApplied = false; applyPriceChange(k);
-            });
-          } else {
-            GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [상승장] 글로벌 대세 상승장 진입!';
-            if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
-            addMarketHistory('<img src="imgs/icon_chart_up.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 글로벌 대세 상승장 진입!', '#ff33aa');
-            Object.keys(GS.chars).forEach(function(k) {
-                var ch = GS.chars[k];
-                if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
-                if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
-                ch._earningApplied = false; applyPriceChange(k);
-              });
-          }
-          if (!silent) playSound('event');
-          updateTotalAssets(); updateMissions(); updateDialogState();
-          if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
-          return;
-        }
+        if (Math.random() < 0.005) { 
+          if (Math.random() < 0.5) {
+            GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 이벤트 발생! 시장 급락!';
+            if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
+            addMarketHistory('<img src="imgs/icon_lightning.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
+            Object.keys(GS.chars).forEach(function(k) {
+                var ch = GS.chars[k];
+                if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+                if (!ch._earningApplied) ch.change = -(0.01 + Math.random() * 0.08);
+                ch._earningApplied = false; applyPriceChange(k);
+            });
+          } else {
+            GS.inBull = true; GS.bullTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_chart_up.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [상승장] 글로벌 대세 상승장 진입!';
+            if (!silent) showNewsToast(GS.currentNews, '#ff33aa', null);
+            addMarketHistory('<img src="imgs/icon_chart_up.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 글로벌 대세 상승장 진입!', '#ff33aa');
+            Object.keys(GS.chars).forEach(function(k) {
+                var ch = GS.chars[k];
+                if (ch.new_recruit_ticks > 0) { ch.new_recruit_ticks--; ch.change = 0; ch._earningApplied = false; applyPriceChange(k); return; }
+                if (!ch._earningApplied) ch.change = 0.01 + Math.random() * 0.08;
+                ch._earningApplied = false; applyPriceChange(k);
+              });
+          }
+          if (!silent) playSound('event');
+          updateTotalAssets(); updateMissions(); updateDialogState();
+          
+          cloudSync(); // 💡 대폭락이나 떡상 이벤트가 발생하면 피할 수 없게 즉시 서버 덮어쓰기!
+
+          if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
+          return;
+        }
 
         // 💡 2. 특수 장세가 안 터졌을 때만 섹터 테마장 로직 실행 (평균 6분 간격)
         GS.noThemeTicks++; // 변수 자체는 다른 곳에서 쓸 수도 있으니 살려둡니다
@@ -4436,50 +4447,16 @@ function doGacha(count) {
   // 2. 먼저 내 폰(로컬)에 결과를 저장해버림
   updateTotalAssets(); updateMissions(); save();
 
-  // 🚨 [꼼수 방어 3] 타임머신 금지: 가챠 전 발급받은 백업본이 있다면 즉시 파기!
-  if (typeof db !== 'undefined') {
-    var lastTransferCode = localStorage.getItem('sg_last_transfer_code');
-    
-    // 타임아웃
-    var timeoutPromise = new Promise(function(_, reject) {
-      setTimeout(function() { reject(new Error("timeout")); }, 7000);
-    });
-    
-    var promises = [];
-    // 유저의 원본 백업 삭제 (기존 로직 유지)
-    if (window.userUid) {
-      promises.push(db.collection('users').doc(window.userUid).delete());
-    }
-    // 발급받아둔 일회용 코드 삭제 (신규 로직)
-    if (lastTransferCode) {
-      promises.push(db.collection('transfers').doc(lastTransferCode).delete());
-      localStorage.removeItem('sg_last_transfer_code'); // 사용 완료 파기
-    }
+  // 🚨 [꼼수 방어] 가챠 결과가 나오는 순간 서버에 즉시 강제 업로드하여 타임머신을 부숴버립니다.
+  cloudSync();
 
-    Promise.race([Promise.all(promises), timeoutPromise]).then(function() {
-      // ✅ 백업본 파기 성공! 이제 안심하고 결과를 보여줌
-      btn1.style.opacity = '1';
-      btn10.style.opacity = '1';
-      playSound('gacha');
-      GS.skipGachaReveal = (count >= 10);
-      revealIdx = 0;
-      showOverlay();
-    }).catch(function(error) {
-      // ❌ 비행기 모드를 켰거나 강제로 통신을 끊은 경우
-      console.error("백업본 파기 실패:", error);
-      showToast("비정상적인 통신이 감지되어 게임을 새로고침합니다.", "#ff4444", null, 4000, false, true);
-      setTimeout(function() { location.reload(); }, 1500);
-    });
-
-  } else {
-    // 서버에 연결 안 된 비로그인(익명) 상태일 때는 그냥 띄워줌
-    btn1.style.opacity = '1';
-    btn10.style.opacity = '1';
-    playSound('gacha');
-    GS.skipGachaReveal = (count >= 10);
-    revealIdx = 0;
-    showOverlay();
-  }
+  // 가챠 연출 시작
+  btn1.style.opacity = '1';
+  btn10.style.opacity = '1';
+  playSound('gacha');
+  GS.skipGachaReveal = (count >= 10);
+  revealIdx = 0;
+  showOverlay();
 }
 
 function showOverlay() {
@@ -4749,7 +4726,9 @@ function trade(key, isBuy) {
     playSound('sell');
   }
   updateTotalAssets(); updateMissions(); save();
-  
+  
+  cloudSync(); // 💡 매수/매도하는 순간 즉시 서버 덮어쓰기
+
   var mgScreen = document.getElementById('screen-minigame');
   if (!mgScreen || !mgScreen.classList.contains('active')) renderAll();
 }
