@@ -2036,7 +2036,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.2</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.3</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -2223,6 +2223,12 @@ function restoreAccount() {
   Promise.race([fetchPromise, timeoutPromise]).then(function(doc) {
       if (doc.exists) {
           var serverData = doc.data();
+
+          // 🚨 [추가된 일회용 코드 방어막] 이미 이전 완료 도장이 찍힌(사용된) 코드라면 차단!
+          if (serverData.isTransferred) {
+              showToast("이미 사용 완료되어 폐기된 일회용 복구 코드입니다.", "#ff4444", null, 5000, false, true);
+              return;
+          }
           
           if (serverData.is_compressed && serverData.saved_data) {
              var decompressed = LZString.decompressFromBase64(serverData.saved_data);
@@ -4356,6 +4362,13 @@ var gachaResults = [];
 var revealIdx = 0;
 
 function doGacha(count) {
+  // 🚨 [꼼수 방지 1] 오프라인 상태에서는 가챠 진행 불가 (비행기 모드 꼼수 차단)
+  if (!navigator.onLine) {
+    document.getElementById('g-action').textContent = '네트워크 연결이 필요합니다.';
+    showToast("가챠(스카웃)는 온라인 상태에서만 가능합니다.", "#ff4444", null, 3000, false, true);
+    return;
+  }
+
   if (GS.tickets < count) {
     document.getElementById('g-action').textContent = '티켓 부족! (보유: ' + GS.tickets + '장)';
     return;
@@ -4378,7 +4391,6 @@ function doGacha(count) {
     var ch = GS.chars[picked];
     var isNew = false;
 
-    // 💡 alreadyMax 변수를 추가해서 이미 만렙이었는지 체크합니다.
     var alreadyMax = false;
 
     if (!ch.unlocked) {
@@ -4391,16 +4403,25 @@ function doGacha(count) {
         ch.max_energy += 10;
         ch.energy = ch.max_energy;
       } else {
-        // 레벨업을 못했다면 이미 만렙이라는 뜻!
         alreadyMax = true; 
       }
     }
-    // 💡 결과를 저장할 때 alreadyMax도 같이 넘겨줍니다.
     gachaResults.push({ key: picked, isNew: isNew, alreadyMax: alreadyMax });
   }
 
   playSound('gacha');
   updateTotalAssets(); updateMissions(); save();
+
+  // 🚨 [꼼수 방지 2] 가챠 결과를 뽑자마자 클라우드(서버) 장부도 강제로 덮어씌움 (롤백 원천 차단)
+  if (window.userUid && typeof db !== 'undefined') {
+    var localRaw = localStorage.getItem('sg_v3');
+    if (localRaw) {
+      var compressedRaw = LZString.compressToBase64(localRaw);
+      // merge: true 옵션으로 기존 데이터를 안전하게 최신화
+      db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).catch(function(e){ console.log("서버 자동 저장 실패", e); });
+    }
+  }
+
   GS.skipGachaReveal = (count >= 10);
   revealIdx = 0;
   showOverlay();
