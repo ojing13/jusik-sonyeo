@@ -1600,13 +1600,13 @@ body, #app {
         </button>
         
         <div class="ticket-box" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; border: 1px solid rgba(255, 255, 255, 0.08);">
-          <div class="ticket-label" style="display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 12px; color: var(--text2); margin-bottom: 4px;">
-            <img src="imgs/scout_ticket_icon.png" style="width:16px; height:16px; object-fit:contain;">보유 티켓
+          <div class="ticket-label" style="display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13.5px; color: var(--text2); margin-top: -5px; margin-bottom: 4px;">
+            <img src="imgs/scout_ticket_icon.png" style="width:24px; height:24px; object-fit:contain;">보유량
           </div>
           
           <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <div class="ticket-count" id="g-ticket-count" style="font-size: 19px; color: white; line-height: 1; margin: 0;">0장</div>
-          </div>
+            <div class="ticket-count" id="g-ticket-count" style="font-size: 19px; color: white; line-height: 1; margin: 0;">0장</div>
+          </div>
         </div>
 
         <div class="gacha-info" style="border-radius: 12px; background: rgba(20, 20, 30, 0.45);">
@@ -1766,22 +1766,46 @@ body, #app {
 
     <button id="mg-start-btn" class="gacha-btn primary" style="width:220px; padding:14px; font-size:20px; color:white; font-family:'Jua', sans-serif;">게임 시작</button>
     <button id="mg-ad-recharge-btn" class="gacha-btn" style="width:220px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none; align-items:center; justify-content:center; gap:8px;">
-        <img src="imgs/ad_icon.png" style="width:22px; height:22px; object-fit:contain; margin-bottom:-5px;"> 광고 보고 하트 +1
+        <img src="imgs/ad_icon.png" style="width:28px; height:28px; object-fit:contain; position:relative; top:-2px;"> 하트 충전 +1
     </button>
 </div>
 
+<!-- 부활 카운트다운 팝업 UI -->
+<div id="mg-revive-prompt-ui" class="mg-overlay" style="display:none; z-index: 50; flex-direction:column; align-items:center; justify-content:center; background:rgba(10, 10, 20, 0.85); backdrop-filter:blur(5px);">
+    <div style="font-size:24px; color:var(--gold); margin-bottom:20px; font-weight:bold;">이어하시겠습니까?</div>
+    
+    <div style="position:relative; width:80px; height:80px; margin-bottom:25px;">
+        <svg width="80" height="80" style="transform: rotate(-90deg);">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="8"></circle>
+            <circle id="mg-revive-circle" cx="40" cy="40" r="34" fill="none" stroke="var(--green)" stroke-width="8" stroke-dasharray="214" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear;"></circle>
+        </svg>
+        <div id="mg-revive-count" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px; color:white; font-family:'Jua', sans-serif;">5</div>
+    </div>
+
+    <button id="mg-prompt-revive-btn" class="gacha-btn" style="width:250px; height:48px; padding:0; margin:0; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #1a3a1a, #225522); border:1px solid #44ff88; border-radius:12px; box-sizing:border-box;">
+        <img src="imgs/ad_icon.png" style="width:28px; height:28px; object-fit:contain; position:relative; top:-2px;">
+        <span style="font-size:18px; color:#88ffaa; font-family:'Jua', sans-serif;">1회 부활</span>
+    </button>
+    
+    <div id="mg-prompt-skip" style="margin-top:20px; font-size:15px; color:#aaa; text-decoration:underline; padding:10px; cursor:pointer;">건너뛰기</div>
+</div>
+
 <div id="mg-over-ui" class="mg-overlay" style="display:none;">
-    <div id="mg-result-rank">S</div> 
-    <div id="mg-final-score" style="font-size:18px; color:#ccc; margin-bottom:5px;">주행 거리: 0m</div>
+    <div id="mg-result-rank" style="margin-bottom:0px;">S</div> 
+    <div id="mg-final-score" style="font-size:18px; color:#ccc; margin-bottom:0px;">주행 거리: 0m</div>
     
     <div id="mg-result-reward-wrap"></div>
 
-    <div class="mg-heart-row" id="mg-over-heart-row" style="margin-top:20px; margin-bottom:15px;"></div>
+    <div class="mg-heart-row" id="mg-over-heart-row" style="margin-top:8px; margin-bottom:12px;"></div>
     
-    <button id="mg-restart-btn" class="gacha-btn secondary" style="width:200px; padding:14px; color:white; font-family:'Jua', sans-serif;">다시 도전</button>
-    <button id="mg-over-ad-recharge-btn" class="gacha-btn" style="width:200px; padding:12px; margin-top:10px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; display:none; align-items:center; justify-content:center; gap:8px;">
-        <img src="imgs/ad_icon.png" style="width:22px; height:22px; object-fit:contain; margin-bottom:-5px;"> 광고 보고 하트 +1
-    </button>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;">
+        <button id="mg-restart-btn" class="gacha-btn secondary" style="width:250px; height:46px; padding:0; margin:0; display:flex; flex-direction:row; align-items:center; justify-content:center; color:white; font-family:'Jua', sans-serif; font-size:16px; border-radius:12px; box-sizing:border-box; white-space:nowrap;">다시 도전</button>
+
+        <button id="mg-over-ad-recharge-btn" class="gacha-btn" style="width:250px; height:46px; padding:0; margin:0; display:none; flex-direction:row; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg, #3a1a3a, #552255); border:1px solid #ff4488; border-radius:12px; box-sizing:border-box; white-space:nowrap;">
+            <img src="imgs/ad_icon.png" style="width:28px; height:28px; object-fit:contain; position:relative; top:-2px;">
+            <span style="font-size:16px; color:#ff88aa; font-family:'Jua', sans-serif; white-space:nowrap;">하트 충전 +1</span>
+        </button>
+    </div>
 </div>
       </div>
     </div>
@@ -1973,8 +1997,8 @@ body, #app {
 
     <div id="sd-ad-pump-container" style="margin-top:12px; display:none;">
       <button id="sd-ad-pump-btn" class="gacha-btn" style="width:100%; margin:0; padding:12px; background:linear-gradient(135deg, #3a1a1a, #552222); border:1px solid #ff4455; font-size:16px; color:#ff8888; font-family:'Jua', sans-serif; display:flex; align-items:center; justify-content:center; gap:8px;">
-        <img src="imgs/ad_icon.png" style="width:20px; height:20px; object-fit:contain;"> 확정 호재 띄우기 <span style="font-size:13px; color:#ccaaaa;">(<span id="sd-ad-pump-count">2</span>/2)</span>
-      </button>
+        <img src="imgs/ad_icon.png" style="width:28px; height:28px; object-fit:contain; position:relative; top:-2px;"> 확정 호재 띄우기 <span style="font-size:13px; color:#ccaaaa;">(<span id="sd-ad-pump-count">2</span>/2)</span>
+      </button>
     </div>
 
   </div>
@@ -5599,10 +5623,11 @@ mgSprite.src = 'imgs/player.png';
 var mgAnimTick = 0;
 
 var mg = {
-  active: false, ctx: null, w: 0, h: 0,
-  safeTop: 0, safeRight: 0,
-  pointPool: [],
-  p: { x: 50, y: -1000, vy: 0, r: 12 }, 
+  active: false, ctx: null, w: 0, h: 0,
+  safeTop: 0, safeRight: 0,
+  pointPool: [],
+  p: { x: 50, y: -1000, vy: 0, r: 12 }, 
+  revived: false, invincibleTicks: 0, lastReward: 0, // 부활 및 무적 관련 변수 추가
   gravity: 0.65, jump: -12, baseSpeed: 6.0, speed: 6.0, score: 0,
   points: [], jumpCount: 0, downCount: 0,
   lastJumpTime: 0, 
@@ -5682,13 +5707,17 @@ function startMg() {
   updateMgHearts();
   resizeMg(); 
   playSound('click');
-  document.getElementById('mg-ui').style.display = 'none';
-  document.getElementById('mg-over-ui').style.display = 'none';
-  document.getElementById('mg-best-score').textContent = '최고 기록: ' + Math.floor(GS.mg_highscore || 0) + 'm';
+  document.getElementById('mg-ui').style.display = 'none';
+  document.getElementById('mg-over-ui').style.display = 'none';
+  document.getElementById('mg-revive-prompt-ui').style.display = 'none';
+  if (window.mgReviveTimer) clearInterval(window.mgReviveTimer);
+  document.getElementById('mg-best-score').textContent = '최고 기록: ' + Math.floor(GS.mg_highscore || 0) + 'm';
   
   mg.p.y = mg.h / 2 - 50;
-  mg.p.vy = 0;
-  mg.score = 0;
+  mg.p.vy = 0;
+  mg.score = 0;
+  mg.revived = false;       // 새 게임 시작 시 부활 초기화
+  mg.invincibleTicks = 0;   // 무적 초기화
   mg.baseSpeed = 6.0;
   mg.speed = mg.baseSpeed;
   mg.jumpCount = 0;
@@ -5706,70 +5735,69 @@ function startMg() {
 }
 
 function endMg() {
-  mg.active = false;
-  playSound('crash');
+  mg.active = false;
 
-  var now = Date.now();
-  var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
-  var missedTicks = Math.floor(offlineMs / 5000);
-  GS.mgLeftoverMs = offlineMs % 5000;
+  var now = Date.now();
+  var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
+  var missedTicks = Math.floor(offlineMs / 5000);
+  GS.mgLeftoverMs = offlineMs % 5000;
 
-  if (missedTicks > 0) {
-    for (var i = 0; i < missedTicks; i++) { tick(true); }
-  }
-  
-  var isNewBest = false;
-  if (!GS.mg_highscore) GS.mg_highscore = 0;
-  if (mg.score > GS.mg_highscore) {
-    GS.mg_highscore = mg.score;
-    isNewBest = true;
-  }
+  if (missedTicks > 0) {
+    for (var i = 0; i < missedTicks; i++) { tick(true); }
+  }
+  
+  var isNewBest = false;
+  if (!GS.mg_highscore) GS.mg_highscore = 0;
+  if (mg.score > GS.mg_highscore) {
+    GS.mg_highscore = mg.score;
+    isNewBest = true;
+  }
 
-  // --- 🏆 랭크 및 보상 판정 로직 ---
-  var rank = 'C';
-  var reward = 0;
-  var rankClass = 'rank-c';
+  // --- 🏆 랭크 및 보상 판정 로직 ---
+  var rank = 'C';
+  var reward = 0;
+  var rankClass = 'rank-c';
 
-  if (mg.score >= 3000) {
-      rank = 'S';
-      reward = 3;
-      rankClass = 'rank-s';
-  } else if (mg.score >= 2000) {
-      rank = 'A';
-      reward = 2;
-      rankClass = 'rank-a';
-  } else if (mg.score >= 1000) {
-      rank = 'B';
-      reward = 1;
-      rankClass = 'rank-b';
-  }
+  if (mg.score >= 3000) {
+      rank = 'S';
+      reward = 3;
+      rankClass = 'rank-s';
+  } else if (mg.score >= 2000) {
+      rank = 'A';
+      reward = 2;
+      rankClass = 'rank-a';
+  } else if (mg.score >= 1000) {
+      rank = 'B';
+      reward = 1;
+      rankClass = 'rank-b';
+  }
 
-  if (reward > 0) {
-      GS.tickets += reward;
-  }
+  if (reward > 0) {
+      GS.tickets += reward;
+  }
 
-  // 결과 UI 업데이트
-  var rankEl = document.getElementById('mg-result-rank');
-  rankEl.textContent = rank;
-  rankEl.className = rankClass;
+  // 결과 UI 업데이트
+  var rankEl = document.getElementById('mg-result-rank');
+  rankEl.textContent = rank;
+  rankEl.className = rankClass;
 
-  var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm';
-  if (isNewBest) finalHtml += ' <span style="color:var(--gold); font-size:14px;">(최고 기록 경신!)</span>';
-  document.getElementById('mg-final-score').innerHTML = finalHtml;
-  
-  var rewardWrap = document.getElementById('mg-result-reward-wrap');
-  if (reward > 0) {
-      rewardWrap.innerHTML = `
-          <div class="mg-result-reward-box">
-              보상: <img src="imgs/scout_ticket_icon.png" style="width:26px;"> ${reward}장
-          </div>
-      `;
-  } else {
-      rewardWrap.innerHTML = `<div style="color:#666; font-size:14px; margin-top:10px;">보상이 없습니다.</div>`;
-  }
+  var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm';
+  if (isNewBest) finalHtml += ' <span style="color:var(--gold); font-size:14px;">(최고 기록 경신!)</span>';
+  document.getElementById('mg-final-score').innerHTML = finalHtml;
+  
+  var rewardWrap = document.getElementById('mg-result-reward-wrap');
+  if (reward > 0) {
+      rewardWrap.innerHTML = `
+          <div class="mg-result-reward-box" style="margin-top:4px; padding:6px 16px; font-size:15px;">
+              보상: <img src="imgs/scout_ticket_icon.png" style="width:20px; vertical-align:middle; margin-top:-2px;"> ${reward}장
+          </div>
+      `;
+  } else {
+      rewardWrap.innerHTML = `<div style="color:#666; font-size:13px; margin-top:4px;">보상이 없습니다.</div>`;
+  }
 
-  document.getElementById('mg-over-ui').style.display = 'flex';
-  save(); 
+  document.getElementById('mg-over-ui').style.display = 'flex';
+  save(); 
 }
 
 function updateMg(ts) {
@@ -5869,23 +5897,42 @@ function updateMg(ts) {
   }
 
   var isHit = false;
-  var feetY = py + mg.p.r;
+  var feetY = py + mg.p.r;
 
-  if (feetY >= groundY) {
-    if (currentType === 'DOWN') {
-      isHit = true; 
-    } else {
-      mg.p.y = groundY - mg.p.r;
-      if (mg.p.vy >= 0) {
-        mg.p.vy = 0;
-        mg.jumpCount = 0; 
-      }
-    }
-  }
+  // 무적 시간 타이머 감소
+  if (mg.invincibleTicks > 0) {
+    mg.invincibleTicks -= ts;
+  }
 
-  if (isHit || mg.p.y > mg.h + 50) {
-    endMg(); 
-  }
+  if (feetY >= groundY) {
+    if (currentType === 'DOWN') {
+      if (mg.invincibleTicks <= 0) {
+        isHit = true; 
+      } else {
+        // 무적 상태일 땐 파란선 위에서도 안전하게 달림
+        mg.p.y = groundY - mg.p.r;
+        if (mg.p.vy >= 0) { mg.p.vy = 0; mg.jumpCount = 0; }
+      }
+    } else {
+      mg.p.y = groundY - mg.p.r;
+      if (mg.p.vy >= 0) {
+        mg.p.vy = 0;
+        mg.jumpCount = 0; 
+      }
+    }
+  }
+
+  // 화면 밖으로 떨어졌을 때 처리
+  if (mg.p.y > mg.h + 50) {
+    if (mg.invincibleTicks <= 0) {
+      checkReviveOrEnd();
+    } else {
+      // 무적 상태인데 틈새로 빠졌다면 하늘로 크게 튕겨 올려줌
+      mg.p.vy = mg.jump * 1.5;
+    }
+  } else if (isHit) {
+    checkReviveOrEnd();
+  }
 }
 
 function drawMg() {
@@ -6011,10 +6058,16 @@ function drawMg() {
   }
 
   var dx = Math.round(mg.p.x - (drawW / 2));
-  // 높이(drawH)가 작아진 만큼 dy(시작 Y좌표)가 알아서 아래로 내려가기 때문에 발바닥 위치는 허공에 뜨지 않고 딱 맞게 유지됩니다!
-  var dy = Math.round(mg.p.y - drawH + 17); 
-  
-  mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, Math.round(drawW), Math.round(drawH));
+  // 높이(drawH)가 작아진 만큼 dy(시작 Y좌표)가 알아서 아래로 내려가기 때문에 발바닥 위치는 허공에 뜨지 않고 딱 맞게 유지됩니다!
+  var dy = Math.round(mg.p.y - drawH + 17); 
+
+  // 무적 상태일 때 반투명하게 깜빡이는 효과 적용
+  if (mg.invincibleTicks > 0) {
+    mg.ctx.globalAlpha = 0.4 + Math.abs(Math.sin(mg.invincibleTicks * 0.15)) * 0.6;
+  }
+  
+  mg.ctx.drawImage(mgSprite, sx, sy, sWidth, sHeight, dx, dy, Math.round(drawW), Math.round(drawH));
+  mg.ctx.globalAlpha = 1.0; // 다시 원래대로 복구
 
   // 💡 캔버스 내부에 점수를 직접 그립니다. (DOM 렉 0% & 메모리 쓰레기 제로)
   if (mg.active) {
@@ -6078,6 +6131,89 @@ function loopMg(time) {
 
 document.getElementById('mg-start-btn').addEventListener('click', startMg);
 document.getElementById('mg-restart-btn').addEventListener('click', startMg);
+// --- 미니게임 부활 로직 ---
+function checkReviveOrEnd() {
+    mg.active = false; 
+    playSound('crash'); 
+    
+    if (mg.revived) {
+        endMg(); 
+    } else {
+        showRevivePrompt(); 
+    }
+}
+
+function showRevivePrompt() {
+    var promptUi = document.getElementById('mg-revive-prompt-ui');
+    var countText = document.getElementById('mg-revive-count');
+    var circle = document.getElementById('mg-revive-circle');
+    
+    promptUi.style.display = 'flex';
+    
+    var timeLeft = 5;
+    countText.textContent = timeLeft;
+    
+    // 💡 1. 게이지를 꽉 찬 상태로 초기화
+    circle.style.transition = 'none';
+    circle.style.strokeDashoffset = '0';
+    
+    // 💡 2. 0.05초 뒤에 '5초 동안 완전히 비워지는' 애니메이션을 한 번에 실행!
+    setTimeout(function() {
+        circle.style.transition = 'stroke-dashoffset 5s linear';
+        circle.style.strokeDashoffset = '214'; // 214는 원의 전체 둘레 길이
+    }, 50);
+
+    if (window.mgReviveTimer) clearInterval(window.mgReviveTimer);
+    window.mgReviveTimer = setInterval(function() {
+        timeLeft--;
+        if (timeLeft > 0) countText.textContent = timeLeft;
+        
+        // 💡 매초 게이지를 수동으로 조작하던 로직 삭제 (CSS가 알아서 부드럽게 줄여줌)
+
+        if (timeLeft <= 0) {
+            clearInterval(window.mgReviveTimer);
+            promptUi.style.display = 'none';
+            endMg(); // 시간 다 되면 결과창으로 이동
+        }
+    }, 1000);
+}
+
+function reviveMg() {
+    if (_isAdPlaying) return;
+
+    if (window.mgReviveTimer) clearInterval(window.mgReviveTimer);
+    document.getElementById('mg-revive-prompt-ui').style.display = 'none';
+
+    _isAdPlaying = true;
+    playSound('click');
+    showToast("광고를 불러오는 중입니다...", "#aaaaaa", null, 2000, false, true);
+
+    setTimeout(function() {
+        _isAdPlaying = false;
+        mg.revived = true;
+        playSound('event');
+
+        // 플레이어를 화면 중앙으로 옮기고 물리엔진 리셋
+        mg.p.y = mg.h / 2 - 50;
+        mg.p.vy = 0;
+        mg.jumpCount = 0;
+        
+        // 약 3초간 무적 (1초 = 약 60틱)
+        mg.invincibleTicks = 180;
+
+        mg.active = true;
+        mg.lastTime = performance.now();
+        if (!mg.reqId) mg.reqId = requestAnimationFrame(loopMg);
+    }, 2000);
+}
+
+document.getElementById('mg-prompt-revive-btn').addEventListener('click', reviveMg);
+document.getElementById('mg-prompt-skip').addEventListener('click', function() {
+    playSound('click');
+    if (window.mgReviveTimer) clearInterval(window.mgReviveTimer);
+    document.getElementById('mg-revive-prompt-ui').style.display = 'none';
+    endMg(); 
+});
 
 function switchScreen(name) {
   playSound('click');
@@ -7582,12 +7718,12 @@ function updateMgHearts() {
         btn.classList.add('disabled');
         btn.textContent = "하트 부족";
         btn.style.opacity = "0.5";
-        document.getElementById('mg-ad-recharge-btn').style.display = 'block';
+        document.getElementById('mg-ad-recharge-btn').style.display = 'flex';
 
-        restartBtn.classList.add('disabled');
-        restartBtn.textContent = "하트 부족";
-        restartBtn.style.opacity = "0.5";
-        document.getElementById('mg-over-ad-recharge-btn').style.display = 'block';
+        restartBtn.classList.add('disabled');
+        restartBtn.textContent = "하트 부족";
+        restartBtn.style.opacity = "0.5";
+        document.getElementById('mg-over-ad-recharge-btn').style.display = 'flex';
 
         // 💡 남은 횟수 텍스트가 사라졌으므로, 횟수에 따라 버튼 투명도만 조절합니다.
         var adBtn1 = document.getElementById('mg-ad-recharge-btn');
