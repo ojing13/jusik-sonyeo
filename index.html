@@ -3,138 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>주식소녀</title>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
-
-<script>
-  // 스크린샷에서 발급받은 우리 게임만의 고유 열쇠
-  const firebaseConfig = {
-    apiKey: "AIzaSyCNMFsmYfll62U6Blay8LBPasn6xbKfBfc",
-    authDomain: "jusik-sonyeo.firebaseapp.com",
-    projectId: "jusik-sonyeo",
-    storageBucket: "jusik-sonyeo.firebasestorage.app",
-    messagingSenderId: "51450164735",
-    appId: "1:51450164735:web:e142be60687de95f0f63ca",
-    measurementId: "G-SP062HJMBG"
-  };
-
-  // 파이어베이스 금고 문 열기
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  // 유저 로그인 확인 및 서버 데이터 이전(Migration) 로직
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      console.log("파이어베이스 로그인 성공! ID:", user.uid);
-      window.userUid = user.uid;
-      
-      const userRef = db.collection('users').doc(user.uid);
-      
-      // 🚨 실시간 계정 이전 감지 (Kill Switch) - 좀비 부활 완벽 차단 로직
-      userRef.onSnapshot(function(doc) {
-        if (doc.exists && (doc.data().kill_switch === true || doc.data().isTransferred === true)) {
-          console.log("💀 킬 스위치 발동! 기존 데이터를 완전히 파기합니다.");
-          
-          window.isRestoring = true; 
-          if (window._tickInterval) clearInterval(window._tickInterval);
-          
-          // 단순 덮어쓰기가 아닌 로컬 스토리지 완벽 초기화
-          localStorage.clear();
-          
-          alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 완전히 초기화되며 새 계정으로 시작합니다.");
-          
-          auth.signOut().then(function() { 
-            location.reload(); 
-          }).catch(function() { 
-            location.reload(); 
-          });
-        }
-      });
-
-      // 💡 1. 복구 모드인지 먼저 확인 (가장 높은 우선순위)
-      var isRecovering = sessionStorage.getItem('sg_recovery_flag');
-      if (isRecovering === 'true') {
-        sessionStorage.removeItem('sg_recovery_flag'); // 깃발 제거
-        var localRaw = localStorage.getItem('sg_v3');
-        if (localRaw) {
-          console.log("🚀 [복구 모드] 로컬 데이터를 서버에 강제 동기화합니다.");
-          var compressedRaw = LZString.compressToBase64(localRaw);
-          userRef.set({ saved_data: compressedRaw, is_compressed: true }); 
-          
-          window.isFirebaseLoaded = true;
-          if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
-          return; 
-        }
-      }
-
-      // 💡 2. 일반 로드 로직
-      userRef.get().then(function(doc) {
-        var localRaw = localStorage.getItem('sg_v3');
-        var localData = localRaw ? JSON.parse(localRaw) : null;
-        
-        if (doc.exists) {
-          var serverData = doc.data();
-
-          if (serverData.kill_switch === true || serverData.isTransferred === true) {
-            console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단하고 즉시 파기합니다.");
-            window.isRestoring = true; 
-            if (window._tickInterval) clearInterval(window._tickInterval);
-            localStorage.clear();
-            auth.signOut().then(function() { location.reload(); }).catch(function() { location.reload(); });
-            return;
-          }
-
-          if (serverData.is_compressed && serverData.saved_data) {
-            var decompressed = LZString.decompressFromBase64(serverData.saved_data);
-            if (decompressed) serverData = JSON.parse(decompressed);
-          } else if (serverData.saved_data) {
-            serverData = JSON.parse(serverData.saved_data);
-          }
-
-          var serverTime = serverData.lastSaveTime || 0;
-          var localTime = (localData && localData.lastSaveTime) ? localData.lastSaveTime : 0;
-
-          if (localData && localTime >= serverTime) {
-            console.log("폰 데이터가 최신입니다. 서버를 업데이트합니다.");
-            var compressedRaw = LZString.compressToBase64(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true });
-          } else {
-            console.log("서버 데이터가 최신입니다. 폰 데이터를 갱신합니다.");
-            localStorage.setItem('sg_v3', JSON.stringify(serverData));
-          }
-        } else {
-          if (localData) {
-            console.log("신규 유저: 현재 데이터를 서버에 등록합니다.");
-            var compressedRaw = LZString.compressToBase64(localRaw);
-            userRef.set({ saved_data: compressedRaw, is_compressed: true });
-          }
-        }
-        
-        // 💡 파이어베이스 확인 끝! 로딩 검사기로 신호 보냄
-        window.isFirebaseLoaded = true;
-        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
-        
-      }).catch(function(error) {
-        console.error("데이터 동기화 중 에러 발생:", error);
-        window.isFirebaseLoaded = true; 
-        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
-      });
-
-    } else {
-      auth.signInAnonymously().then(function() {
-        window.isFirebaseLoaded = true;
-        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
-      }).catch(function(e) { 
-        console.error("익명 로그인 실패:", e); 
-        window.isFirebaseLoaded = true;
-        if (typeof checkLoadingComplete === 'function') checkLoadingComplete();
-      });
-    }
-  });
-</script>
 
 <script>
   (function() {
@@ -2052,31 +1921,28 @@ body, #app {
       <button id="toggle-noti-btn" onclick="toggleNoti()" style="padding:6px 14px; border-radius:6px; border:none; background:var(--green); color:white; font-family:'Jua',sans-serif; font-size:14px; cursor:pointer; width:55px;">ON</button>
     </div>
 
-    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:14px; color:var(--gold); margin-bottom:6px; text-align:center;">기기 변경 / 계정 복구</div>
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #444455;">
+      <div style="font-size:12px; color:var(--text2); margin-bottom:10px; text-align:center; letter-spacing:1px;">기기 변경 / 계정 복구</div>
       
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:8px;">
-          <button onclick="backupAndCopyCode()" style="width:100%; height:36px; background:var(--green); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">백업 및 복구 코드 발급</button>
-          <div id="recovery-code-container" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed #444;">
-            <div style="font-size:10px; color:#ffcc44; margin-bottom:4px; text-align:center;">※ 코드가 유실되었을 경우 아래 텍스트를 직접 복사하세요.</div>
-            <input type="text" id="my-recovery-code" readonly onclick="this.select()" style="width:100%; height:28px; padding:0 8px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; font-size:11px; text-align:center; outline:none; box-sizing:border-box;" value="로딩중...">
-          </div>
-        </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <!-- 복구 코드 복사 버튼 -->
+        <button onclick="backupAndCopyCode()" style="width:100%; height:38px; background:#28a745; color:#fff; border:none; border-radius:8px; cursor:pointer; font-family:'Jua',sans-serif; font-size:14px; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; gap:6px;">
+          <img src="imgs/setting_icon.png" style="width:16px; height:16px; filter:brightness(0) invert(1);"> 복구 코드 클립보드 복사
+        </button>
 
-        <div style="background:#1a1a2a; border:1px solid #333344; border-radius:8px; padding:8px;">
-          <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">기존 데이터 불러오기</div>
-          <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
-          <div style="display:flex; align-items:center; gap:6px; height:30px;">
-            <input type="text" id="input-recovery-code" placeholder="복구 코드 입력" style="width:100%; height:100%; padding:0 8px; background:#000; border:1px solid #444; color:#fff; border-radius:6px; font-size:11px; outline:none; box-sizing:border-box;">
-            <button onclick="restoreAccount()" style="flex-shrink:0; height:100%; padding:0 14px; background:var(--red); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:13px; box-sizing:border-box;">복구</button>
+        <!-- 복구 실행 구역 -->
+        <div style="background:rgba(0,0,0,0.2); border:1px solid #333344; border-radius:8px; padding:10px;">
+          <div style="font-size:11px; color:var(--text2); margin-bottom:8px; padding-left:2px;">기존 데이터 불러오기 (코드 붙여넣기)</div>
+          <div style="display:flex; gap:6px; height:36px; width:100%;">
+            <input type="text" id="input-recovery-code" placeholder="코드를 입력하세요" style="flex:1; height:100%; padding:0 10px; background:#000; border:1px solid #444; color:#fff; border-radius:6px; font-size:12px; outline:none; box-sizing:border-box; min-width:0;">
+            <button onclick="restoreAccount()" style="width:80px; height:100%; background:var(--red); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:13px; font-weight:bold; flex-shrink:0;">복구 실행</button>
           </div>
         </div>
       </div>
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.9</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.0</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -2122,171 +1988,95 @@ function updateSettingsUI() {
     notiBtn.textContent = GS.notiOn ? 'ON' : 'OFF';
     notiBtn.style.background = GS.notiOn ? 'var(--green)' : '#555566';
   }
-
-  var recoveryInput = document.getElementById('my-recovery-code');
-  if (recoveryInput) {
-    var lastCode = localStorage.getItem('sg_last_transfer_code');
-    recoveryInput.value = lastCode ? lastCode : "버튼을 눌러 발급";
-  }
 }
-// 💡 클라우드 백업 및 복구 코드 발급 (Live Pointer 방식)
+// 💡 깔끔한 오프라인 백업: 화면 표시 없이 즉시 클립보드로 복사
 function backupAndCopyCode() {
   playSound('click');
   save(); 
 
-  if (!window.userUid || typeof db === 'undefined') {
-    showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
+  var localRaw = localStorage.getItem('sg_v3');
+  if (!localRaw) {
+    showToast("백업할 데이터가 없습니다.", "#ff4444");
     return;
   }
 
-  // 🚨 [유령 코드 청소] 이전에 발급받은 코드가 있다면 DB에서 삭제하여 쓰레기 데이터 누적 방지
-  var lastCode = localStorage.getItem('sg_last_transfer_code');
-  if (lastCode) {
-    db.collection('transfers').doc(lastCode).delete().catch(function(){});
+  var compressedRaw = LZString.compressToBase64(localRaw);
+
+  // 1. 최신 클립보드 API 지원 시
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(compressedRaw).then(function() {
+      showToast("백업 완료! 복구 코드가 클립보드에 복사되었습니다.", "#66ff88", null, 4000);
+    }).catch(function(err) {
+      fallbackCopy(compressedRaw);
+    });
+  } else {
+    // 2. 구형 브라우저 지원 시
+    fallbackCopy(compressedRaw);
   }
 
-  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자 제외
-  var newCode = '';
-  for (var i = 0; i < 8; i++) {
-    newCode += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  var codeInput = document.getElementById('my-recovery-code');
-  var codeContainer = document.getElementById('recovery-code-container');
-  if (codeInput) codeInput.value = newCode;
-  if (codeContainer) codeContainer.style.display = 'block';
-
-  var isCopied = false;
-  try {
-    var tempTextArea = document.createElement("textarea");
-    tempTextArea.value = newCode;
-    tempTextArea.style.position = "fixed";
-    tempTextArea.style.left = "-9999px";
-    document.body.appendChild(tempTextArea);
-    tempTextArea.select();
-    tempTextArea.setSelectionRange(0, 99999);
-    isCopied = document.execCommand('copy');
-    document.body.removeChild(tempTextArea);
-  } catch (err) {
-    isCopied = false;
-  }
-
-  showToast("서버에 연동하는 중...", "#aaaaaa", null, 2000, false, true);
-
-  var localRaw = localStorage.getItem('sg_v3');
-  var compressedRaw = LZString.compressToBase64(localRaw);
-
-  // 1. 내 장부(users)에 최신 상태를 강제 업로드
-  db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).then(function() {
-    
-    // 2. 1회용 금고(transfers)에는 '내 UID'를 가리키는 이정표만 저장
-    return db.collection('transfers').doc(newCode).set({ 
-      targetUid: window.userUid, 
-      createdAt: firebase.firestore.FieldValue.serverTimestamp() 
-    });
-
-  }).then(function() {
-    localStorage.setItem('sg_last_transfer_code', newCode);
-    localStorage.setItem('sg_cloud_sync', 'true'); // 💡 꼼수 방지용 라이브 동기화 모드 켜기!
-
-    if (isCopied) {
-      showToast("백업 완료! 복구 코드가 복사되었습니다. (" + newCode + ")", "#66ff88", null, 5000, false, true);
-    } else {
-      showToast("백업 완료! 아래 일회용 코드를 직접 복사해주세요. (" + newCode + ")", "#ffcc44", null, 5000, false, true);
-    }
-  }).catch(function(error) {
-    console.error("서버 백업 실패:", error);
-    showToast("백업 실패: " + error.message, "#ff4444", null, 4000, false, true);
-  });
+  // 화면엔 안 보이지만, 뒤에서 몰래 텍스트를 만들고 긁어가는 안전장치
+  function fallbackCopy(text) {
+    try {
+      var tempTextArea = document.createElement("textarea");
+      tempTextArea.value = text;
+      tempTextArea.style.position = "fixed";
+      tempTextArea.style.left = "-99999px"; // 화면 저 멀리 숨김
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      tempTextArea.setSelectionRange(0, 999999);
+      var isCopied = document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+      
+      if (isCopied) {
+        showToast("백업 완료! 복구 코드가 클립보드에 복사되었습니다.", "#66ff88", null, 4000);
+      } else {
+        showToast("복사 권한이 없습니다. 브라우저 설정을 확인해주세요.", "#ff4444", null, 4000);
+      }
+    } catch (err) {
+      showToast("복사 실패! 브라우저 환경이 지원하지 않습니다.", "#ff4444", null, 4000);
+    }
+  }
 }
 
-// 💡 이정표를 따라가서 실시간 데이터를 가져오는 스마트 복구 기능
+// 💡 완전 오프라인 방식: 텍스트 코드를 붙여넣어 복구하는 기능
 function restoreAccount() {
-  var transferCode = document.getElementById('input-recovery-code').value.trim().toUpperCase(); 
+  var inputEl = document.getElementById('input-recovery-code');
+  var transferCode = inputEl ? inputEl.value.trim() : ""; 
+  
   if (!transferCode) {
       showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
       return;
   }
-  
-  var currentUser = firebase.auth().currentUser;
-  if (!currentUser) {
-      showToast("로그인 대기 중입니다. 잠시 후 다시 시도하세요.", "#ff4444", null, 3000, false, true);
-      return;
-  }
 
-  playSound('click');
-  showToast("서버 금고 확인 중...", "#aaaaaa", null, 5000, false, true);
+  playSound('click');
+  showToast("데이터 복구 중...", "#aaaaaa", null, 2000);
 
-  var timeoutPromise = new Promise(function(_, reject) {
-    setTimeout(function() { reject(new Error("timeout")); }, 7000);
-  });
+  try {
+    // 입력된 긴 텍스트의 압축을 해제함
+    var decompressed = LZString.decompressFromBase64(transferCode);
+    if (!decompressed) throw new Error("복호화 실패");
+    
+    var parsedData = JSON.parse(decompressed);
+    if (!parsedData || typeof parsedData.money === 'undefined') {
+      throw new Error("잘못된 데이터 형식");
+    }
 
-  var fetchTransfer = db.collection('transfers').doc(transferCode).get({ source: 'server' });
+    console.log("🚀 오프라인 복구 데이터 확인 성공!");
+    window.isRestoring = true; 
 
-  Promise.race([fetchTransfer, timeoutPromise]).then(function(transferDoc) {
-      if (!transferDoc.exists) {
-          showToast("존재하지 않거나 이미 파기된 복구 코드입니다.", "#ff4444", null, 5000, false, true);
-          return;
-      }
-      
-      var targetUid = transferDoc.data().targetUid;
-      if (targetUid === currentUser.uid) {
-          showToast("현재 이미 사용 중인 계정입니다.", "#ffcc44", null, 3000, false, true);
-          return;
-      }
+    if (window._tickInterval) clearInterval(window._tickInterval);
+    if (typeof mg !== 'undefined') mg.active = false; 
 
-      // 💡 포인터를 따라가서 '진짜 원본 최신 데이터'를 가져옴
-      return db.collection('users').doc(targetUid).get({ source: 'server' }).then(function(userDoc) {
-          if (!userDoc.exists || userDoc.data().kill_switch) {
-              showToast("원본 데이터가 존재하지 않거나 파기되었습니다.", "#ff4444", null, 5000, false, true);
-              return;
-          }
+    parsedData.lastSaveTime = Date.now();
+    localStorage.setItem('sg_v3', JSON.stringify(parsedData));
 
-          var serverData = userDoc.data();
-          if (serverData.is_compressed && serverData.saved_data) {
-             var decompressed = LZString.decompressFromBase64(serverData.saved_data);
-             if (decompressed) serverData = JSON.parse(decompressed);
-             else serverData = null; 
-          } else if (serverData.saved_data) {
-            serverData = JSON.parse(serverData.saved_data);
-          }
-          
-          if (!serverData || typeof serverData.money === 'undefined') {
-            showToast("데이터를 읽을 수 없습니다.", "#ff4444", null, 4000, false, true);
-            return;
-          }
+    showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000);
+    setTimeout(function() { location.reload(); }, 1200);
 
-          console.log("🚀 실시간 복구 데이터 확인 성공!");
-          window.isRestoring = true; 
-
-          if (window._tickInterval) clearInterval(window._tickInterval);
-          if (typeof mg !== 'undefined') mg.active = false; 
-
-          sessionStorage.setItem('sg_recovery_flag', 'true');
-          serverData.lastSaveTime = Date.now();
-          localStorage.setItem('sg_v3', JSON.stringify(serverData));
-
-          var compressedNew = LZString.compressToBase64(JSON.stringify(serverData));
-          
-          // 내 새 기기에 덮어쓰고, 구형 기기는 킬 스위치, 코드는 삭제!
-          db.collection('users').doc(currentUser.uid).set({ saved_data: compressedNew, is_compressed: true }).then(function() {
-              if (targetUid) {
-                  db.collection('users').doc(targetUid).set({ kill_switch: true });
-              }
-              db.collection('transfers').doc(transferCode).delete();
-
-              showToast("복구 완료! 1초 뒤 데이터를 적용합니다.", "#66ff88", null, 3000, false, true);
-              setTimeout(function() { location.reload(); }, 1200);
-          }).catch(function(e) {
-              console.error("서버 갱신 중 오류:", e);
-              location.reload(); 
-          });
-      });
-  }).catch(function(error) {
-      console.error("복구 서버 에러:", error);
-      if (error.message === "timeout") showToast("서버 응답 지연: 네트워크 상태를 확인해주세요.", "#ff4444", null, 5000, false, true);
-      else showToast("서버 연결 실패.", "#ff4444", null, 5000, false, true);
-  });
+  } catch (e) {
+    console.error("복구 에러:", e);
+    showToast("유효하지 않거나 손상된 복구 코드입니다.", "#ff4444", null, 4000);
+  }
 }
 
 function toggleBGM() {
@@ -2895,9 +2685,18 @@ var GS = {
   // 💡 추가: 하트 광고 시청 횟수 제한용 변수
   adHeartUses: 5,
   adPumpUses: 2,
-  lastAdDate: new Date().toDateString(),
+  lastAdDate: new Date().toDateString(),
   showEventMarkers: true, // 💡 차트 이벤트 마커 표시 여부
-  marketHistory: [] // 💡 시황 기록 배열
+  marketHistory: [], // 💡 시황 기록 배열
+  gachaQueue: [], // 💡 가챠 결과를 미리 세워두는 대기열
+  // 💡 시장의 운명을 미리 정해두는 데스티니(Destiny) 시스템
+  destiny: {
+    specialTick: Math.floor(Math.random() * 300) + 100, // 폭락/상승장 타이머
+    specialType: Math.random() < 0.5 ? 'crash' : 'bull', // 이번 특수장세 결과
+    themeTick: Math.floor(Math.random() * 100) + 50,    // 테마장 타이머
+    newsTick: Math.floor(Math.random() * 20) + 10,      // 뉴스 타이머
+    earningBeat: Math.random() < 0.52                   // 다음 실적발표 결과(어닝 서프라이즈 여부)
+  }
 };
 
 function addMarketHistory(msg, color) {
@@ -3572,12 +3371,14 @@ function save() {
       lastSaveTime: Date.now(), // 💡 저장하는 순간의 정확한 시간을 기록
       virtual_time: GS.virtual_time || Date.now(),
       adTicketUses: GS.adTicketUses, 
-      adHeartUses: GS.adHeartUses, 
-      adPumpUses: GS.adPumpUses,
-      lastAdDate: GS.lastAdDate,  
-      marketHistory: GS.marketHistory,
-      chars: outChars    
-    };
+      adHeartUses: GS.adHeartUses, 
+      adPumpUses: GS.adPumpUses,
+      lastAdDate: GS.lastAdDate,  
+      marketHistory: GS.marketHistory,
+      gachaQueue: GS.gachaQueue, // 💡 가챠 대기열 저장
+      destiny: GS.destiny, // 💡 운명 기록 저장
+      chars: outChars    
+    };
       
     // 💡 2. 기존처럼 내 폰(로컬)에 저장
     localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -3585,28 +3386,6 @@ function save() {
   } catch(e) {
     console.error("Save Error: ", e);
   }
-}
-
-// 💡 실시간 꼼수 차단용: 1.5초 대기를 무시하고 즉시(immediate) 꽂아버리는 옵션 추가
-var _cloudSyncTimeout = null;
-function cloudSync(immediate) {
-  if (localStorage.getItem('sg_cloud_sync') === 'true' && window.userUid && typeof db !== 'undefined') {
-    var syncAction = function() {
-      var localRaw = localStorage.getItem('sg_v3');
-      if (localRaw) {
-        var compressedRaw = LZString.compressToBase64(localRaw);
-        db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).catch(function(e){});
-      }
-    };
-
-    if (immediate) {
-      if (_cloudSyncTimeout) clearTimeout(_cloudSyncTimeout);
-      syncAction(); // 1.5초 대기 없이 즉시 서버에 덮어쓰기!
-    } else {
-      if (_cloudSyncTimeout) clearTimeout(_cloudSyncTimeout);
-      _cloudSyncTimeout = setTimeout(syncAction, 1500);
-    }
-  }
 }
 
 function load() {
@@ -3696,6 +3475,8 @@ function load() {
     GS.lastAdDate = todayStr;
 
     if (d.marketHistory) GS.marketHistory = d.marketHistory;
+    if (d.gachaQueue) GS.gachaQueue = d.gachaQueue; else GS.gachaQueue = [];
+    if (d.destiny) GS.destiny = d.destiny; else GS.destiny = { specialTick: 200, specialType: 'crash', themeTick: 50, newsTick: 15, earningBeat: true }; // 💡 운명 로드
 
     if (d.tradeMode !== undefined) {
       GS.tradeMode = d.tradeMode;
@@ -3958,11 +3739,20 @@ function tick(silent) {
   }
 
   if (GS.currentTheme.target !== '없음') {
-    if (Math.random() < 0.1) generateNews(silent);
-  } else {
-        // 💡 1. 블랙스완 & 대세 상승장 (조건 없이 순수하게 매 틱마다 0.5% 확률로 독립 실행)
-        if (Math.random() < 0.005) { 
-          if (Math.random() < 0.5) {
+    GS.destiny.newsTick--;
+    if (GS.destiny.newsTick <= 0) {
+      GS.destiny.newsTick = Math.floor(Math.random() * 15) + 5;
+      generateNews(silent);
+    }
+  } else {
+        // 💡 1. 블랙스완 & 대세 상승장 (정해진 운명의 시간이 오면 발동!)
+        GS.destiny.specialTick--;
+        if (GS.destiny.specialTick <= 0) { 
+          GS.destiny.specialTick = Math.floor(Math.random() * 400) + 200; // 다음 운명 세팅
+          var nextType = GS.destiny.specialType;
+          GS.destiny.specialType = Math.random() < 0.5 ? 'crash' : 'bull'; // 다음번엔 뭘로 할지 미리 결정
+          
+          if (nextType === 'crash') {
             GS.inCrash = true; GS.crashTicks = 3; GS.newsLinkKey = null; GS.stickyNewsKey = null; GS.stickyNewsTicks = 0; GS.currentNews = '<img src="imgs/icon_lightning.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 이벤트 발생! 시장 급락!';
             if (!silent) showNewsToast(GS.currentNews, '#cc88ff', null);
             addMarketHistory('<img src="imgs/icon_lightning.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 긴급! 블랙스완 발생 (시장 대폭락)', '#cc88ff');
@@ -3985,29 +3775,31 @@ function tick(silent) {
           }
           if (!silent) playSound('event');
           updateTotalAssets(); updateMissions(); updateDialogState();
-          
-          cloudSync(true); // 💡 대폭락이나 떡상 이벤트가 발생하면 피할 수 없게 즉시 서버 덮어쓰기!
-
           if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
           return;
         }
 
-        // 💡 2. 특수 장세가 안 터졌을 때만 섹터 테마장 로직 실행 (평균 6분 간격)
-        GS.noThemeTicks++; // 변수 자체는 다른 곳에서 쓸 수도 있으니 살려둡니다
-        var shouldTrigger = (Math.random() < (1 / 72));
-        if (shouldTrigger) {
-          GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
-          var icon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">';
-          var historyIcon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">';
-          var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
-          GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
-          if (!silent) showNewsToast(GS.currentNews, color, null);
-          addMarketHistory(historyIcon + ' 「' + GS.currentTheme.name + '」 시작', color);
-          if (!silent) playSound('event');
-        } else {
-            if (Math.random() < 0.06) generateNews(silent);
-        }
-      }
+        // 💡 2. 테마장 및 뉴스 (마찬가지로 운명의 시간이 오면 발동!)
+        GS.noThemeTicks++;
+        GS.destiny.themeTick--;
+        if (GS.destiny.themeTick <= 0) {
+          GS.destiny.themeTick = Math.floor(Math.random() * 150) + 50; // 다음 테마장 타이머
+          GS.currentTheme = pickNextTheme(); GS.themeTimer = GS.currentTheme.duration; GS.newsLinkKey = null;
+          var icon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;">';
+          var historyIcon = GS.currentTheme.type === 'bad' ? '<img src="imgs/icon_snow.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">' : '<img src="imgs/icon_fire.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;">';
+          var color = GS.currentTheme.type === 'bad' ? '#4477ff' : '#ff4455';
+          GS.currentNews = icon + ' 이벤트 발생! 「' + GS.currentTheme.name + '」 시작!';
+          if (!silent) showNewsToast(GS.currentNews, color, null);
+          addMarketHistory(historyIcon + ' 「' + GS.currentTheme.name + '」 시작', color);
+          if (!silent) playSound('event');
+        } else {
+          GS.destiny.newsTick--;
+          if (GS.destiny.newsTick <= 0) {
+            GS.destiny.newsTick = Math.floor(Math.random() * 25) + 10;
+            generateNews(silent);
+          }
+        }
+      }
 
   Object.keys(GS.chars).forEach(function(k) {
     var ch = GS.chars[k];
@@ -4141,19 +3933,20 @@ var EARNINGS_BEAT = ['깜짝 실적! EPS 예상치 대폭 상회', '매출 역�
 var EARNINGS_MISS = ['실적 쇼크! 예상치 큰 폭 하회', '수요 부진, 가이던스 하향'];
 
 function scheduleEarning(silent) {
-  var keys = Object.keys(GS.chars).filter(function(k){ return GS.chars[k].earningCooldown <= 0; });
-  if (!keys.length) return;
-  if (Math.random() < 0.05 && GS.earningSeasonTicks === 0) {
-    GS.earningSeasonTicks = 6;
-    GS.newsLinkKey = null;
-    GS.currentNews = '<img src="imgs/icon_chart_bar.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [어닝시즌] 돌입! 전 종목 변동성 2배!';
-    if (!silent) showNewsToast(GS.currentNews, '#ff9922', null);
-    addMarketHistory('<img src="imgs/icon_chart_bar.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 어닝시즌 돌입! 전 종목 변동성 2배!', '#ff9922');
-    if (!silent) playSound('event');
-  }
-  var picked = keys[Math.floor(Math.random() * keys.length)];
-  var beat = Math.random() < 0.52;
-  GS.earningPending = { key: picked, beat: beat, waitTicks: 4 + Math.floor(Math.random() * 3) };
+  var keys = Object.keys(GS.chars).filter(function(k){ return GS.chars[k].earningCooldown <= 0; });
+  if (!keys.length) return;
+  if (Math.random() < 0.05 && GS.earningSeasonTicks === 0) {
+    GS.earningSeasonTicks = 6;
+    GS.newsLinkKey = null;
+    GS.currentNews = '<img src="imgs/icon_chart_bar.png" style="width:16px; height:16px; vertical-align:middle; margin-top:-2px;"> [어닝시즌] 돌입! 전 종목 변동성 2배!';
+    if (!silent) showNewsToast(GS.currentNews, '#ff9922', null);
+    addMarketHistory('<img src="imgs/icon_chart_bar.png" style="width:14px; height:14px; vertical-align:middle; margin-top:-2px;"> 어닝시즌 돌입! 전 종목 변동성 2배!', '#ff9922');
+    if (!silent) playSound('event');
+  }
+  var picked = keys[Math.floor(Math.random() * keys.length)];
+  var beat = GS.destiny.earningBeat; // 💡 미리 정해둔 운명 사용!
+  GS.destiny.earningBeat = Math.random() < 0.52; // 다음번 실적발표 운명 미리 세팅
+  GS.earningPending = { key: picked, beat: beat, waitTicks: 4 + Math.floor(Math.random() * 3) };
   GS.newsLinkKey = picked;
   GS.currentNews = '[예고] ' + GS.chars[picked].name + ' 실적 발표 임박!';
   if (!silent) showNewsToast(GS.currentNews, '#ffdd44', picked);
@@ -4393,14 +4186,24 @@ function goToMarket(k) {
 var gachaResults = [];
 var revealIdx = 0;
 
-function doGacha(count) {
-  // 🚨 [꼼수 방어 1] 인터넷이 끊겨있으면 아예 시작도 못 하게 차단
-  if (!navigator.onLine) {
-    document.getElementById('g-action').textContent = '네트워크 연결이 필요합니다.';
-    showToast("가챠(스카웃)는 온라인 상태에서만 가능합니다.", "#ff4444", null, 3000, false, true);
-    return;
-  }
+// 💡 큐가 비어있으면 100명 치의 운명을 미리 정해서 줄 세워두는 함수
+function refillGachaQueue() {
+  if (!GS.gachaQueue) GS.gachaQueue = [];
+  var byRarity = function(r) { return Object.keys(GS.chars).filter(function(k) { return GS.chars[k].rarity === r; }); };
+  var ssr = byRarity('SSR'), sr = byRarity('SR'), r = byRarity('R'), n = byRarity('N');
 
+  while (GS.gachaQueue.length < 100) {
+    var roll = Math.random();
+    var picked;
+    if (roll < 0.02) picked = ssr[Math.floor(Math.random() * ssr.length)];
+    else if (roll < 0.09) picked = sr[Math.floor(Math.random() * sr.length)];
+    else if (roll < 0.30) picked = r[Math.floor(Math.random() * r.length)];
+    else picked = n[Math.floor(Math.random() * n.length)];
+    GS.gachaQueue.push(picked);
+  }
+}
+
+function doGacha(count) {
   if (GS.tickets < count) {
     document.getElementById('g-action').textContent = '티켓 부족! (보유: ' + GS.tickets + '장)';
     return;
@@ -4409,28 +4212,25 @@ function doGacha(count) {
   var btn1 = document.getElementById('g-btn1');
   var btn10 = document.getElementById('g-btn10');
   
-  // 🚨 [꼼수 방어 2] 서버 통신 중에 여러 번 누르는 광클/매크로 차단
   if (btn1.style.opacity === '0.5' || btn10.style.opacity === '0.5') return;
   
   btn1.style.opacity = '0.5';
   btn10.style.opacity = '0.5';
 
-  // 1. 티켓 소모 및 결과 굴리기
+  // 💡 1. 큐 확인 및 보충 (미리 줄 세우기)
+  if (!GS.gachaQueue || GS.gachaQueue.length < count) {
+    refillGachaQueue();
+  }
+
+  // 2. 티켓 소모
   GS.tickets -= count;
   GS.gacha_count += count;
   if (GS.missions['first_gacha']) GS.missions['first_gacha'].progress = 1;
   gachaResults = [];
 
-  var byRarity = function(r) { return Object.keys(GS.chars).filter(function(k) { return GS.chars[k].rarity === r; }); };
-  var ssr = byRarity('SSR'), sr = byRarity('SR'), r = byRarity('R'), n = byRarity('N');
-
+  // 3. 결과 꺼내기 (주사위를 안 굴리고, 아까 세워둔 줄에서 맨 앞사람을 데려옵니다!)
   for (var i = 0; i < count; i++) {
-    var roll = Math.random();
-    var picked;
-    if (roll < 0.02) picked = ssr[Math.floor(Math.random() * ssr.length)];
-    else if (roll < 0.09) picked = sr[Math.floor(Math.random() * sr.length)];
-    else if (roll < 0.30) picked = r[Math.floor(Math.random() * r.length)];
-    else picked = n[Math.floor(Math.random() * n.length)];
+    var picked = GS.gachaQueue.shift(); // 배열 맨 앞에서 꺼냄
     var ch = GS.chars[picked];
     var isNew = false;
     var alreadyMax = false;
@@ -4451,11 +4251,11 @@ function doGacha(count) {
     gachaResults.push({ key: picked, isNew: isNew, alreadyMax: alreadyMax });
   }
 
-  // 2. 먼저 내 폰(로컬)에 결과를 저장해버림
-  updateTotalAssets(); updateMissions(); save();
+  // 💡 4. 꺼낸 후 큐가 줄어들었으니 다시 100명 꽉꽉 채워두기
+  refillGachaQueue();
 
-  // 🚨 [꼼수 방어] 가챠 결과가 나오는 순간 서버에 즉시 강제 업로드하여 타임머신을 부숴버립니다.
-  cloudSync(true);
+  // 5. 결과를 내 폰(로컬)에 저장 (이 안에 '줄 서 있는 100명의 순서'도 함께 저장됨!)
+  updateTotalAssets(); updateMissions(); save();
 
   // 가챠 연출 시작
   btn1.style.opacity = '1';
@@ -4738,8 +4538,6 @@ function trade(key, isBuy) {
     playSound('sell');
   }
   updateTotalAssets(); updateMissions(); save();
-  
-  cloudSync(true); // 💡 매수/매도하는 순간 즉시 서버 덮어쓰기
 
   var mgScreen = document.getElementById('screen-minigame');
   if (!mgScreen || !mgScreen.classList.contains('active')) renderAll();
@@ -6453,11 +6251,13 @@ function devResetStep() {
     GS.bgmOn = true; GS.sfxOn = true; GS.notiOn = true;
 
     GS.marketHistory = [];
-    GS.mg_hearts = 4; 
+    GS.gachaQueue = [];
+    GS.destiny = { specialTick: Math.floor(Math.random() * 300) + 100, specialType: Math.random() < 0.5 ? 'crash' : 'bull', themeTick: Math.floor(Math.random() * 100) + 50, newsTick: Math.floor(Math.random() * 20) + 10, earningBeat: Math.random() < 0.52 };
+    GS.mg_hearts = 4;
     GS.mg_last_heart_time = Date.now();
     GS.adPumpUses = 2;
-    
-    if (_actionTimer) clearTimeout(_actionTimer);
+    
+    if (_actionTimer) clearTimeout(_actionTimer);
     if (_tradeTimer) clearTimeout(_tradeTimer);
     
     initChars(); initMissions();
@@ -7591,13 +7391,12 @@ document.getElementById('ssr-right-arrow').addEventListener('click', function() 
 startSsrAutoTimer();
 // ------------------------------
 
-// 💡 [핵심] 파이어베이스와 이미지가 모두 준비되어야만 통과시키는 게이트키퍼
+// 💡 [핵심] 이미지가 모두 준비되어야만 통과시키는 게이트키퍼 (서버 의존성 완전 제거)
 window.isAssetsLoaded = false;
-window.isFirebaseLoaded = false;
 
 function checkLoadingComplete() {
-  if (window.isAssetsLoaded && window.isFirebaseLoaded) {
-    if (window.isLoadComplete) return;
+  if (window.isAssetsLoaded) {
+    if (window.isLoadComplete) return;
     window.isLoadComplete = true; // 터치 잠금 해제!
     
     // 💡 완벽한 타이밍에 단 한 번만 게임 초기화 및 오프라인 연산 실행!
