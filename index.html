@@ -2137,16 +2137,22 @@ function updateSettingsUI() {
 }
 // 💡 클라우드 백업 및 복구 코드 발급 (Live Pointer 방식)
 function backupAndCopyCode() {
-  playSound('click');
-  save(); 
+  playSound('click');
+  save(); 
 
-  if (!window.userUid || typeof db === 'undefined') {
-    showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
-    return;
-  }
+  if (!window.userUid || typeof db === 'undefined') {
+    showToast("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.", "#ff4444", null, 3000, false, true);
+    return;
+  }
 
-  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자 제외
-  var newCode = '';
+  // 🚨 [유령 코드 청소] 이전에 발급받은 코드가 있다면 DB에서 삭제하여 쓰레기 데이터 누적 방지
+  var lastCode = localStorage.getItem('sg_last_transfer_code');
+  if (lastCode) {
+    db.collection('transfers').doc(lastCode).delete().catch(function(){});
+  }
+
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자 제외
+  var newCode = '';
   for (var i = 0; i < 8; i++) {
     newCode += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -3587,19 +3593,26 @@ function save() {
   }
 }
 
-// 💡 실시간 꼼수 차단용: 중요 이벤트 발생 시 서버에 즉시 현재 상태를 업로드 (1.5초 딜레이로 통신비용 절약)
+// 💡 실시간 꼼수 차단용: 1.5초 대기를 무시하고 즉시(immediate) 꽂아버리는 옵션 추가
 var _cloudSyncTimeout = null;
-function cloudSync() {
-  if (localStorage.getItem('sg_cloud_sync') === 'true' && window.userUid && typeof db !== 'undefined') {
-    if (_cloudSyncTimeout) clearTimeout(_cloudSyncTimeout);
-    _cloudSyncTimeout = setTimeout(function() {
-      var localRaw = localStorage.getItem('sg_v3');
-      if (localRaw) {
-        var compressedRaw = LZString.compressToBase64(localRaw);
-        db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).catch(function(e){});
-      }
-    }, 1500);
-  }
+function cloudSync(immediate) {
+  if (localStorage.getItem('sg_cloud_sync') === 'true' && window.userUid && typeof db !== 'undefined') {
+    var syncAction = function() {
+      var localRaw = localStorage.getItem('sg_v3');
+      if (localRaw) {
+        var compressedRaw = LZString.compressToBase64(localRaw);
+        db.collection('users').doc(window.userUid).set({ saved_data: compressedRaw, is_compressed: true }, { merge: true }).catch(function(e){});
+      }
+    };
+
+    if (immediate) {
+      if (_cloudSyncTimeout) clearTimeout(_cloudSyncTimeout);
+      syncAction(); // 1.5초 대기 없이 즉시 서버에 덮어쓰기!
+    } else {
+      if (_cloudSyncTimeout) clearTimeout(_cloudSyncTimeout);
+      _cloudSyncTimeout = setTimeout(syncAction, 1500);
+    }
+  }
 }
 
 function load() {
@@ -3979,7 +3992,7 @@ function tick(silent) {
           if (!silent) playSound('event');
           updateTotalAssets(); updateMissions(); updateDialogState();
           
-          cloudSync(); // 💡 대폭락이나 떡상 이벤트가 발생하면 피할 수 없게 즉시 서버 덮어쓰기!
+          cloudSync(true); // 💡 대폭락이나 떡상 이벤트가 발생하면 피할 수 없게 즉시 서버 덮어쓰기!
 
           if (!silent) { save(); var mgScreen = document.getElementById('screen-minigame'); if (!mgScreen || !mgScreen.classList.contains('active')) renderAll(); }
           return;
@@ -4448,7 +4461,7 @@ function doGacha(count) {
   updateTotalAssets(); updateMissions(); save();
 
   // 🚨 [꼼수 방어] 가챠 결과가 나오는 순간 서버에 즉시 강제 업로드하여 타임머신을 부숴버립니다.
-  cloudSync();
+  cloudSync(true);
 
   // 가챠 연출 시작
   btn1.style.opacity = '1';
@@ -4665,6 +4678,11 @@ document.addEventListener('click', function(e) {
 });
 
 function trade(key, isBuy) {
+  // 🚨 [오프라인 꼼수 방어] 인터넷 끊고 단타 치는 행위 차단
+  if (!navigator.onLine) {
+    setAction('네트워크 연결이 필요합니다.', 3);
+    return;
+  }
   var ch = GS.chars[key];
   var amount = tradeMode;
   var reqAmt = getVipReq(ch.rarity);
@@ -4727,7 +4745,7 @@ function trade(key, isBuy) {
   }
   updateTotalAssets(); updateMissions(); save();
   
-  cloudSync(); // 💡 매수/매도하는 순간 즉시 서버 덮어쓰기
+  cloudSync(true); // 💡 매수/매도하는 순간 즉시 서버 덮어쓰기
 
   var mgScreen = document.getElementById('screen-minigame');
   if (!mgScreen || !mgScreen.classList.contains('active')) renderAll();
