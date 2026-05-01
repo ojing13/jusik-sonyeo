@@ -2068,7 +2068,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.8</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.9</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -6856,14 +6856,19 @@ function initializeGame() {
   }
 
   if (!GS.missions['first_trade'] || GS.missions['first_trade'].progress === 0) { marketTab = 'IT'; portTab = '보유'; }
-  
-  // 💡 여기에 탭 스와이프 화살표 생성 함수를 추가합니다!
-  initSwipeArrows();
-  
-  updateMissions(); updateTotalAssets(); updateDialogState(true); renderAll();
-  if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
+  
+  // 💡 여기에 탭 스와이프 화살표 생성 함수를 추가합니다!
+  initSwipeArrows();
+  
+  updateMissions(); updateTotalAssets(); updateDialogState(true); 
+  
+  // 💡 [핵심 버그 수정] 파이어베이스가 오프라인 연산 결과를 롤백해버리는 것을 막기 위해, 여기서 강제로 도장(Save)을 찍습니다!
+  save(); 
+  
+  renderAll();
+  if (localStorage.getItem('sg_tutorial_done') === 'true') { document.getElementById('mg-hint-text').style.display = 'block'; }
 
-  // 💡 나중에 복구 시 강제로 멈출 수 있도록 이름표를 확실히 붙여줍니다.
+  // 💡 나중에 복구 시 강제로 멈출 수 있도록 이름표를 확실히 붙여줍니다.
   if (window._tickInterval) clearInterval(window._tickInterval);
   window._tickInterval = setInterval(tick, 5000);
 }
