@@ -39,10 +39,24 @@
       // 🚨 실시간 계정 이전 감지 (Kill Switch)
       userRef.onSnapshot(function(doc) {
         if (doc.exists && doc.data().isTransferred) {
-          alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 초기화되며 새 계정으로 시작합니다.");
+          console.log("💀 킬 스위치 발동! 기존 데이터를 완전히 파기합니다.");
+          
+          // 🚨 [좀비 부활 완벽 차단 1] 게임 엔진 강제 정지 및 로컬 저장(save) 영구 차단
+          window.isRestoring = true; 
+          if (window._tickInterval) clearInterval(window._tickInterval);
+          
+          // 🚨 [좀비 부활 완벽 차단 2] 알림창이 뜨기 전에 로컬 데이터부터 흔적 없이 폭파
           localStorage.removeItem('sg_v3');
           localStorage.removeItem('sg_tutorial_done');
-          auth.signOut().then(function() { location.reload(); });
+          
+          alert("이 계정은 다른 기기로 안전하게 이전되었습니다.\n보안을 위해 현재 기기의 데이터는 초기화되며 새 계정으로 시작합니다.");
+          
+          // 🚨 [좀비 부활 완벽 차단 3] 강제 로그아웃 (비동기 대기 중 꼼수 방지용 catch 추가)
+          auth.signOut().then(function() { 
+            location.reload(); 
+          }).catch(function() { 
+            location.reload(); 
+          });
         }
       });
 
@@ -69,10 +83,14 @@
         if (doc.exists) {
           var serverData = doc.data();
 
-          // 🚨 [핵심 방어막] 서버 장부에 이미 '이전 완료' 도장이 찍혀있다면?
-          // 내 폰의 데이터가 최신이든 아니든 무조건 동기화를 차단하고 얌전히 킬 스위치를 기다립니다.
+          // 🚨 [핵심 방어막] 일반 로드 중에 '이전 완료' 도장을 발견하면 즉시 파기!
           if (serverData.isTransferred) {
-            console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단합니다.");
+            console.log("🔒 이전이 완료된 계정입니다. 데이터 동기화를 차단하고 즉시 파기합니다.");
+            window.isRestoring = true; 
+            if (window._tickInterval) clearInterval(window._tickInterval);
+            localStorage.removeItem('sg_v3');
+            localStorage.removeItem('sg_tutorial_done');
+            auth.signOut().then(function() { location.reload(); }).catch(function() { location.reload(); });
             return;
           }
 
@@ -2036,7 +2054,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.4</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.4.5</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
