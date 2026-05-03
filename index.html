@@ -2292,13 +2292,14 @@ function backupAndCopyCode() {
 
 // 💡 완전 오프라인 방식: 텍스트 코드를 붙여넣어 복구하는 기능
 function restoreAccount() {
-  var inputEl = document.getElementById('input-recovery-code');
-  var transferCode = inputEl ? inputEl.value.trim() : ""; 
-  
-  if (!transferCode) {
-      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
-      return;
-  }
+  var inputEl = document.getElementById('input-recovery-code');
+  // 💡 수정됨: .trim() 대신 정규식을 사용하여 코드 중간에 파고든 모든 공백과 줄바꿈을 강제로 싹 다 제거합니다.
+  var transferCode = inputEl ? inputEl.value.replace(/[\s\r\n]+/g, '') : ""; 
+  
+  if (!transferCode) {
+      showToast("복구 코드를 입력해주세요.", "#ff4444", null, 3000, false, true);
+      return;
+  }
 
   playSound('click');
   showToast("데이터 복구 중...", "#aaaaaa", null, 2000);
