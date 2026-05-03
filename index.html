@@ -5700,11 +5700,12 @@ mgSprite.src = 'imgs/player.png';
 var mgAnimTick = 0;
 
 var mg = {
-  active: false, ctx: null, w: 0, h: 0,
-  safeTop: 0, safeRight: 0,
-  pointPool: [],
-  p: { x: 50, y: -1000, vy: 0, r: 12 }, 
-  revived: false, invincibleTicks: 0, lastReward: 0, // 부활 및 무적 관련 변수 추가
+  active: false, ctx: null, w: 0, h: 0,
+  safeTop: 0, safeRight: 0,
+  pointPool: [],
+  p: { x: 50, y: -1000, vy: 0, r: 12 }, 
+  revived: false, invincibleTicks: 0, lastReward: 0, 
+  isEnded: false, // 💡 핵심 자물쇠: 중복 보상 방지!
   gravity: 0.65, jump: -12, baseSpeed: 6.0, speed: 6.0, score: 0,
   points: [], jumpCount: 0, downCount: 0,
   lastJumpTime: 0, 
@@ -5774,7 +5775,6 @@ function startMg() {
   GS.mg_hearts--; 
 
   // 3. 만약 하트가 4개 가득 차 있었다가 처음으로 깎인 거라면?
-  // 이때부터 "30분 타이머"를 째깍째깍 시작합니다!
   if (GS.mg_hearts === 3) { 
     GS.mg_last_heart_time = Date.now(); 
   }
@@ -5784,17 +5784,18 @@ function startMg() {
   updateMgHearts();
   resizeMg(); 
   playSound('click');
-  document.getElementById('mg-ui').style.display = 'none';
-  document.getElementById('mg-over-ui').style.display = 'none';
-  document.getElementById('mg-revive-prompt-ui').style.display = 'none';
-  if (window.mgReviveTimer) clearInterval(window.mgReviveTimer);
-  document.getElementById('mg-best-score').textContent = '최고 기록: ' + Math.floor(GS.mg_highscore || 0) + 'm';
+  document.getElementById('mg-ui').style.display = 'none';
+  document.getElementById('mg-over-ui').style.display = 'none';
+  document.getElementById('mg-revive-prompt-ui').style.display = 'none';
+  if (window.mgReviveTimer) clearInterval(window.mgReviveTimer);
+  document.getElementById('mg-best-score').textContent = '최고 기록: ' + Math.floor(GS.mg_highscore || 0) + 'm';
   
   mg.p.y = mg.h / 2 - 50;
-  mg.p.vy = 0;
-  mg.score = 0;
-  mg.revived = false;       // 새 게임 시작 시 부활 초기화
-  mg.invincibleTicks = 0;   // 무적 초기화
+  mg.p.vy = 0;
+  mg.score = 0;
+  mg.revived = false;       
+  mg.invincibleTicks = 0;   
+  mg.isEnded = false;       // 💡 새 게임 시작 시 자물쇠 해제!
   mg.baseSpeed = 6.0;
   mg.speed = mg.baseSpeed;
   mg.jumpCount = 0;
@@ -5805,76 +5806,79 @@ function startMg() {
   mg.points.push({ x: 0, y: mg.h / 2, type: 'UP' });
   mg.points.push({ x: mg.w + 100, y: mg.h / 2, type: 'UP' });
 
-  mg.active = true; // 💡 true로 바꾸는 순간 loopMg가 알아서 게임 플레이 연산을 시작합니다.
+  mg.active = true; 
   mg.startTime = Date.now();
   mg.lastTime = performance.now();
-  // 루프 중복 호출 방지를 위해 requestAnimationFrame은 여기서 부르지 않아요!
 }
 
 function endMg() {
-  mg.active = false;
+  // 💡 여기서 핵심 마법 발동! 이미 정산이 끝났다면 보상 지급 없이 튕겨냅니다.
+  if (mg.isEnded) return; 
+  mg.isEnded = true; // 자물쇠 철컥! (이후 중복 보상 절대 불가)
 
-  var now = Date.now();
-  var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
-  var missedTicks = Math.floor(offlineMs / 5000);
-  GS.mgLeftoverMs = offlineMs % 5000;
+  mg.active = false;
 
-  if (missedTicks > 0) {
-    for (var i = 0; i < missedTicks; i++) { tick(true); }
-  }
-  
-  var isNewBest = false;
-  if (!GS.mg_highscore) GS.mg_highscore = 0;
-  if (mg.score > GS.mg_highscore) {
-    GS.mg_highscore = mg.score;
-    isNewBest = true;
-  }
+  var now = Date.now();
+  var offlineMs = (now - mg.startTime) + (GS.mgLeftoverMs || 0);
+  var missedTicks = Math.floor(offlineMs / 5000);
+  GS.mgLeftoverMs = offlineMs % 5000;
 
-  // --- 🏆 랭크 및 보상 판정 로직 ---
-  var rank = 'C';
-  var reward = 0;
-  var rankClass = 'rank-c';
+  if (missedTicks > 0) {
+    for (var i = 0; i < missedTicks; i++) { tick(true); }
+  }
+  
+  var isNewBest = false;
+  if (!GS.mg_highscore) GS.mg_highscore = 0;
+  if (mg.score > GS.mg_highscore) {
+    GS.mg_highscore = mg.score;
+    isNewBest = true;
+  }
 
-  if (mg.score >= 3000) {
-      rank = 'S';
-      reward = 3;
-      rankClass = 'rank-s';
-  } else if (mg.score >= 2000) {
-      rank = 'A';
-      reward = 2;
-      rankClass = 'rank-a';
-  } else if (mg.score >= 1000) {
-      rank = 'B';
-      reward = 1;
-      rankClass = 'rank-b';
-  }
+  // --- 🏆 랭크 및 보상 판정 로직 ---
+  var rank = 'C';
+  var reward = 0;
+  var rankClass = 'rank-c';
 
-  if (reward > 0) {
-      GS.tickets += reward;
-  }
+  if (mg.score >= 3000) {
+      rank = 'S';
+      reward = 3;
+      rankClass = 'rank-s';
+  } else if (mg.score >= 2000) {
+      rank = 'A';
+      reward = 2;
+      rankClass = 'rank-a';
+  } else if (mg.score >= 1000) {
+      rank = 'B';
+      reward = 1;
+      rankClass = 'rank-b';
+  }
 
-  // 결과 UI 업데이트
-  var rankEl = document.getElementById('mg-result-rank');
-  rankEl.textContent = rank;
-  rankEl.className = rankClass;
+  if (reward > 0) {
+      GS.tickets += reward;
+  }
 
-  var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm';
-  if (isNewBest) finalHtml += ' <span style="color:var(--gold); font-size:14px;">(최고 기록 경신!)</span>';
-  document.getElementById('mg-final-score').innerHTML = finalHtml;
-  
-  var rewardWrap = document.getElementById('mg-result-reward-wrap');
-  if (reward > 0) {
-      rewardWrap.innerHTML = `
-          <div class="mg-result-reward-box" style="margin-top:4px; padding:6px 16px; font-size:15px;">
-              보상: <img src="imgs/scout_ticket_icon.png" style="width:20px; vertical-align:middle; margin-top:-2px;"> ${reward}장
-          </div>
-      `;
-  } else {
-      rewardWrap.innerHTML = `<div style="color:#666; font-size:13px; margin-top:4px;">보상이 없습니다.</div>`;
-  }
+  // 결과 UI 업데이트
+  var rankEl = document.getElementById('mg-result-rank');
+  rankEl.textContent = rank;
+  rankEl.className = rankClass;
 
-  document.getElementById('mg-over-ui').style.display = 'flex';
-  save(); 
+  var finalHtml = '주행 거리: ' + Math.floor(mg.score) + 'm';
+  if (isNewBest) finalHtml += ' <span style="color:var(--gold); font-size:14px;">(최고 기록 경신!)</span>';
+  document.getElementById('mg-final-score').innerHTML = finalHtml;
+  
+  var rewardWrap = document.getElementById('mg-result-reward-wrap');
+  if (reward > 0) {
+      rewardWrap.innerHTML = `
+          <div class="mg-result-reward-box" style="margin-top:4px; padding:6px 16px; font-size:15px;">
+              보상: <img src="imgs/scout_ticket_icon.png" style="width:20px; vertical-align:middle; margin-top:-2px;"> ${reward}장
+          </div>
+      `;
+  } else {
+      rewardWrap.innerHTML = `<div style="color:#666; font-size:13px; margin-top:4px;">보상이 없습니다.</div>`;
+  }
+
+  document.getElementById('mg-over-ui').style.display = 'flex';
+  save(); 
 }
 
 function updateMg(ts) {
@@ -7718,12 +7722,22 @@ function checkLoadingComplete() {
 // 화면 OFF→ON 시 밀린 시간 완벽 동기화 및 BGM 제어
 var _mgHiddenAt = null;
 
+// 💡 1. 앱을 백그라운드로 넘기거나 화면이 꺼질 때 (모바일 대응)
 document.addEventListener('visibilitychange', function() {
   var mainBgm = document.getElementById('bgm-player');
   var mgBgm = document.getElementById('mg-bgm-player');
 
   if (document.hidden) {
-    // 화면 나갈 때 시간 기록
+    // 💡 [핵심 방어] 부활 창이 떠있거나, 플레이 도중에 화면을 끄면 즉시 강제 정산!
+    if (window.mgReviveTimer) {
+      clearInterval(window.mgReviveTimer);
+      window.mgReviveTimer = null;
+      endMg(); 
+    } else if (mg.active) {
+      endMg(); // 억울하지 않게 지금까지 달린 거리 정산
+    }
+
+    // 화면 나갈 때 시간 기록 및 즉시 저장
     _mgHiddenAt = Date.now();
     save();
     
@@ -7731,7 +7745,7 @@ document.addEventListener('visibilitychange', function() {
     if (mgBgm) mgBgm.pause();
 
     if (audioCtx && audioCtx.state !== 'closed') {
-            audioCtx.suspend();
+      audioCtx.suspend();
     }
   } else {
     if (_mgHiddenAt === null) return;
@@ -7742,15 +7756,15 @@ document.addEventListener('visibilitychange', function() {
     _mgHiddenAt = null;
 
     if (audioCtx) {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume().then(() => {
-                    console.log("AudioContext resumed successfully");
-                });
-            } else if (audioCtx.state === 'interrupted') {
-                // iOS에서 전화가 오거나 알람이 울린 후 발생하는 상태
-                audioCtx.resume();
-            }
-        }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => {
+          console.log("AudioContext resumed successfully");
+        });
+      } else if (audioCtx.state === 'interrupted') {
+        // iOS에서 전화가 오거나 알람이 울린 후 발생하는 상태
+        audioCtx.resume();
+      }
+    }
 
     if (GS.bgmOn) {
       var mgScreen = document.getElementById('screen-minigame');
@@ -7762,41 +7776,51 @@ document.addEventListener('visibilitychange', function() {
     }
 
     // 5초 단위로 틱 계산 후 남은 ms는 다시 주머니에 저장
-    var totalElapsedTicks = Math.floor(offlineMs / 5000);
-    GS.leftoverMs = offlineMs % 5000; 
+    var totalElapsedTicks = Math.floor(offlineMs / 5000);
+    GS.leftoverMs = offlineMs % 5000; 
 
-    // 💡 24시간(17,280틱) 상한선 설정 및 초과된 시간 처리
-    var MAX_OFFLINE_TICKS = 17280;
-    var simulatedTicks = Math.min(totalElapsedTicks, MAX_OFFLINE_TICKS);
-    var skippedTicks = totalElapsedTicks - simulatedTicks;
+    // 💡 24시간(17,280틱) 상한선 설정 및 초과된 시간 처리
+    var MAX_OFFLINE_TICKS = 17280;
+    var simulatedTicks = Math.min(totalElapsedTicks, MAX_OFFLINE_TICKS);
+    var skippedTicks = totalElapsedTicks - simulatedTicks;
 
-    // 💡 버려진 시간(24시간 초과분)에 대해 플랫라인 생성 없이 시간축만 점프하여 차트를 자연스럽게 이어붙임
-    if (skippedTicks > 0) {
-      GS.total_game_ticks += skippedTicks;
-      GS.virtual_time = (GS.virtual_time || Date.now()) + (skippedTicks * 5000);
-    }
+    // 💡 버려진 시간(24시간 초과분)에 대해 플랫라인 생성 없이 시간축만 점프하여 차트를 자연스럽게 이어붙임
+    if (skippedTicks > 0) {
+      GS.total_game_ticks += skippedTicks;
+      GS.virtual_time = (GS.virtual_time || Date.now()) + (skippedTicks * 5000);
+    }
 
-    if (simulatedTicks > 0) {
-      var moneyBefore = GS.money;
-      for (var i = 0; i < simulatedTicks; i++) {
-        tick(true); 
-      }
+    if (simulatedTicks > 0) {
+      var moneyBefore = GS.money;
+      for (var i = 0; i < simulatedTicks; i++) {
+        tick(true); 
+      }
 
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
-      if (earnedAmount > 0 && GS.notiOn) {
-        setTimeout(function() {
-          setAction('백그라운드에서 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
-          playSound('dividend');
-        }, 600);
-      }
-    }
+      var earnedAmount = Math.max(0, GS.money - moneyBefore);
+      if (earnedAmount > 0 && GS.notiOn) {
+        setTimeout(function() {
+          setAction('백그라운드에서 배당금 총 ' + fcomma(earnedAmount) + '원 획득!', 5);
+          playSound('dividend');
+        }, 600);
+      }
+    }
 
-    // 💡 [버그 수정] 복귀 시에도 강제 동기화를 없애서 차트 마커의 엇박자 발생을 원천 차단합니다.
+    updateTotalAssets();
+    renderAll();
+    save();
+  }
+});
 
-    updateTotalAssets();
-    renderAll();
-    save();
-  }
+// 💡 2. 브라우저 탭을 완전히 꺼버리거나 새로고침할 때 (PC & 웹 대응)
+window.addEventListener('pagehide', function() {
+  if (window.mgReviveTimer) {
+    clearInterval(window.mgReviveTimer);
+    window.mgReviveTimer = null;
+    endMg(); 
+  } else if (mg.active) {
+    endMg(); 
+  }
+  save(); // 최후의 순간에 주머니에 정산금 꽂아넣고 저장!
 });
 // 하트 시스템 작동 코드
 function updateMgHearts() {
