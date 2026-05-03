@@ -2186,7 +2186,9 @@ body, #app {
         <div style="background:rgba(0,0,0,0.2); border:1px solid #333344; border-radius:8px; padding:10px;">
           <div style="font-size:11px; color:var(--text2); margin-bottom:8px; padding-left:2px;">기존 데이터 불러오기 (코드 붙여넣기)</div>
           <div style="display:flex; gap:6px; height:36px; width:100%;">
-            <input type="text" id="input-recovery-code" placeholder="코드를 입력하세요" style="flex:1; height:100%; padding:0 10px; background:#000; border:1px solid #444; color:#fff; border-radius:6px; font-size:12px; outline:none; box-sizing:border-box; min-width:0;">
+            <div style="flex:1; min-width:0; height:100%;">
+              <textarea id="input-recovery-code" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:9px 10px; background:#000; border:1px solid #444; color:#fff; border-radius:6px; font-size:12px; line-height:16px; outline:none; box-sizing:border-box; resize:none; white-space:nowrap; overflow:hidden; display:block; margin:0;"></textarea>
+            </div>
             <button onclick="restoreAccount()" style="width:80px; height:100%; background:var(--red); color:#fff; border:none; border-radius:6px; cursor:pointer; font-family:'Jua',sans-serif; font-size:13px; font-weight:bold; flex-shrink:0;">복구 실행</button>
           </div>
         </div>
@@ -2194,7 +2196,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.1</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.2</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -2252,7 +2254,8 @@ function backupAndCopyCode() {
     return;
   }
 
-  var compressedRaw = LZString.compressToBase64(localRaw);
+  // 💡 수정됨: 특수문자가 변형되지 않는 가장 안전한 방식(URI Component)으로 압축 방식을 변경합니다.
+  var compressedRaw = LZString.compressToEncodedURIComponent(localRaw);
 
   // 1. 최신 클립보드 API 지원 시
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2305,8 +2308,11 @@ function restoreAccount() {
   showToast("데이터 복구 중...", "#aaaaaa", null, 2000);
 
   try {
-    // 입력된 긴 텍스트의 압축을 해제함
-    var decompressed = LZString.decompressFromBase64(transferCode);
+    // 💡 수정됨: 새로운 안전 규격(URI Component)으로 먼저 압축 해제를 시도하고, 실패하면 예전 방식(Base64)으로 다시 시도합니다.
+    var decompressed = LZString.decompressFromEncodedURIComponent(transferCode);
+    if (!decompressed) {
+      decompressed = LZString.decompressFromBase64(transferCode);
+    }
     if (!decompressed) throw new Error("복호화 실패");
     
     var parsedData = JSON.parse(decompressed);
