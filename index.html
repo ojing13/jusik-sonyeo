@@ -8373,6 +8373,21 @@ document.addEventListener('touchend', function(e) {
   if (btn) btn.style.transform = '';
 }, {passive: true});
 
+// 핀치 줌 / 더블탭 줌 완전 차단 (안드로이드 삼성 인터넷 대응)
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+var lastTouchEnd = 0;
+document.addEventListener('touchend', function(e) {
+  var now = Date.now();
+  if (now - lastTouchEnd < 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
 (function initCanvasFireflies() {
   // 기존 DOM 반딧불이 및 스타일 잔재 제거
   var existing = document.querySelectorAll('.subtle-fireflies-layer, .ff-canvas-layer');
