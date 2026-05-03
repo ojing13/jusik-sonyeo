@@ -2196,7 +2196,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.2</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.3</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -4631,16 +4631,15 @@ function showOverlay() {
 }
 
 function updateCharImage(container, key, tickerText, fallbackSelector) {
-  var existingImg = container.querySelector('.dynamic-char-img');
-  if (existingImg && existingImg.dataset.charKey === key) return;
-  if (existingImg) existingImg.remove();
+  var existingImg = container.querySelector('.dynamic-char-img');
+  if (existingImg && existingImg.dataset.charKey === key) return;
+  if (existingImg) existingImg.remove();
 
-  var fallback = container.querySelector(fallbackSelector);
-  var img = document.createElement('img');
-  img.className = 'dynamic-char-img';
-  img.dataset.charKey = key;
-  img.style.cssText = 'width:100%; height:100%; object-fit:cover; position:absolute; inset:0; opacity:0; transition:opacity 0.3s; z-index:1;';
-  img.decoding = 'async'; // 💡 메인 스레드 렉 방지용 비동기 디코딩
+  var fallback = container.querySelector(fallbackSelector);
+  var img = document.createElement('img');
+  img.className = 'dynamic-char-img';
+  img.dataset.charKey = key;
+  img.style.cssText = 'width:100%; height:100%; object-fit:cover; position:absolute; inset:0; opacity:0; transition:opacity 0.3s; z-index:1;';
   img.src = 'imgs/' + key.toLowerCase() + '.png';
 
   img.onload = function() {
@@ -6933,19 +6932,22 @@ function preloadAllAssets() {
   }
 
   function updateProgress() {
-    loadedCount++;
-    targetPercent = Math.floor((loadedCount / totalImages) * 100);
-  }
+    loadedCount++;
+    targetPercent = Math.floor((loadedCount / totalImages) * 100);
+  }
 
-  setTimeout(function() { targetPercent = 100; }, 5000); // 5초 최후 안전장치 (무한 로딩 방지)
+  // 💡 안전장치를 15초로 늘려서 모바일 환경에서도 모든 이미지를 확실히 받아올 수 있게 보장합니다!
+  setTimeout(function() { 
+    if (targetPercent < 100) targetPercent = 100; 
+  }, 15000); 
 
-  imagesToLoad.forEach(function(src) {
-    var img = new Image();
-    imgElements.push(img); // 브라우저가 몰래 지우는 것 방지
-    img.onload = updateProgress;
-    img.onerror = updateProgress;
-    img.src = src;
-  });
+  imagesToLoad.forEach(function(src) {
+    var img = new Image();
+    imgElements.push(img); // 브라우저가 몰래 지우는 것 방지
+    img.onload = updateProgress;
+    img.onerror = updateProgress; // 에러가 나도 다음 단계로 넘어가게 처리
+    img.src = src;
+  });
 }
 
 // 💡 양방향 탭 스와이프 화살표 자동 제어 함수 (완벽 수정본)
@@ -7127,7 +7129,7 @@ function renderDictionary() {
 
     // 💡 불필요하고 무거운 태그 싹 빼고 가장 가벼운 구조로 렌더링
     div.innerHTML = crownHtml + rarityBadge + 
-      '<div class="dict-avatar"><img src="imgs/' + k.toLowerCase() + '.png" loading="lazy" decoding="async"></div>' +
+      '<div class="dict-avatar"><img src="imgs/' + k.toLowerCase() + '.png"></div>' +
       '<div class="dict-info">' + infoHtml + '</div>';
 
     div.onclick = function() {
@@ -8152,34 +8154,34 @@ function renderFlex() {
     }
 
     var div = document.createElement('div');
-    div.className = 'flex-item' + (isOwned ? ' owned' : ' locked');
-    div.innerHTML =
-      '<div class="flex-img-wrap">' +
-        '<div class="flex-lock-overlay"><img src="imgs/icon_lock.png"></div>' +
-        '<img src="imgs/flex_' + imgNum + '.png" class="flex-img" style="' + customSizeStyle + '" decoding="async" onerror="this.style.opacity=\'0\'">' +
-      '</div>' +
-      '<div class="flex-info">' +
-        '<div class="flex-name">' + item.name + '</div>' +
-        '<div class="flex-desc">' + item.desc + '</div>' +
-        '<div class="flex-bottom-row">' +
-          '<div>' +
-            '<div class="flex-price">' + fcomma(item.price) + '원</div>' +
-            '<div style="font-size:11px; color:var(--text2); margin-top:2px;">' + (isOwned ? '보유중' : '구매가') + '</div>' +
-          '</div>' +
-          '<button class="flex-buy-btn' + (canBuy ? '' : ' disabled') + '" onclick="buyFlex(\'' + item.id + '\')">' + (canBuy ? '구매하기' : '잔액 부족') + '</button>' +
-          '<button class="flex-sell-btn" onclick="sellFlex(\'' + item.id + '\')">매각하기</button>' +
-        '</div>' +
-      '</div>';
-    fragment.appendChild(div);
+    div.className = 'flex-item' + (isOwned ? ' owned' : ' locked');
+    div.innerHTML =
+      '<div class="flex-img-wrap">' +
+        '<div class="flex-lock-overlay"><img src="imgs/icon_lock.png"></div>' +
+        '<img src="imgs/flex_' + imgNum + '.png" class="flex-img" style="' + customSizeStyle + '" onerror="this.style.opacity=\'0\'">' +
+      '</div>' +
+      '<div class="flex-info">' +
+        '<div class="flex-name">' + item.name + '</div>' +
+        '<div class="flex-desc">' + item.desc + '</div>' +
+        '<div class="flex-bottom-row">' +
+          '<div>' +
+            '<div class="flex-price">' + fcomma(item.price) + '원</div>' +
+            '<div style="font-size:11px; color:var(--text2); margin-top:2px;">' + (isOwned ? '보유중' : '구매가') + '</div>' +
+          '</div>' +
+          '<button class="flex-buy-btn' + (canBuy ? '' : ' disabled') + '" onclick="buyFlex(\'' + item.id + '\')">' + (canBuy ? '구매하기' : '잔액 부족') + '</button>' +
+          '<button class="flex-sell-btn" onclick="sellFlex(\'' + item.id + '\')">매각하기</button>' +
+        '</div>' +
+      '</div>';
+    fragment.appendChild(div);
 
-    var miniIcon = document.createElement('div');
-    // 첫 번째 아이템을 무조건 current로 초기화
-    miniIcon.className = 'flex-mini-icon' + (isOwned ? ' owned' : ' locked') + (idx === 0 ? ' current' : '');
-    
-    // 💡 ::after 가 아니라 진짜 태그(div.indicator-dot)를 넣어줍니다!
-    miniIcon.innerHTML = '<img src="imgs/flex_' + imgNum + '.png" class="flex-mini-img" decoding="async" onerror="this.style.opacity=\'0\'">'
-      + (!isOwned ? '<img src="imgs/icon_lock.png" style="position:absolute; width:55%; height:55%; object-fit:contain; opacity:1; z-index:3;">' : '')
-      + '<div class="indicator-dot"></div>'; // << 핵심: 노란색 점 DOM을 확실하게 심어줌!
+    var miniIcon = document.createElement('div');
+    // 첫 번째 아이템을 무조건 current로 초기화
+    miniIcon.className = 'flex-mini-icon' + (isOwned ? ' owned' : ' locked') + (idx === 0 ? ' current' : '');
+    
+    // 💡 ::after 가 아니라 진짜 태그(div.indicator-dot)를 넣어줍니다!
+    miniIcon.innerHTML = '<img src="imgs/flex_' + imgNum + '.png" class="flex-mini-img" onerror="this.style.opacity=\'0\'">'
+      + (!isOwned ? '<img src="imgs/icon_lock.png" style="position:absolute; width:55%; height:55%; object-fit:contain; opacity:1; z-index:3;">' : '')
+      + '<div class="indicator-dot"></div>'; // << 핵심: 노란색 점 DOM을 확실하게 심어줌!
     
     miniIcon.onclick = function() {
       playSound('click');
