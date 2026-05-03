@@ -2196,7 +2196,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.4</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.5</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -2243,7 +2243,7 @@ function updateSettingsUI() {
     notiBtn.style.background = GS.notiOn ? 'var(--green)' : '#555566';
   }
 }
-// 💡 깔끔한 오프라인 백업: 카카오톡에서도 안 깨지는 튼튼한 코드로 복사
+// 💡 깔끔한 오프라인 백업: 화면 표시 없이 즉시 클립보드로 복사 (카톡 다이어트 버전)
 function backupAndCopyCode() {
   playSound('click');
   save(); 
@@ -2254,13 +2254,31 @@ function backupAndCopyCode() {
     return;
   }
 
-  // 1. 혹시 모를 에러 방지를 위해, JSON 문자열을 한번 더 확실하게 묶어줍니다.
-  // 2. encodeURIComponent 로 특수문자를 안전하게 1차 변환!
-  // 3. LZString 의 가장 안전한 방식인 Base64 로 압축! (메신저에서 절대 안 깨짐)
-  var safeString = encodeURIComponent(localRaw);
+  // 💡 데이터 다이어트 시작!
+  var parsedData = JSON.parse(localRaw);
+  
+  // 용량을 엄청나게 차지하는 불필요한 과거 차트/로그 데이터만 쏙 빼냅니다.
+  if (parsedData.chars) {
+    Object.keys(parsedData.chars).forEach(function(k) {
+      delete parsedData.chars[k].chart_1m;
+      delete parsedData.chars[k].chart_10m;
+      delete parsedData.chars[k].chart_1h;
+      delete parsedData.chars[k].chart_1d;
+      delete parsedData.chars[k].events;
+      delete parsedData.chars[k].price_history;
+      delete parsedData.chars[k].tick_history;
+    });
+  }
+  parsedData.marketHistory = []; // 시황 기록도 비웁니다.
+
+  // 꼼수 방지용 운명(destiny) 로직이나 돈, 레벨 등은 그대로 안전하게 유지됩니다!
+  var dietRaw = JSON.stringify(parsedData);
+
+  // 카톡 등에서 안 깨지게 Base64로 안전하게 압축
+  var safeString = encodeURIComponent(dietRaw);
   var compressedRaw = LZString.compressToBase64(safeString);
 
-  // 구버전 및 신버전 클립보드 복사 로직 (동일)
+  // 1. 최신 클립보드 API 지원 시
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(compressedRaw).then(function() {
       showToast("백업 완료! 복구 코드가 클립보드에 복사되었습니다.", "#66ff88", null, 4000);
@@ -2268,15 +2286,17 @@ function backupAndCopyCode() {
       fallbackCopy(compressedRaw);
     });
   } else {
+    // 2. 구형 브라우저 지원 시
     fallbackCopy(compressedRaw);
   }
 
+  // 화면엔 안 보이지만, 뒤에서 몰래 텍스트를 만들고 긁어가는 안전장치
   function fallbackCopy(text) {
     try {
       var tempTextArea = document.createElement("textarea");
       tempTextArea.value = text;
       tempTextArea.style.position = "fixed";
-      tempTextArea.style.left = "-99999px"; 
+      tempTextArea.style.left = "-99999px"; // 화면 저 멀리 숨김
       document.body.appendChild(tempTextArea);
       tempTextArea.select();
       tempTextArea.setSelectionRange(0, 999999);
@@ -2311,14 +2331,12 @@ function restoreAccount() {
   try {
     var decompressed = null;
 
-    // 1. 신규 방식 (Base64 + URI) 해독 시도!
+    // 1. 신규 다이어트 방식 (Base64 + URI) 해독 시도!
     var decodedFromBase64 = LZString.decompressFromBase64(transferCode);
     if (decodedFromBase64) {
       try {
         decompressed = decodeURIComponent(decodedFromBase64);
-      } catch (err1) {
-        // 만약 여기서 에러가 나면 구버전 코드일 수 있으니 그냥 넘깁니다.
-      }
+      } catch (err1) {}
     }
 
     // 2. 구버전 방식 (URI Component) 해독 시도! (예전 유저들 보호)
