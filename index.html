@@ -6936,10 +6936,10 @@ function preloadAllAssets() {
     targetPercent = Math.floor((loadedCount / totalImages) * 100);
   }
 
-  // 💡 안전장치를 15초로 늘려서 모바일 환경에서도 모든 이미지를 확실히 받아올 수 있게 보장합니다!
-  setTimeout(function() { 
-    if (targetPercent < 100) targetPercent = 100; 
-  }, 15000); 
+  // 💡 안전장치를 30초로 넉넉하게 늘려서 최악의 무한 로딩 버그를 막습니다!
+  setTimeout(function() { 
+    if (targetPercent < 100) targetPercent = 100; 
+  }, 30000);
 
   imagesToLoad.forEach(function(src) {
     var img = new Image();
