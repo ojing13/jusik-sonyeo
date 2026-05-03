@@ -1475,8 +1475,28 @@ body, #app {
   object-fit: contain;
 }
 .flex-mini-icon.locked .flex-mini-img {
-  /* 💡 무거운 brightness(0) 필터를 없애고, 투명도를 더 낮춰서 가벼운 실루엣처럼 보이게 꼼수 적용! */
-  opacity: 0.15;
+  /* 💡 무거운 brightness(0) 필터를 없애고, 투명도를 더 낮춰서 가벼운 실루엣처럼 보이게 꼼수 적용! */
+  opacity: 0.15;
+}
+/* 💡 가상 요소 버그를 피하기 위해 진짜 태그(.indicator-dot)를 직접 사용합니다 */
+.indicator-dot {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  margin-left: -3px; /* Safari 호환성을 위해 transform 대신 margin 사용 */
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.9);
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 20;
+}
+.flex-mini-icon.current .indicator-dot {
+  opacity: 1;
+  bottom: -10px; /* 위로 살짝 통통 튀어 오릅니다 */
 }
 .flex-name {
   font-size: 18px; color: #ffffff;
@@ -8028,11 +8048,44 @@ var FLEX_ITEMS = [
   { id: 'f9', name: '카리브해 프라이빗 아일랜드', price: 500000000000000, desc: '[보유 효과] 최종 터치 수익 및 배당금 획득량 영구 2배 증가' }
 ];
 
+// 💡 전역 공간에 완벽하게 분리한 연동 함수
+window.updateFlexIndicator = function() {
+  var gallery = document.getElementById('flex-gallery');
+  var miniBoard = document.getElementById('flex-mini-board');
+  if (!gallery || !miniBoard) return;
+
+  var gRect = gallery.getBoundingClientRect();
+  var center = gRect.left + (gRect.width / 2);
+  
+  var items = gallery.querySelectorAll('.flex-item');
+  if (items.length === 0) return;
+
+  var closestIdx = 0;
+  // Safari 렌더링 지연 시에도 무시하지 않도록 조건 처리
+  if (gRect.width > 0) {
+    var minDist = Infinity;
+    items.forEach(function(item, idx) {
+      var r = item.getBoundingClientRect();
+      var itemCenter = r.left + (r.width / 2);
+      var dist = Math.abs(center - itemCenter);
+      if (dist < minDist) {
+        minDist = dist;
+        closestIdx = idx;
+      }
+    });
+  }
+
+  var icons = miniBoard.querySelectorAll('.flex-mini-icon');
+  icons.forEach(function(icon, idx) {
+    if (idx === closestIdx) icon.classList.add('current');
+    else icon.classList.remove('current');
+  });
+};
+
 // 기존 renderFlex 함수 전체를 아래로 교체
 function renderFlex() {
   document.getElementById('flex-cash').textContent = fcomma(GS.money) + '원';
   
-  // 💡 보유 중인 플렉스 아이템의 총 가치를 계산해서 화면에 표시
   var totalFlexValue = 0;
   if (GS.flexItems) {
     FLEX_ITEMS.forEach(function(item) {
@@ -8045,12 +8098,15 @@ function renderFlex() {
   var gallery = document.getElementById('flex-gallery');
   var miniBoard = document.getElementById('flex-mini-board');
 
-  if (gallery.children.length === FLEX_ITEMS.length) {
+  // 이벤트 중복 부착 방지 및 확실한 바인딩
+  gallery.removeEventListener('scroll', window.updateFlexIndicator);
+  gallery.addEventListener('scroll', window.updateFlexIndicator, { passive: true });
+
+  if (gallery.children.length === FLEX_ITEMS.length + 1) {
     FLEX_ITEMS.forEach(function(item, idx) {
       var isOwned = !!(GS.flexItems && GS.flexItems[item.id]);
       var canBuy = !isOwned && GS.money >= item.price;
       
-      // 메인 갤러리 갱신
       var div = gallery.children[idx];
       div.className = 'flex-item' + (isOwned ? ' owned' : ' locked');
       var btn = div.querySelector('.flex-buy-btn');
@@ -8059,11 +8115,15 @@ function renderFlex() {
         btn.textContent = canBuy ? '구매하기' : '잔액 부족';
       }
       
-      // 미니 진열장 갱신
       if (miniBoard.children[idx]) {
-        miniBoard.children[idx].className = 'flex-mini-icon' + (isOwned ? ' owned' : ' locked');
+        var miniIcon = miniBoard.children[idx];
+        var isCurrent = miniIcon.classList.contains('current');
+        miniIcon.className = 'flex-mini-icon' + (isOwned ? ' owned' : ' locked') + (isCurrent ? ' current' : '');
       }
     });
+    // 시간차를 두고 2번 확실하게 렌더링
+    setTimeout(window.updateFlexIndicator, 50);
+    setTimeout(window.updateFlexIndicator, 300);
     return;
   }
 
@@ -8077,25 +8137,21 @@ function renderFlex() {
     var canBuy = !isOwned && GS.money >= item.price;
     var imgNum = idx + 1;
 
-    // 💡 아이템별 맞춤 크기 설정 (기본은 70%)
     var customSizeStyle = "";
     if (item.id === 'f2') {
-      // 럭셔리 다이버 시계: 작게 (55%)
       customSizeStyle = "width: 55%; height: 55%;";
     } else if (item.id === 'f3' || item.id === 'f4' || item.id === 'f5' || item.id === 'f6' || item.id === 'f8' || item.id === 'f9') {
-      // 거대 스케일 아이템들: 큼직하게 꽉 채우기 (90%)
       customSizeStyle = "width: 90%; height: 90%;";
     }
 
-    // 메인 갤러리 카드
     var div = document.createElement('div');
     div.className = 'flex-item' + (isOwned ? ' owned' : ' locked');
     div.innerHTML =
-      '<div class="flex-img-wrap">' +
-        '<div class="flex-lock-overlay"><img src="imgs/icon_lock.png"></div>' +
-        '<img src="imgs/flex_' + imgNum + '.png" class="flex-img" style="' + customSizeStyle + '" decoding="async" onerror="this.style.opacity=\'0\'">' +
-      '</div>' +
-      '<div class="flex-info">' +
+      '<div class="flex-img-wrap">' +
+        '<div class="flex-lock-overlay"><img src="imgs/icon_lock.png"></div>' +
+        '<img src="imgs/flex_' + imgNum + '.png" class="flex-img" style="' + customSizeStyle + '" decoding="async" onerror="this.style.opacity=\'0\'">' +
+      '</div>' +
+      '<div class="flex-info">' +
         '<div class="flex-name">' + item.name + '</div>' +
         '<div class="flex-desc">' + item.desc + '</div>' +
         '<div class="flex-bottom-row">' +
@@ -8109,13 +8165,15 @@ function renderFlex() {
       '</div>';
     fragment.appendChild(div);
 
-    // 미니 진열장 아이콘
-    var miniIcon = document.createElement('div');
-    miniIcon.className = 'flex-mini-icon' + (isOwned ? ' owned' : ' locked');
-    miniIcon.innerHTML = '<img src="imgs/flex_' + imgNum + '.png" class="flex-mini-img" decoding="async" onerror="this.style.opacity=\'0\'">'
-      + (!isOwned ? '<img src="imgs/icon_lock.png" style="position:absolute; width:55%; height:55%; object-fit:contain; opacity:1; z-index:3;">' : '');
+    var miniIcon = document.createElement('div');
+    // 첫 번째 아이템을 무조건 current로 초기화
+    miniIcon.className = 'flex-mini-icon' + (isOwned ? ' owned' : ' locked') + (idx === 0 ? ' current' : '');
     
-    // 미니 아이콘 누르면 해당 카드로 쓱 이동
+    // 💡 ::after 가 아니라 진짜 태그(div.indicator-dot)를 넣어줍니다!
+    miniIcon.innerHTML = '<img src="imgs/flex_' + imgNum + '.png" class="flex-mini-img" decoding="async" onerror="this.style.opacity=\'0\'">'
+      + (!isOwned ? '<img src="imgs/icon_lock.png" style="position:absolute; width:55%; height:55%; object-fit:contain; opacity:1; z-index:3;">' : '')
+      + '<div class="indicator-dot"></div>'; // << 핵심: 노란색 점 DOM을 확실하게 심어줌!
+    
     miniIcon.onclick = function() {
       playSound('click');
       div.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -8129,6 +8187,9 @@ function renderFlex() {
 
   gallery.appendChild(fragment);
   miniBoard.appendChild(miniFragment);
+
+  setTimeout(window.updateFlexIndicator, 50);
+  setTimeout(window.updateFlexIndicator, 300); // 사파리 레이아웃 지연 완벽 방어
 }
 // 💡 커스텀 확인창 띄우기 함수 (더블클릭 완벽 차단)
 function showCustomConfirm(title, msg, onConfirm, okBgColor) {
