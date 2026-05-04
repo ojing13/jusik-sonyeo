@@ -2237,7 +2237,7 @@ body, #app {
     </div>
 
     <div style="text-align:center; margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:center;">
-      <div onclick="window.open('https://policies.google.com/privacy', '_blank')" style="font-size:10px; color:#888899; cursor:pointer; text-decoration:underline; user-select:none;">이용약관 및 개인정보처리방침</div>
+      <div onclick="openPrivacyPolicy()" style="font-size:10px; color:#888899; cursor:pointer; text-decoration:underline; user-select:none;">이용약관 및 개인정보처리방침</div>
       <div id="dev-reset-btn" onclick="playSound('click'); devResetStep()" style="font-size:10px; color:#444466; cursor:pointer; text-decoration:underline; user-select:none;">데이터 초기화</div>
     </div>
   </div>
@@ -8363,6 +8363,19 @@ document.addEventListener('touchend', function(e) {
   loop();
 })();
 
+// --- 📄 개인정보처리방침 외부 링크 안전 열기 ---
+function openPrivacyPolicy() {
+  playSound('click');
+  var policyUrl = 'https://gold-navy-0ed.notion.site/356ae04156b980068e9fc7d7f78dca23?source=copy_link'; 
+  
+  // Capacitor/Cordova 앱 환경인 경우 시스템 기본 브라우저(크롬/사파리)로 안전하게 열기 (_system)
+  // 일반 웹 환경에서는 기존처럼 새 탭으로 열림
+  if (window.cordova || window.Capacitor) {
+    window.open(policyUrl, '_system');
+  } else {
+    window.open(policyUrl, '_blank');
+  }
+}
 </script>
 <div id="chart-modal" class="modal-overlay">
   <div class="modal-content">
