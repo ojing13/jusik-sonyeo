@@ -2196,7 +2196,7 @@ body, #app {
     </div>
 
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.5</div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.6</div>
       <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
       <div style="display:flex; align-items:center; gap:6px; height:30px;">
         <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
@@ -8373,21 +8373,6 @@ document.addEventListener('touchend', function(e) {
   if (btn) btn.style.transform = '';
 }, {passive: true});
 
-// 핀치 줌 / 더블탭 줌 완전 차단 (안드로이드 삼성 인터넷 대응)
-document.addEventListener('touchstart', function(e) {
-  if (e.touches.length > 1) e.preventDefault();
-}, { passive: false });
-
-document.addEventListener('touchmove', function(e) {
-  if (e.touches.length > 1) e.preventDefault();
-}, { passive: false });
-
-var lastTouchEnd = 0;
-document.addEventListener('touchend', function(e) {
-  var now = Date.now();
-  if (now - lastTouchEnd < 300) e.preventDefault();
-  lastTouchEnd = now;
-}, { passive: false });
 (function initCanvasFireflies() {
   // 기존 DOM 반딧불이 및 스타일 잔재 제거
   var existing = document.querySelectorAll('.subtle-fireflies-layer, .ff-canvas-layer');
