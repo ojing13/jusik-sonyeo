@@ -8,16 +8,12 @@
 <script>
   (function() {
     var mainCharKey = 'noah'; 
-    var MIGRATION_MAP = {"aapl":"aris","nvda":"noxs","googl":"eter","msft":"merh","amzn":"luci","meta":"mio","tsla":"tia","tsm":"seri","brk":"bell","asml":"elin","avgo":"viol","jpm":"jeni","wmt":"wint","lly":"liri","v":"vivi","jnj":"cloe","ma":"wend","xom":"erna","cost":"koha","dis":"mion","nke":"nana","mcd":"mako","unh":"yuii","gs2":"glor","adbe":"amel","crm":"ceci","qcom":"quii","ko":"kare","sbux":"stel","pltr":"fion","amd":"emma","mu":"miku","arm":"juri","intc":"ilia","orcl":"ophi","ibm":"beck","csco":"char","now":"sofi","uber":"ubel","spot":"pene","shop":"shir","coin":"kohr","hd":"deli","nflx":"noah","bac":"bety","wfc":"wini","ms2":"momo","axp":"akar","schw":"celi","spgi":"este","abbv":"abig","mrk":"mary","pfe":"pipi","tmo":"sena","isrg":"irina","cvx":"sheri","cop":"koto","nee":"nene","cat":"katia","ge":"gisel","ba":"bomi","lmt":"ruby","rtx":"rita","hon":"hana","de":"dana","tgt":"tita","low":"rach","pep":"shiz","pg":"pia","pm":"miri","race":"flor","nvo":"noel","sap":"saya","app2":"haze","oxy":"orly","mco":"medi","bx":"bian","txn":"tio","amat":"alic","klac":"klar","mrvl":"mari","regn":"line","vrtx":"vero","amgn":"anna","gild":"garn","abt":"eva","ups":"yuzu","pypl":"parf","abnb":"amy","snow":"sino","f":"sara","gm":"gemm","vz":"layl","t2":"aile"};
     try {
       var savedData = localStorage.getItem('sg_v3');
       if (savedData) {
         var parsed = JSON.parse(savedData);
         if (parsed.mainChar) {
           mainCharKey = parsed.mainChar;
-          if (MIGRATION_MAP[mainCharKey]) {
-            mainCharKey = MIGRATION_MAP[mainCharKey];
-          }
         }
       }
     } catch(e) {} 
@@ -3782,33 +3778,6 @@ function load() {
     var s = localStorage.getItem(SAVE_KEY);
     if (!s) return;
     var d = JSON.parse(s);
-
-    // --- [과거 세이브 데이터 자동 변환(마이그레이션) 시작] ---
-    var MIGRATION_MAP = {"aapl":"aris","nvda":"noxs","googl":"eter","msft":"merh","amzn":"luci","meta":"mio","tsla":"tia","tsm":"seri","brk":"bell","asml":"elin","avgo":"viol","jpm":"jeni","wmt":"wint","lly":"liri","v":"vivi","jnj":"cloe","ma":"wend","xom":"erna","cost":"koha","dis":"mion","nke":"nana","mcd":"mako","unh":"yuii","gs2":"glor","adbe":"amel","crm":"ceci","qcom":"quii","ko":"kare","sbux":"stel","pltr":"fion","amd":"emma","mu":"miku","arm":"juri","intc":"ilia","orcl":"ophi","ibm":"beck","csco":"char","now":"sofi","uber":"ubel","spot":"pene","shop":"shir","coin":"kohr","hd":"deli","nflx":"noah","bac":"bety","wfc":"wini","ms2":"momo","axp":"akar","schw":"celi","spgi":"este","abbv":"abig","mrk":"mary","pfe":"pipi","tmo":"sena","isrg":"irina","cvx":"sheri","cop":"koto","nee":"nene","cat":"katia","ge":"gisel","ba":"bomi","lmt":"ruby","rtx":"rita","hon":"hana","de":"dana","tgt":"tita","low":"rach","pep":"shiz","pg":"pia","pm":"miri","race":"flor","nvo":"noel","sap":"saya","app2":"haze","oxy":"orly","mco":"medi","bx":"bian","txn":"tio","amat":"alic","klac":"klar","mrvl":"mari","regn":"line","vrtx":"vero","amgn":"anna","gild":"garn","abt":"eva","ups":"yuzu","pypl":"parf","abnb":"amy","snow":"sino","f":"sara","gm":"gemm","vz":"layl","t2":"aile"};
-    
-    if (d.mainChar && MIGRATION_MAP[d.mainChar]) {
-        d.mainChar = MIGRATION_MAP[d.mainChar];
-    }
-    if (d.earningPending && d.earningPending.key && MIGRATION_MAP[d.earningPending.key]) {
-        d.earningPending.key = MIGRATION_MAP[d.earningPending.key];
-    }
-    if (d.newsBoost) {
-        var newNewsBoost = {};
-        Object.keys(d.newsBoost).forEach(function(k) {
-            var newK = MIGRATION_MAP[k] || k;
-            newNewsBoost[newK] = d.newsBoost[k];
-        });
-        d.newsBoost = newNewsBoost;
-    }
-    if (d.chars) {
-        var newChars = {};
-        Object.keys(d.chars).forEach(function(k) {
-            var newK = MIGRATION_MAP[k] || k;
-            newChars[newK] = d.chars[k];
-        });
-        d.chars = newChars;
-    }
-    // --- [과거 세이브 데이터 자동 변환(마이그레이션) 끝] ---
 
     GS.money = (d.money !== undefined) ? d.money : GS.money;
     GS.total_assets = (d.total_assets !== undefined) ? d.total_assets : GS.total_assets;
