@@ -6531,12 +6531,13 @@ function switchScreen(name) {
 
   // 수정
 if (name !== 'minigame') {
-    if (name === 'market') renderMarket();
-    if (name === 'portfolio') renderPortfolio();
-    if (name === 'gacha') renderGacha();
-    if (name === 'mission') renderMission();
-    if (name === 'home') renderHome();
-    if (name === 'flex') setTimeout(renderFlex, 0);
+    // 💡 모든 화면 이동에 동일하게 10ms 렌더링 안전장치 부여
+    if (name === 'market') setTimeout(renderMarket, 10);
+    if (name === 'portfolio') setTimeout(renderPortfolio, 10);
+    if (name === 'gacha') setTimeout(renderGacha, 10);
+    if (name === 'mission') setTimeout(renderMission, 10);
+    if (name === 'home') setTimeout(renderHome, 10);
+    if (name === 'flex') setTimeout(renderFlex, 10);
 }
 }
 
@@ -7154,9 +7155,9 @@ function initializeGame() {
 var currentDictTab = '전체';
 
 function openDictionary(tab) {
-  currentDictTab = tab || '전체';
-  document.getElementById('dictionary-modal').classList.add('active');
-  renderDictionary();
+  currentDictTab = tab || '전체';
+  document.getElementById('dictionary-modal').classList.add('active');
+  setTimeout(function() { renderDictionary(); }, 10); // 💡 렌더링 씹힘 방지! (창이 열릴 틈을 0.01초 줍니다)
 }
 
 function renderDictionary() {
