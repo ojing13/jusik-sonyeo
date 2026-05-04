@@ -3436,7 +3436,8 @@ function initChars() {
     
     // 마지막 배열(40번째)은 무조건 완벽하게 현재 공식 시작가로 고정!
     dummyPrices[39] = currentP;
-    dummyTicks[39] = parseFloat(((Math.random() * 0.02) - 0.01) * 100).toFixed(2); 
+    // 💡 parseFloat가 toFixed를 완전히 감싸도록 괄호 위치를 수정하여 에러 원천 차단!
+    dummyTicks[39] = parseFloat((((Math.random() * 0.02) - 0.01) * 100).toFixed(2));
 
     // 과거(38번째부터 0번째까지)로 역순으로 거슬러 올라가며 잔잔한 파동 생성
     for (var i = 38; i >= 0; i--) {
