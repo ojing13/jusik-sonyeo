@@ -3599,14 +3599,15 @@ function setAction(msg, priority) {
 }
 
 function updateTotalAssets() {
-  var total = GS.money;
-  Object.values(GS.chars).forEach(function(ch) {
-    if (ch.owned > 0) {
-      var val = ch.price * ch.owned;
-      var tax = Math.floor(val * 0.01);
-      total += (val - tax);
-    }
-  });
+  var total = GS.money;
+  Object.values(GS.chars).forEach(function(ch) {
+    if (ch.owned > 0) {
+      var val = ch.price * ch.owned;
+      var taxRate = (GS.flexItems && GS.flexItems['f5']) ? 0 : 0.01; // 💡 요트 보유 시 수수료 차감 0% 반영
+      var tax = Math.floor(val * taxRate);
+      total += (val - tax);
+    }
+  });
 
   // 💡 플렉스에서 구매한 아이템들의 가치를 총 자산에 합산해줍니다!
   if (GS.flexItems) {
@@ -5132,7 +5133,8 @@ frameEl.style.border = '1px solid rgba(255, 255, 255, 0.1)';
         
         // 유저에게 '무엇을 해야 보너스를 받는지' 미니 목표를 제시합니다.
         if (validSectors >= 5) {
-          bonusStr = '분산 보너스 최대치 적용 중! (+50%)';
+          var maxBonusStr = (GS.flexItems && GS.flexItems['f7']) ? '(+100%)' : '(+50%)'; // 💡 예술품 효과 텍스트 반영
+          bonusStr = '분산 보너스 최대치 적용 중! ' + maxBonusStr;
           bonusColor = '#ffcc44';
         } else if (validSectors >= 3) {
           bonusStr = '분산 보너스 적용 중! (+20%)';
@@ -5668,8 +5670,11 @@ function showStockDetail(k) {
 
   var baseRate = divRates[ch.rarity] || 0.0015;
   var levelBonus = getDivLevelBonus(ch.rarity, ch.level);
-  var finalRate = baseRate * levelBonus * (ch.is_vip ? 1.5 : 1);
+  var vipMult = (GS.flexItems && GS.flexItems['f8']) ? 2.0 : 1.5; // 💡 타워(f8) 보유 시 VIP 배당 2배 반영
+  var finalRate = baseRate * levelBonus * (ch.is_vip ? vipMult : 1);
   var expectedDiv = Math.floor(ch.price * ch.owned * finalRate);
+
+  if (GS.flexItems && GS.flexItems['f9']) { expectedDiv *= 2; } // 💡 아일랜드(f9) 최종 2배 효과 반영
 
   document.getElementById('sd-div-rate').textContent = (finalRate * 100).toFixed(3) + '% (5분당)';
   document.getElementById('sd-div-est').textContent = ch.owned > 0 ? fcomma(expectedDiv) + '원' : '0원 (미보유)';
