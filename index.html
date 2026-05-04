@@ -3041,13 +3041,13 @@ var GS = {
 };
 
 function addMarketHistory(msg, color) {
-  var d = new Date(GS.virtual_time || Date.now());
-  var hh = (d.getHours() < 10 ? '0' : '') + d.getHours();
-  var mm = (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
-  var timeStr = hh + ':' + mm;
+  var d = new Date(); // 💡 가상 시계를 버리고 무조건 현실 시간(실시간) 적용!
+  var hh = (d.getHours() < 10 ? '0' : '') + d.getHours();
+  var mm = (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+  var timeStr = hh + ':' + mm;
 
-  GS.marketHistory.unshift({ time: timeStr, msg: msg, color: color });
-  if (GS.marketHistory.length > 100) GS.marketHistory.pop();
+  GS.marketHistory.unshift({ time: timeStr, msg: msg, color: color });
+  if (GS.marketHistory.length > 100) GS.marketHistory.pop();
 }
 
 function openMarketHistory() {
