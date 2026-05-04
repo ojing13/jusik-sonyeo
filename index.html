@@ -4443,12 +4443,15 @@ function updateTapUI() {
 
   // 2. 체력 게이지 바 및 텍스트만 갱신
   var fill = document.getElementById('energy-fill');
-  fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
-  fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
-  
-  document.getElementById('energy-text').textContent = '체력 ' + Math.floor(ch.energy) + '/' + ch.max_energy + ' | 탭 ' + GS.tapCount + '/100';
-  
-  // (그래프나 이미지 등은 건드리지 않으므로 연산량이 1/100로 줄어듭니다)
+  fill.style.width = ((ch.energy / ch.max_energy) * 100) + '%';
+  fill.style.background = (ch.energy / ch.max_energy) > 0.3 ? '#22cc44' : '#ff4444';
+  
+  document.getElementById('energy-text').textContent = '체력 ' + Math.floor(ch.energy) + '/' + ch.max_energy + ' | 탭 ' + GS.tapCount + '/100';
+
+  // 💡 추가: 터치로 티켓을 얻었을 때 상단 UI도 즉시 숫자가 올라가도록 반영!
+  document.querySelector('#h-ticket .ticket-label').textContent = GS.tickets + '장';
+  
+  // (그래프나 이미지 등은 건드리지 않으므로 연산량이 1/100로 줄어듭니다)
 }
 
 function tap(e) {
@@ -5676,8 +5679,15 @@ function showStockDetail(k) {
 
   if (GS.flexItems && GS.flexItems['f9']) { expectedDiv *= 2; } // 💡 아일랜드(f9) 최종 2배 효과 반영
 
-  document.getElementById('sd-div-rate').textContent = (finalRate * 100).toFixed(3) + '% (5분당)';
-  document.getElementById('sd-div-est').textContent = ch.owned > 0 ? fcomma(expectedDiv) + '원' : '0원 (미보유)';
+  var hasWatch = GS.flexItems && GS.flexItems['f2'];
+  var cycleText = hasWatch ? '4분 30초' : '5분';
+
+  document.getElementById('sd-div-rate').textContent = (finalRate * 100).toFixed(3) + '% (' + cycleText + '당)';
+  document.getElementById('sd-div-est').textContent = ch.owned > 0 ? fcomma(expectedDiv) + '원' : '0원 (미보유)';
+
+  // 💡 추가: 하드코딩된 '5분당' 텍스트를 찾아 시계 보유 여부에 따라 동적으로 변경!
+  var estLabel = document.getElementById('sd-div-est').previousElementSibling;
+  if (estLabel) estLabel.textContent = cycleText + '당 예상 현금 배당';
 
   document.getElementById('sd-price').textContent = fcomma(ch.price) + '원';
   // 💡 저장해둔 이슈를 화면에 쏴줍니다! 없으면 '특이사항 없음'
@@ -5931,8 +5941,11 @@ function doMgJump() {
 }
 
 function startMg() {
-  // 1. 하트가 0개인지 확인해요
-  if (GS.mg_hearts <= 0) { 
+  // 💡 [추가] 이미 게임이 실행 중일 때 버튼이 또 눌려서 하트가 다중 증발하는 현상 원천 차단!
+  if (mg.active) return;
+
+  // 1. 하트가 0개인지 확인해요
+  if (GS.mg_hearts <= 0) {
     setAction("하트가 부족해요!", 5); 
     return; 
   }
@@ -7904,11 +7917,14 @@ var _mgHiddenAt = null;
 
 // 💡 1. 앱을 백그라운드로 넘기거나 화면이 꺼질 때 (모바일 대응)
 document.addEventListener('visibilitychange', function() {
-  var mainBgm = document.getElementById('bgm-player');
-  var mgBgm = document.getElementById('mg-bgm-player');
+  var mainBgm = document.getElementById('bgm-player');
+  var mgBgm = document.getElementById('mg-bgm-player');
 
-  if (document.hidden) {
-    // 💡 [핵심 방어] 부활 창이 떠있거나, 플레이 도중에 화면을 끄면 즉시 강제 정산!
+  if (document.hidden) {
+    // 💡 [추가] 화면이 꺼졌을 때 5초 타이머를 확실히 숨통 끊어서 '시간 2배 뻥튀기' 차단!
+    if (window._tickInterval) { clearInterval(window._tickInterval); window._tickInterval = null; }
+
+    // 💡 [핵심 방어] 부활 창이 떠있거나, 플레이 도중에 화면을 끄면 즉시 강제 정산!
     if (window.mgReviveTimer) {
       clearInterval(window.mgReviveTimer);
       window.mgReviveTimer = null;
@@ -7985,10 +8001,14 @@ document.addEventListener('visibilitychange', function() {
       }
     }
 
-    updateTotalAssets();
-    renderAll();
-    save();
-  }
+    updateTotalAssets();
+    renderAll();
+    save();
+
+    // 💡 [추가] 화면이 다시 켜졌으니 밀린 정산을 마치고 타이머 정상 가동!
+    if (window._tickInterval) clearInterval(window._tickInterval);
+    window._tickInterval = setInterval(tick, 5000);
+  }
 });
 
 // 💡 2. 브라우저 탭을 완전히 꺼버리거나 새로고침할 때 (PC & 웹 대응)
