@@ -4328,6 +4328,10 @@ function generateNews(silent) {
     var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
     if (delIdx !== -1) ch.events.splice(delIdx, 1);
   }
+  // 💡 [시한폭탄 제거] 분할/병합 이벤트가 무한 증식해서 세이브 파일 용량이 터지는 것을 막기 위한 절대 상한선(100개) 추가!
+  if (ch.events.length > 100) {
+    ch.events.shift(); // 무조건 제일 오래된 기록 삭제
+  }
 
   GS.newsBoost[k] = { flag: ev.flag, ticks: 4 };
   GS.newsLinkKey = k;
@@ -4391,6 +4395,10 @@ function fireEarning(pending, silent) {
   if (normalEventsCount > 50) {
     var delIdx = ch.events.findIndex(function(e) { return e.type !== 'split' && e.type !== 'merge'; });
     if (delIdx !== -1) ch.events.splice(delIdx, 1);
+  }
+  // 💡 [시한폭탄 제거] 분할/병합 이벤트가 무한 증식해서 세이브 파일 용량이 터지는 것을 막기 위한 절대 상한선(100개) 추가!
+  if (ch.events.length > 100) {
+    ch.events.shift(); // 무조건 제일 오래된 기록 삭제
   }
 
   ch.change = changeMin + Math.random() * (changeMax - changeMin);
