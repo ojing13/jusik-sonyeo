@@ -2236,15 +2236,6 @@ body, #app {
       </div>
     </div>
 
-    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444455;">
-      <div style="font-size:12px; color:var(--text2); margin-bottom:6px; text-align:center;">🛠️ 개발자 콘솔 v1.5.7</div>
-      <!-- 💡 사파리 버그 방지: 높이를 30px로 수정! -->
-      <div style="display:flex; align-items:center; gap:6px; height:30px;">
-        <input type="text" id="cheat-input" placeholder="코드를 입력하세요" style="width:100%; height:100%; padding:0 8px; background:#0d0d18; border:1px solid var(--border); border-radius:6px; color:white; font-family:'Jua',sans-serif; font-size:12px; outline:none; box-sizing:border-box;">
-        <button onclick="applyCheat()" style="flex-shrink:0; height:100%; padding:0 14px; background:#886600; color:#000; border:1px solid var(--gold); border-radius:6px; font-family:'Jua',sans-serif; font-size:13px; cursor:pointer; box-sizing:border-box;">적용</button>
-      </div>
-    </div>
-
     <div style="text-align:center; margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:center;">
       <div onclick="window.open('https://policies.google.com/privacy', '_blank')" style="font-size:10px; color:#888899; cursor:pointer; text-decoration:underline; user-select:none;">이용약관 및 개인정보처리방침</div>
       <div id="dev-reset-btn" onclick="playSound('click'); devResetStep()" style="font-size:10px; color:#444466; cursor:pointer; text-decoration:underline; user-select:none;">데이터 초기화</div>
@@ -2574,27 +2565,59 @@ function startGame() {
 
 var _actionTimer = null;
 var _tradeTimer = null;
-var audioCtx;
-function playSound(type) {
-    if (!userInteracted || !GS.sfxOn) return;
 
-    // 1. 오디오 컨텍스트가 없거나 닫혔으면 새로 생성
+// 💡 [오디오 엔진 전면 개편]
+var audioCtx = null;
+var _audioNeedsReset = false;
+
+// 빈 소리를 재생하여 모바일 OS의 오디오 잠금을 강제로 해제하는 함수
+function unlockAudioEngine() {
     if (!audioCtx || audioCtx.state === 'closed') {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
     }
-
-    // 2. 일시정지 상태라면 깨우기 시도
-    if (audioCtx.state === 'suspended') {
+    
+    if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
         audioCtx.resume();
-        // 깨어나는 중에는 소리가 안 날 수 있으므로, 일단 이번 호출은 무시하거나 
-        // 아주 짧은 지연 후 실행하게 할 수 있지만, 보통 다음 터치부터 정상 작동하게 됩니다.
     }
 
-    // [중요] 컨텍스트가 'running' 상태일 때만 소리 재생 로직 실행
-    if (audioCtx.state !== 'running') return;
+    // 아주 짧은 무음 버퍼를 생성해 플레이 (iOS 사파리 멱살 잡고 깨우기)
+    var buffer = audioCtx.createBuffer(1, 1, 22050);
+    var source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    if (source.start) { source.start(0); } else { source.noteOn(0); }
+}
 
-    // 미니게임 중 불필요한 이벤트 사운드 차단 (기존 로직)
-    if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
+// 전역 터치 이벤트에 오디오 언락커 연결 (모든 터치마다 엔진 상태 점검)
+document.addEventListener('touchstart', function() {
+    if (!userInteracted) return;
+    if (_audioNeedsReset) {
+        // 오래 백그라운드에 있어서 죽은 엔진은 미련 없이 버리고 새로 만듭니다!
+        if (audioCtx && audioCtx.state !== 'closed') {
+            audioCtx.close().catch(function(e){});
+        }
+        audioCtx = null;
+        _audioNeedsReset = false;
+    }
+    unlockAudioEngine();
+}, {passive: true});
+
+function playSound(type) {
+    if (!userInteracted || !GS.sfxOn) return;
+
+    // 엔진이 없거나 죽었으면 즉시 생성 및 언락
+    if (!audioCtx || audioCtx.state === 'closed') {
+        unlockAudioEngine();
+    } else if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
+        audioCtx.resume();
+    }
+
+    // 컨텍스트가 완전히 running 상태가 아니면 소리를 내지 않고 패스 (에러 방지)
+    if (audioCtx.state !== 'running') return;
+
+    // 미니게임 중 불필요한 이벤트 사운드 차단 (기존 로직)
+    if (typeof mg !== 'undefined' && mg.active && (type === 'event' || type === 'dividend')) return;
 
     var osc = audioCtx.createOscillator();
     var gain = audioCtx.createGain();
@@ -4448,17 +4471,7 @@ function updateTapUI() {
 }
 
 function tap(e) {
-    // [강력 처방] 터치가 발생한 순간 오디오 상태를 체크해서 강제로 깨움
-    if (audioCtx) {
-        if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
-            audioCtx.resume();
-        }
-    } else {
-        // 컨텍스트 자체가 날아갔을 경우 재생성
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    var charEl = document.getElementById('char-tap');
+    var charEl = document.getElementById('char-tap');
     if (charEl) {
         if (window.tapTimeout) clearTimeout(window.tapTimeout); // 이전 타이머 취소
         charEl.style.transform = 'scale(0.92)'; // 0.92배로 푹 누름
@@ -6760,190 +6773,6 @@ function devResetStep() {
   }
 }
 
-// --- 🛠️ 개발자용 치트키 시스템 (1회용 특별 보상 + 무한 하트 충전 + 자산 임의 조절) ---
-function applyCheat() {
-  playSound('click');
-  var inputEl = document.getElementById('cheat-input');
-  var code = inputEl.value.trim(); // 앞뒤 공백 제거
-  inputEl.value = ''; // 입력창 비우기
-
-  if (!code) return;
-
-  // 💡 [추가된 기능] 자산 임의 조절 (예: 자산 10경, 자산 100조, 자산 1억)
-  if (code.startsWith('자산') || code.startsWith('돈')) {
-    var isKyeong = code.indexOf('경') > -1;
-    var isJo = code.indexOf('조') > -1;
-    var isEok = code.indexOf('억') > -1;
-    var isMan = code.indexOf('만') > -1;
-    var amountStr = code.replace(/[^0-9]/g, ''); // 숫자만 추출
-    
-    if (amountStr.length > 0) {
-      var amount = parseFloat(amountStr); // 경 단위처럼 큰 숫자를 위해 parseFloat 사용
-      
-      // '경', '조', '억', '만' 단위가 포함되어 있으면 자동으로 곱해줍니다.
-      if (isKyeong) amount *= 10000000000000000;
-      else if (isJo) amount *= 1000000000000;
-      else if (isEok) amount *= 100000000;
-      else if (isMan) amount *= 10000;
-
-      // 증가가 아니라 딱 그 금액으로 덮어씌웁니다.
-      GS.money = amount;
-      
-      playSound('event'); 
-      showToast("자산이 " + fcomma(amount) + "원으로 설정되었습니다!", "#ffd700", null, 3000); 
-      
-      updateTotalAssets();
-      save(); 
-      renderAll();
-      
-      document.getElementById('settings-modal').classList.remove('active');
-      return;
-    } else {
-      showToast("금액을 숫자로 함께 입력해주세요. (예: 자산 10조)", "#ff4444");
-      return;
-    }
-  }
-
-  if (code === '운유산') {
-    // 1. 이미 썼는지 확인
-    if (localStorage.getItem('cheat_unyusan_used') === 'true') {
-      showToast("이미 사용한 코드입니다.", "#ff4444");
-      return;
-    }
-
-    // 2. 보상 지급 (10억 + 티켓 100장)
-    GS.money += 1000000000; 
-    GS.tickets += 100;      
-    
-    // 3. 영구 도장 쾅! (다시 못 쓰게)
-    localStorage.setItem('cheat_unyusan_used', 'true');
-
-    // 4. 연출 및 저장
-    playSound('event'); 
-    showToast("지급 완료", "#ffd700", null, 5000); 
-    
-    updateTotalAssets();
-    save(); 
-    renderAll();
-    
-    // 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
-
-  } else if (code === '하트만땅') { 
-    // 1. 하트를 최대치(4개)로 꽉 채웁니다.
-    GS.mg_hearts = 4;
-    
-    // 2. 하트가 꽉 찼으니 타이머 기준 시간을 지금으로 초기화합니다.
-    GS.mg_last_heart_time = Date.now();
-
-    // 3. 연출 및 저장
-    playSound('event'); 
-    showToast("하트 충전 완료!", "#ff3264", null, 3000); 
-    
-    // 4. 즉시 화면의 하트 개수를 새로고침하고 저장합니다.
-    updateMgHearts();
-    save(); 
-    
-    // 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
-  
-  } else if (code === '티켓만땅') { 
-    // 1. 스카웃 티켓 1000장을 즉시 추가합니다.
-    GS.tickets += 1000;
-    
-    // 2. 연출 및 저장
-    playSound('event'); 
-    showToast("티켓 1000장 충전 완료!", "#cc88ff", null, 3000); 
-    
-    // 3. 화면의 숫자들을 즉시 갱신하고 저장합니다.
-    updateTotalAssets();
-    save(); 
-    renderAll();
-    
-    // 4. 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
-
-  } else if (code === '광고초기화') { 
-    // 1. 하트 광고 횟수 초기화
-    GS.adHeartUses = 5;
-
-    // 2. 호재 띄우기 광고 횟수 초기화 (전세기 f6 보유 여부에 따라 아까 고친 4회 또는 2회로 똑똑하게 적용!)
-    var maxPumpUses = (GS.flexItems && GS.flexItems['f6']) ? 4 : 2;
-    GS.adPumpUses = maxPumpUses;
-
-    // 3. 미니게임 하트 광고 UI 즉시 복구 (기존 UI 업데이트 함수 완벽 재활용)
-    updateMgHearts();
-
-    // 4. 상세창 확정 호재 UI 즉시 복구 (창이 열려있을 경우 대비)
-    var adPumpCount = document.getElementById('sd-ad-pump-count');
-    var adPumpMax = document.getElementById('sd-ad-pump-max');
-    var adPumpBtn = document.getElementById('sd-ad-pump-btn');
-    if (adPumpCount) adPumpCount.textContent = GS.adPumpUses;
-    if (adPumpMax) adPumpMax.textContent = maxPumpUses;
-    if (adPumpBtn) adPumpBtn.style.opacity = '1';
-
-    // 5. 연출 및 저장
-    playSound('event'); 
-    showToast("모든 광고 시청 횟수가 초기화되었습니다!", "#66ff88", null, 3000); 
-    save();
-    
-    // 6. 설정창 자동으로 닫기
-    document.getElementById('settings-modal').classList.remove('active');
-
-  } else if (code === '타임슬립') { 
-    playSound('click');
-    showToast("⏳ 24시간 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#ffcc44", null, 3000, false, true);
-
-    setTimeout(function() {
-      var moneyBefore = GS.money;
-      var skipTicks = 17280; 
-
-      for (var i = 0; i < skipTicks; i++) {
-        tick(true); 
-      }
-
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
-
-      updateTotalAssets();
-      save();
-      renderAll();
-
-      playSound('dividend');
-      showToast("✨ 24시간 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#66ff88", null, 5000, false, true);
-
-      document.getElementById('settings-modal').classList.remove('active');
-    }, 100);
-
-  } else if (code === '위클리슬립') { 
-    playSound('click');
-    showToast("⏳ 1주일 타임슬립 연산 중... (잠시 화면이 멈출 수 있습니다)", "#cc88ff", null, 3000, false, true);
-
-    setTimeout(function() {
-      var moneyBefore = GS.money;
-      var skipTicks = 17280 * 7;
-
-      for (var i = 0; i < skipTicks; i++) {
-        tick(true);
-      }
-
-      var earnedAmount = Math.max(0, GS.money - moneyBefore);
-
-      updateTotalAssets();
-      save();
-      renderAll();
-
-      playSound('dividend');
-      showToast("✨ 1주일 흐름 적용 완료! 배당 " + fcomma(earnedAmount) + "원 획득!", "#cc88ff", null, 5000, false, true);
-
-      document.getElementById('settings-modal').classList.remove('active');
-    }, 100);
-
-  } else {
-    // 다른 글자를 쳤을 때
-    showToast("알 수 없는 코드입니다.", "#ff4444");
-  }
-}
-
 // 💡 완벽하게 작동하는 프리로드(미리 불러오기) 함수
 window.isLoadComplete = false;
 
@@ -7933,27 +7762,23 @@ document.addEventListener('visibilitychange', function() {
     if (mainBgm) mainBgm.pause();
     if (mgBgm) mgBgm.pause();
 
-    if (audioCtx && audioCtx.state !== 'closed') {
-      audioCtx.suspend();
-    }
-  } else {
-    if (_mgHiddenAt === null) return;
-    
-    var now = Date.now();
-    // 꺼져있던 시간 + 주머니에 있던 자투리 시간
-    var offlineMs = (now - _mgHiddenAt) + (GS.leftoverMs || 0); 
-    _mgHiddenAt = null;
+    // 💡 [오디오 엔진 완전 종료] 백그라운드 진입 시 OS에 의해 가사 상태에 빠지는 것을 막기 위해,
+    // 차라리 우리가 직접 안전하게 종료해버리고 돌아올 때 새 것으로 교체하도록 플래그를 세웁니다!
+    if (audioCtx && audioCtx.state !== 'closed') {
+      audioCtx.close().catch(function(e){});
+    }
+    _audioNeedsReset = true; // 돌아올 때 첫 터치 시 새 엔진 장착 예약!
 
-    if (audioCtx) {
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume().then(() => {
-          console.log("AudioContext resumed successfully");
-        });
-      } else if (audioCtx.state === 'interrupted') {
-        // iOS에서 전화가 오거나 알람이 울린 후 발생하는 상태
-        audioCtx.resume();
-      }
-    }
+  } else {
+    if (_mgHiddenAt === null) return;
+    
+    var now = Date.now();
+    // 꺼져있던 시간 + 주머니에 있던 자투리 시간
+    var offlineMs = (now - _mgHiddenAt) + (GS.leftoverMs || 0); 
+    _mgHiddenAt = null;
+
+    // 💡 돌아왔을 때는 여기서 억지로 오디오를 깨우지 않습니다. (정책 위반으로 먹통됨)
+    // 대신 위에서 만든 전역 touchstart 리스너가 유저의 첫 터치 시점에 새 엔진을 달아줄 것입니다!
 
     if (GS.bgmOn) {
       var mgScreen = document.getElementById('screen-minigame');
