@@ -3424,17 +3424,35 @@ function claimMission(id) {
 }
 
 function initChars() {
-  var baseMaxEn = { SSR: 400, SR: 300, R: 250, N: 200 };
-  Object.keys(CHARS_DEF).forEach(function(k) {
-    var d = CHARS_DEF[k];
-    var mEn = baseMaxEn[d.rarity] || 200;
-    GS.chars[k] = {
-        name: d.name, ticker: d.ticker, sector: d.sector, price: d.price,
-        rarity: d.rarity, color: d.color, unlocked: d.unlocked,
-        owned: 0, avg_price: 0, level: 1, energy: mEn, max_energy: mEn,
-        is_vip: false, change: 0, new_recruit_ticks: 0,
-        tick_history: [0],
-        price_history: [d.price], 
+  var baseMaxEn = { SSR: 400, SR: 300, R: 250, N: 200 };
+  Object.keys(CHARS_DEF).forEach(function(k) {
+    var d = CHARS_DEF[k];
+    var mEn = baseMaxEn[d.rarity] || 200;
+
+    // 💡 [혁신] 휑한 차트를 채우기 위한 역방향 더미 데이터 생성기
+    var dummyPrices = new Array(40);
+    var dummyTicks = new Array(40);
+    var currentP = d.price;
+    
+    // 마지막 배열(40번째)은 무조건 완벽하게 현재 공식 시작가로 고정!
+    dummyPrices[39] = currentP;
+    dummyTicks[39] = parseFloat(((Math.random() * 0.02) - 0.01) * 100).toFixed(2); 
+
+    // 과거(38번째부터 0번째까지)로 역순으로 거슬러 올라가며 잔잔한 파동 생성
+    for (var i = 38; i >= 0; i--) {
+        var change = (Math.random() * 0.03) - 0.015; // -1.5% ~ +1.5%의 잔잔한 파동
+        currentP = currentP / (1 + change); // 이전 가격 역산
+        dummyPrices[i] = currentP;
+        dummyTicks[i] = parseFloat((change * 100).toFixed(2));
+    }
+
+    GS.chars[k] = {
+        name: d.name, ticker: d.ticker, sector: d.sector, price: d.price,
+        rarity: d.rarity, color: d.color, unlocked: d.unlocked,
+        owned: 0, avg_price: 0, level: 1, energy: mEn, max_energy: mEn,
+        is_vip: false, change: 0, new_recruit_ticks: 0,
+        tick_history: dummyTicks,   // 💡 점 1개에서 40개짜리 배열로 교체
+        price_history: dummyPrices, // 💡 점 1개에서 40개짜리 배열로 교체
         events: [], // 💡 차트 표시용 이벤트 배열 추가
       earningCooldown: 0,
       _earningApplied: false,
