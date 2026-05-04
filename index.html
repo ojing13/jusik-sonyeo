@@ -493,9 +493,10 @@ body { font-family: 'Jua', 'Noto Sans KR', -apple-system, sans-serif; color:var(
 .qty-dropdown {
   position:absolute; top:100%; right:0; margin-top:6px;
   background:var(--bg2); border:1px solid var(--border);
-  border-radius:10px; overflow:hidden; z-index:200;
+  border-radius:10px; overflow-y:auto; z-index:200;
   display:none; flex-direction:column; min-width:110px;
   box-shadow:0 4px 16px rgba(0,0,0,0.6);
+  max-height:300px;
 }
 .qty-dropdown.show { display:flex; }
 .qty-option {
@@ -1730,6 +1731,7 @@ body, #app {
         <div style="position:relative; flex-shrink: 0;">
           <div class="qty-btn" id="qty-btn" onclick="toggleQtyDropdown()" style="white-space: nowrap;">수량: 1주 ▼</div>
           <div id="qty-dropdown" class="qty-dropdown">
+            <div class="qty-option" onclick="selectQty(-1, '전량')">전량</div>
             <div class="qty-option" onclick="selectQty(1, '1주')">1주</div>
             <div class="qty-option" onclick="selectQty(10, '10주')">10주</div>
             <div class="qty-option" onclick="selectQty(100, '100주')">100주</div>
@@ -1738,7 +1740,50 @@ body, #app {
             <div class="qty-option" onclick="selectQty(100000, '10만주')">10만주</div>
             <div class="qty-option" onclick="selectQty(1000000, '100만주')">100만주</div>
             <div class="qty-option" onclick="selectQty(10000000, '1000만주')">1000만주</div>
-            <div class="qty-option" onclick="selectQty(-1, '전량')">전량</div>
+            <div class="qty-option" onclick="selectQty(100000000, '1억주')">1억주</div>
+<div class="qty-option" onclick="selectQty(1000000000, '10억주')">10억주</div>
+<div class="qty-option" onclick="selectQty(10000000000, '100억주')">100억주</div>
+<div class="qty-option" onclick="selectQty(100000000000, '1000억주')">1000억주</div>
+<div class="qty-option" onclick="selectQty(1e12, '1조주')">1조주</div>
+<div class="qty-option" onclick="selectQty(1e13, '10조주')">10조주</div>
+<div class="qty-option" onclick="selectQty(1e14, '100조주')">100조주</div>
+<div class="qty-option" onclick="selectQty(1e15, '1000조주')">1000조주</div>
+<div class="qty-option" onclick="selectQty(1e16, '1경주')">1경주</div>
+<div class="qty-option" onclick="selectQty(1e17, '10경주')">10경주</div>
+<div class="qty-option" onclick="selectQty(1e18, '100경주')">100경주</div>
+<div class="qty-option" onclick="selectQty(1e19, '1000경주')">1000경주</div>
+<div class="qty-option" onclick="selectQty(1e20, '1해주')">1해주</div>
+<div class="qty-option" onclick="selectQty(1e21, '10해주')">10해주</div>
+<div class="qty-option" onclick="selectQty(1e22, '100해주')">100해주</div>
+<div class="qty-option" onclick="selectQty(1e23, '1000해주')">1000해주</div>
+<div class="qty-option" onclick="selectQty(1e24, '1자주')">1자주</div>
+<div class="qty-option" onclick="selectQty(1e25, '10자주')">10자주</div>
+<div class="qty-option" onclick="selectQty(1e26, '100자주')">100자주</div>
+<div class="qty-option" onclick="selectQty(1e27, '1000자주')">1000자주</div>
+<div class="qty-option" onclick="selectQty(1e28, '1양주')">1양주</div>
+<div class="qty-option" onclick="selectQty(1e29, '10양주')">10양주</div>
+<div class="qty-option" onclick="selectQty(1e30, '100양주')">100양주</div>
+<div class="qty-option" onclick="selectQty(1e31, '1000양주')">1000양주</div>
+<div class="qty-option" onclick="selectQty(1e32, '1구주')">1구주</div>
+<div class="qty-option" onclick="selectQty(1e33, '10구주')">10구주</div>
+<div class="qty-option" onclick="selectQty(1e34, '100구주')">100구주</div>
+<div class="qty-option" onclick="selectQty(1e35, '1000구주')">1000구주</div>
+<div class="qty-option" onclick="selectQty(1e36, '1간주')">1간주</div>
+<div class="qty-option" onclick="selectQty(1e37, '10간주')">10간주</div>
+<div class="qty-option" onclick="selectQty(1e38, '100간주')">100간주</div>
+<div class="qty-option" onclick="selectQty(1e39, '1000간주')">1000간주</div>
+<div class="qty-option" onclick="selectQty(1e40, '1정주')">1정주</div>
+<div class="qty-option" onclick="selectQty(1e41, '10정주')">10정주</div>
+<div class="qty-option" onclick="selectQty(1e42, '100정주')">100정주</div>
+<div class="qty-option" onclick="selectQty(1e43, '1000정주')">1000정주</div>
+<div class="qty-option" onclick="selectQty(1e44, '1재주')">1재주</div>
+<div class="qty-option" onclick="selectQty(1e45, '10재주')">10재주</div>
+<div class="qty-option" onclick="selectQty(1e46, '100재주')">100재주</div>
+<div class="qty-option" onclick="selectQty(1e47, '1000재주')">1000재주</div>
+<div class="qty-option" onclick="selectQty(1e48, '1극주')">1극주</div>
+<div class="qty-option" onclick="selectQty(1e49, '10극주')">10극주</div>
+<div class="qty-option" onclick="selectQty(1e50, '100극주')">100극주</div>
+<div class="qty-option" onclick="selectQty(1e51, '1000극주')">1000극주</div>
           </div>
         </div>
       </div>
@@ -3607,8 +3652,8 @@ function fcomma(v) {
   var unitIndex = Math.floor(Math.log10(absV) / 4);
 
   if (unitIndex >= units.length) {
-    unitIndex = units.length - 1; 
-  }
+  return (isNegative ? "-" : "") + absV.toExponential(2).replace('e+', 'e');
+}
 
   // 제일 큰 단위 추출 (예: 1억 2500만 -> 1)
   var majorValue = Math.floor(absV / Math.pow(10000, unitIndex));
