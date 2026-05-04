@@ -2089,9 +2089,9 @@ body, #app {
                 <td style="padding:6px 8px; color:#ccc; font-size:10px;">매도 수수료(1%) 전면 면제</td>
               </tr>
               <tr style="background:#0d0d18; border-bottom:1px solid var(--border);">
-                <td style="padding:6px 8px; color:#cc88ff; word-break:keep-all;">프라이빗 전세기</td>
-                <td style="padding:6px 8px; color:#ccc; font-size:10px;">확정 호재 횟수 증가 (2회 → 5회)</td>
-              </tr>
+                <td style="padding:6px 8px; color:#cc88ff; word-break:keep-all;">프라이빗 전세기</td>
+                <td style="padding:6px 8px; color:#ccc; font-size:10px;">확정 호재 횟수 증가 (2회 → 4회)</td>
+              </tr>
               <tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:6px 8px; color:#cc88ff; word-break:keep-all;">최고가급 예술품</td>
                 <td style="padding:6px 8px; color:#ccc; font-size:10px;">5섹터 분산 보너스 강화 (1.5배 → 2배)</td>
@@ -3655,10 +3655,13 @@ function fcomma(v) {
   return (isNegative ? "-" : "") + absV.toExponential(2).replace('e+', 'e');
 }
 
-  // 제일 큰 단위 추출 (예: 1억 2500만 -> 1)
-  var majorValue = Math.floor(absV / Math.pow(10000, unitIndex));
-  // 두 번째로 큰 단위 추출 (예: 1억 2500만 -> 2500)
-  var minorValue = Math.floor(absV / Math.pow(10000, unitIndex - 1)) % 10000;
+  // 제일 큰 단위 추출 (부동소수점 오차 방지를 위해 toFixed로 미세 오차 보정 후 내림)
+  var rawMajor = absV / Math.pow(10000, unitIndex);
+  var majorValue = Math.floor(Number(rawMajor.toFixed(4)));
+
+  // 두 번째로 큰 단위 추출
+  var rawMinor = absV / Math.pow(10000, unitIndex - 1);
+  var minorValue = Math.floor(Number(rawMinor.toFixed(4))) % 10000;
 
   var result = majorValue.toLocaleString() + units[unitIndex];
 
@@ -3831,11 +3834,11 @@ function load() {
 
     // 💡 추가: 날짜가 바뀌었으면 모든 광고 시청 횟수 리셋, 아니면 불러오기
 
-    var todayStr = new Date().toDateString();
-    // 💡 전세기 보유 여부에 따라 호재 횟수 최대치 변경
-    var maxPumpUses = (d.flexItems && d.flexItems['f6']) ? 5 : 2;
+    var todayStr = new Date().toDateString();
+    // 💡 전세기 보유 여부에 따라 호재 횟수 최대치 변경
+    var maxPumpUses = (d.flexItems && d.flexItems['f6']) ? 4 : 2;
 
-    if (d.lastAdDate === todayStr) {
+    if (d.lastAdDate === todayStr) {
       GS.adTicketUses = (d.adTicketUses !== undefined) ? d.adTicketUses : 5;
       GS.adHeartUses = (d.adHeartUses !== undefined) ? d.adHeartUses : 5;
       GS.adPumpUses = (d.adPumpUses !== undefined) ? d.adPumpUses : maxPumpUses;
@@ -4052,11 +4055,11 @@ function applyPriceChange(k) {
 }
 function tick(silent) {
   // 💡 [추가] 게임을 켜둔 상태로 자정(밤 12시)이 넘어갔을 때 실시간으로 횟수 자동 초기화!
-  var todayStr = new Date().toDateString();
-  if (GS.lastAdDate !== todayStr && !GS.isTutorial) {
-    var maxPumpUses = (GS.flexItems && GS.flexItems['f6']) ? 5 : 2;
-    GS.adHeartUses = 5;
-    GS.adPumpUses = maxPumpUses; // 마이너스 빚도 다음날이면 깔끔하게 탕감!
+  var todayStr = new Date().toDateString();
+  if (GS.lastAdDate !== todayStr && !GS.isTutorial) {
+    var maxPumpUses = (GS.flexItems && GS.flexItems['f6']) ? 4 : 2;
+    GS.adHeartUses = 5;
+    GS.adPumpUses = maxPumpUses; // 마이너스 빚도 다음날이면 깔끔하게 탕감!
     GS.lastAdDate = todayStr;
     
     updateMgHearts(); // 미니게임 하트 즉시 갱신
@@ -4870,16 +4873,16 @@ function toggleQtyDropdown() {
 }
 
 function selectQty(val, label) {
-  playSound('click');
-  tradeMode = parseInt(val);
-  
-  // 💡 추가: GS 변수에 저장하고 세이브 함수 호출
-  GS.tradeMode = tradeMode;
-  GS.tradeLabel = label;
-  
-  document.getElementById('qty-btn').textContent = '수량: ' + label + ' ▼';
-  document.getElementById('qty-dropdown').classList.remove('show');
-  save(); // 💡 추가: 수량 변경 즉시 저장
+  playSound('click');
+  tradeMode = Number(val); // 💡 parseInt 대신 Number를 사용하여 e표기법 증발 버그 해결!
+  
+  // 💡 추가: GS 변수에 저장하고 세이브 함수 호출
+  GS.tradeMode = tradeMode;
+  GS.tradeLabel = label;
+  
+  document.getElementById('qty-btn').textContent = '수량: ' + label + ' ▼';
+  document.getElementById('qty-dropdown').classList.remove('show');
+  save(); // 💡 추가: 수량 변경 즉시 저장
 }
 
 document.addEventListener('click', function(e) {
@@ -5694,11 +5697,11 @@ function showStockDetail(k) {
   var adPumpCount = document.getElementById('sd-ad-pump-count');
   var adPumpMax = document.getElementById('sd-ad-pump-max');
 
-  if (ch.owned > 0) {
-    adPumpContainer.style.display = 'block';
-    var maxPumpUses = (GS.flexItems && GS.flexItems['f6']) ? 5 : 2;
-    if (adPumpMax) adPumpMax.textContent = maxPumpUses;
-    adPumpCount.textContent = Math.max(0, GS.adPumpUses); // 💡 마이너스 빚은 화면에 0으로 표시
+  if (ch.owned > 0) {
+    adPumpContainer.style.display = 'block';
+    var maxPumpUses = (GS.flexItems && GS.flexItems['f6']) ? 4 : 2;
+    if (adPumpMax) adPumpMax.textContent = maxPumpUses;
+    adPumpCount.textContent = Math.max(0, GS.adPumpUses); // 💡 마이너스 빚은 화면에 0으로 표시
     if (GS.adPumpUses > 0) {
       adPumpBtn.style.opacity = '1';
       adPumpBtn.onclick = function() { showPumpAd(k); };
@@ -8127,15 +8130,15 @@ document.addEventListener('touchcancel', function(e) {
 ============================================================ */
 // --- 💎 플렉스 시스템 데이터 및 로직 ---
 var FLEX_ITEMS = [
-  { id: 'f1', name: '한정판 명품 지갑', price: 5000000, desc: '[보유 효과] 1회 터치 수익 +10% 증가' },
-  { id: 'f2', name: '럭셔리 다이버 시계', price: 50000000, desc: '[보유 효과] 배당금 지급 주기 단축 (5분 → 4분 30초)' },
-  { id: 'f3', name: '하이엔드 슈퍼카', price: 500000000, desc: '[보유 효과] 미니게임 거리 점수 획득 속도 1.2배 증가' },
-  { id: 'f4', name: '야경뷰 펜트하우스', price: 5000000000, desc: '[보유 효과] 체력 자연 회복 속도 1.5배 증가' },
-  { id: 'f5', name: '최고급 호화 요트', price: 50000000000, desc: '[보유 효과] 주식 매도 수수료(1%) 전면 면제' },
-  { id: 'f6', name: '프라이빗 전세기', price: 500000000000, desc: '[보유 효과] 확정 호재 띄우기 일일 횟수 증가 (2회 → 5회)' },
-  { id: 'f7', name: '역대 최고가급 예술품', price: 5000000000000, desc: '[보유 효과] 5개 섹터 분산투자 배당 보너스 강화 (1.5배 → 2.0배)' },
-  { id: 'f8', name: '초거대 랜드마크 타워', price: 50000000000000, desc: '[보유 효과] 경영권(VIP) 혜택 강화 (터치 수익 2배 → 3배 / 배당금 1.5배 → 2배)' },
-  { id: 'f9', name: '카리브해 프라이빗 아일랜드', price: 500000000000000, desc: '[보유 효과] 최종 터치 수익 및 배당금 획득량 영구 2배 증가' }
+  { id: 'f1', name: '한정판 명품 지갑', price: 5000000, desc: '[보유 효과] 1회 터치 수익 +10% 증가' },
+  { id: 'f2', name: '럭셔리 다이버 시계', price: 50000000, desc: '[보유 효과] 배당금 지급 주기 단축 (5분 → 4분 30초)' },
+  { id: 'f3', name: '하이엔드 슈퍼카', price: 500000000, desc: '[보유 효과] 미니게임 거리 점수 획득 속도 1.2배 증가' },
+  { id: 'f4', name: '야경뷰 펜트하우스', price: 5000000000, desc: '[보유 효과] 체력 자연 회복 속도 1.5배 증가' },
+  { id: 'f5', name: '최고급 호화 요트', price: 50000000000, desc: '[보유 효과] 주식 매도 수수료(1%) 전면 면제' },
+  { id: 'f6', name: '프라이빗 전세기', price: 500000000000, desc: '[보유 효과] 확정 호재 띄우기 일일 횟수 증가 (2회 → 4회)' },
+  { id: 'f7', name: '역대 최고가급 예술품', price: 5000000000000, desc: '[보유 효과] 5개 섹터 분산투자 배당 보너스 강화 (1.5배 → 2.0배)' },
+  { id: 'f8', name: '초거대 랜드마크 타워', price: 50000000000000, desc: '[보유 효과] 경영권(VIP) 혜택 강화 (터치 수익 2배 → 3배 / 배당금 1.5배 → 2배)' },
+  { id: 'f9', name: '카리브해 프라이빗 아일랜드', price: 500000000000000, desc: '[보유 효과] 최종 터치 수익 및 배당금 획득량 영구 2배 증가' }
 ];
 
 // 💡 전역 공간에 완벽하게 분리한 연동 함수
@@ -8340,11 +8343,11 @@ function buyFlex(id) {
       GS.money -= item.price;
       if (!GS.flexItems) GS.flexItems = {};
       GS.flexItems[id] = true;
-      
-      // 전세기(f6) 구매 시 혜택 지급
-      if (id === 'f6') GS.adPumpUses += 3;
-      
-      showToast("[" + item.name + "] 플렉스 성공!", "#ffd700");
+      
+      // 전세기(f6) 구매 시 혜택 지급
+      if (id === 'f6') GS.adPumpUses += 2;
+      
+      showToast("[" + item.name + "] 플렉스 성공!", "#ffd700");
       
       // 파티클 폭죽 터트리기
       for(var i=0; i<30; i++) {
@@ -8388,12 +8391,12 @@ function sellFlex(id) {
       GS.money += sellPrice; 
       delete GS.flexItems[id];
 
-      // 💡 어뷰징 방어: 0 이하(마이너스) '빚'을 지게 만들어서 무한 샀다 팔기 복사 버그 원천 차단!
+      // 💡 어뷰징 방어: 0 이하(마이너스) '빚'을 지게 만들어서 무한 샀다 팔기 복사 버그 원천 차단!
       if (id === 'f6') {
-        GS.adPumpUses -= 3;
+        GS.adPumpUses -= 2;
       }
-      
-      showToast("[" + item.name + "] 매각 완료! (+" + fcomma(sellPrice) + "원)", "#4477ff");
+      
+      showToast("[" + item.name + "] 매각 완료! (+" + fcomma(sellPrice) + "원)", "#4477ff");
       
       updateTotalAssets();
       save();
